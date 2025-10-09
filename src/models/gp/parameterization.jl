@@ -42,6 +42,11 @@ apply_parameters(m::ZeroMean, θ) = m
 extract_parameters(m::ConstMean) = m.c
 apply_parameters(::ConstMean, θ) = ConstMean(θ)
 
+# TODO: CustomMean uses a user defined function that could depend on parameters 
+#       We should support custom definitions for applying and extracting parameters
+extract_parameters(::CustomMean) = nothing
+apply_parameters(m::CustomMean, θ) = m
+
 # ---------------- Kernel functions ----------------
 
 # Kernels and transforms without parameters
@@ -54,10 +59,10 @@ BaseKernelsWithoutParameters = Union{
 }
 
 # TODO: GibbsKernel has a lengthscale function which could depend on trainable parameters
-KernelsWithoutParameters = Union{GibbsKernel} 
+KernelsWithoutParameters = GibbsKernel 
 
 # TODO: FunctionTransform has a transformation function which could depend on trainable parameters
-TransformsWithoutParameters = Union{FunctionTransform, SelectTransform, IdentityTransform}
+TransformsWithoutParameters = Union{FunctionTransform, SelectTransform, KernelFunctions.IdentityTransform}
 
 AllWithoutParameters = Union{
     BaseKernelsWithoutParameters, 
@@ -65,9 +70,20 @@ AllWithoutParameters = Union{
     TransformsWithoutParameters
 }
 
+# TODO: Add support for multi-output models (MOKernel) and general neural networks as kernels (NeuralKernelNetwork)
+UnsupportedKernels = Union{
+    IndependentMOKernel, IntrinsicCoregionMOKernel, 
+    LatentFactorMOKernel, LinearMixingModelKernel,
+    KernelFunctions.NeuralKernelNetwork
+}
+
 # no parameters
 extract_parameters(::T) where {T<:AllWithoutParameters} = nothing
 apply_parameters(k::T, θ) where {T<:AllWithoutParameters} = k
+
+# currently unsupported
+extract_parameters(::T) where {T<:UnsupportedKernels} = throw(ArgumentError("`extract_parameters` is not supported for kernel type $(T)."))
+apply_parameters(k::T, θ) where {T<:UnsupportedKernels} = throw(ArgumentError("`apply_parameters` is not supported for kernel type $(T)."))
 
 # basekernels (see KernelFunctions.jl src/basekernels)
 extract_parameters(k::ConstantKernel) = ParameterHandling.positive(k.c)
@@ -104,7 +120,6 @@ extract_parameters(k::GammaRationalKernel) = (
 apply_parameters(::GammaRationalKernel, θ) = GammaRationalKernel(; α=only(θ[1]), γ=only(θ[2]))
 
 # kernels (see KernelFunctions.jl src/kernels)
-# TODO: NeuralKernelNetwork not implemented
 extract_parameters(k::KernelProduct) = map(extract_parameters, k.kernels)
 apply_parameters(k::KernelProduct, θ) = KernelProduct(map(apply_parameters, k.kernels, θ))
 
