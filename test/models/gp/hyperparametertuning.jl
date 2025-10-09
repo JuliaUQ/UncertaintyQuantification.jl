@@ -28,6 +28,7 @@
         
         @test likelihood_opt > likelihood_no_opt
     end
+    
     @testset "TwoDimensionalInput" begin
         x = [collect(range(0, stop=5, length=10)) collect(range(0, stop=5, length=10))]
         y = sin.(x[:, 1]) + cos.(x[:, 2])
