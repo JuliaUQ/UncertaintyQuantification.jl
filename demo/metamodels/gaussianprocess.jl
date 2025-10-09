@@ -22,7 +22,7 @@ optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha=0.01), Optim.Options(; 
 # optimizer = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=10, show_trace=false))
 
 gpr = GaussianProcess(
-    gp, x, himmelblau, :y, design; input_transform=ZScoreTransform(), output_transform=StandardNormalTransform(), optimization=optimizer
+    gp, x, himmelblau, :y, design; input_transform=ZScoreTransform(), output_transform=ZScoreTransform(), optimization=optimizer
 )
 
 test_data = sample(x, 1000)
