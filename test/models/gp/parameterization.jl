@@ -1,41 +1,51 @@
-exported_names = names(KernelFunctions; all=false)
-
-function is_kernel_type(sym)
-    obj = getfield(KernelFunctions, sym)   # get type or value
+function is_of_type(
+    exporting_module::Module,
+    name::Symbol, 
+    type::DataType
+)
+    obj = getfield(exporting_module, name)
     if obj isa DataType
-        return obj <: Kernel
+        return obj <: type
     elseif obj isa UnionAll
-        return obj.body <: Kernel
+        return obj.body <: type
     else
         return false
     end
 end
 
-# Filter the symbols
-kernel_symbols = filter(is_kernel_type, exported_names)
+function get_exported_types(
+    exporting_module::Module,
+    type::DataType
+)
+    exported_names = names(exporting_module; all=false)
+    type_symbols = filter(n -> is_of_type(exporting_module, n, type), exported_names)
+    types = map(sym -> getfield(exporting_module, sym), type_symbols)
+    return filter(t -> !isabstracttype(t), types)
+end
 
-# Map to actual type objects
-kernel_types = [getfield(KernelFunctions, sym) for sym in kernel_symbols]
+check_extract_parameters(type::Type) = hasmethod(UncertaintyQuantification.extract_parameters, Tuple{type})
+check_apply_parameters(type::Type) = hasmethod(UncertaintyQuantification.apply_parameters, Tuple{type, Any})
+check_implementation(type::Type) = check_extract_parameters(type) && check_apply_parameters(type)
 
-function is_transform_type(sym)
-    obj = getfield(KernelFunctions, sym)
-    if obj isa DataType
-        return obj <: Transform
-    elseif obj isa UnionAll
-        return obj.body <: Transform
-    else
-        return false
+@testset "GaussianProcessParameterHandling" begin
+    transforms = get_exported_types(KernelFunctions, Transform)
+    unimplemented_transforms = filter(!check_implementation, transforms)
+
+    kernels = get_exported_types(KernelFunctions, Kernel)
+    unimplemented_kernels = filter(!check_implementation, kernels)
+
+    meanfunctions = get_exported_types(AbstractGPs, AbstractGPs.MeanFunction)
+    unimplemented_meanfunctions = filter(!check_implementation, meanfunctions)
+
+    @testset "KernelFunctions.Transform" begin
+        @test isempty(unimplemented_transforms) || @error "Transform parameter handling not implemented for:\n "* join(string.(unimplemented_transforms), "\n ")
+    end
+
+    @testset "KernelFunctions.Kernel" begin
+        @test isempty(unimplemented_kernels) || @error "Kernel parameter handling not implemented for:\n "* join(string.(unimplemented_kernels), "\n ")
+    end
+
+    @testset "AbstractGPs.MeanFunction" begin
+        @test isempty(unimplemented_meanfunctions) || @error "Meanfunction parameter handling not implemented for:\n "* join(string.(unimplemented_meanfunctions), "\n ")
     end
 end
-
-transform_symbols = filter(is_transform_type, exported_names)
-transform_types = getfield.(Ref(KernelFunctions), transform_symbols)
-
-function check_implementation(t::Vector{Type})
-    extract = map(tᵢ -> hasmethod(UncertaintyQuantification.extract_parameters, Tuple{tᵢ}), t)
-    return extract
-end
-
-transform_types[.!check_implementation(transform_types)]
-
-kernel_types[.!check_implementation(kernel_types)]
