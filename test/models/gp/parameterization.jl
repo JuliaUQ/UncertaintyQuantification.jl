@@ -30,3 +30,12 @@ end
 
 transform_symbols = filter(is_transform_type, exported_names)
 transform_types = getfield.(Ref(KernelFunctions), transform_symbols)
+
+function check_implementation(t::Vector{Type})
+    extract = map(tᵢ -> hasmethod(UncertaintyQuantification.extract_parameters, Tuple{tᵢ}), t)
+    return extract
+end
+
+transform_types[.!check_implementation(transform_types)]
+
+kernel_types[.!check_implementation(kernel_types)]
