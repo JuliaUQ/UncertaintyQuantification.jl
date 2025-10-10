@@ -165,20 +165,38 @@ apply_parameters(f::GP, θ) = GP(
 )
 
 """
-    NoisyGP
+    NoisyGP(gp::GP, σ²::Real)
 
-A wrapper around `GP` that adds Gaussian observation noise `obs_noise`.
+Wraps a Gaussian process `gp` and adds learnable Gaussian observation noise with zero mean and variance `σ²` to the diagonal of its finite-dimensional covariance matrix.
 """
 struct NoisyGP{T<:GP,Tn<:Real}
     gp::T
-    obs_noise::Tn
+    σ²::Tn
 end
 
-(gp::NoisyGP)(x) = gp.gp(x, gp.obs_noise)
-with_gaussian_noise(gp::GP, obs_noise::Real) = NoisyGP(gp, obs_noise)
+(gp::NoisyGP)(x) = gp.gp(x, gp.σ²)
+
+"""
+    with_gaussian_noise(gp::AbstractGPs.GP, σ²::Real)
+
+Wraps a Gaussian process `gp` with additive Gaussian observation noise of variance `σ²`.
+
+This creates a [`NoisyGP`](@ref) object, which adds `σ²` to the diagonal of the covariance
+matrix when evaluating the finite-dimensional projection of `gp`.
+
+# Examples
+```jldoctest
+julia> using AbstractGPs
+
+julia> gp = GP(SqExponentialKernel());
+
+julia> noisy_gp = with_gaussian_noise(gp, 0.1);
+```
+"""
+with_gaussian_noise(gp::GP, σ²::Real) = NoisyGP(gp, σ²)
 
 extract_parameters(f::NoisyGP) = (
     extract_parameters(f.gp), 
-    ParameterHandling.positive(f.obs_noise, exp, 1e-6)
+    ParameterHandling.positive(f.σ², exp, 1e-6)
 )
 apply_parameters(f::NoisyGP, θ) = NoisyGP(apply_parameters(f.gp, θ[1]), θ[2])
