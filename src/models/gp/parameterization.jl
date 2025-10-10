@@ -1,27 +1,29 @@
 """
-Parameterized objects: a uniform interface for trainable models.
+# Developer Note
 
-`Parameterized(obj)` wraps an object so it can be called with a parameter vector `θ`:
+`Parameterized(object)` wraps `object` so it can be called with parameters `θ`.
+
+`parameterize(object)` returns a parameterized, callable version of the object and its parameters.
     ```julia
     model, θ = parameterize(obj)
     model(θ)  # returns a new object with parameters applied
     This works for mean functions, kernels, transformations, and Gaussian processes.
 
-The system relies on two core functions:
+Based on two core functions, this system can extract model parameters for an optimization routine 
+and apply potentially constrained parameters to the underlying model to compute the optimization objective. 
+The two core functions are:
 
     1.  extract_parameters(obj)
 
     Returns the free parameters of obj wrapped in ParameterHandling containers.
     Enforces constraints (e.g., positive or bounded) where applicable.
-    For composite objects (like KernelSum or GP), returns a tuple or vector of parameter sets.
+    For composite objects (like a `AbstractGPs.GP`), returns a tuple of componentwise parameter sets.
     Returns nothing for objects without trainable parameters.
 
     2.  apply_parameters(obj, θ)
 
     Returns a new object of the same type with parameters θ applied.
     For hierarchical objects, θ is expected to match the structure returned by extract_parameters.
-
-This interface enables generic optimization routines to work across all supported types.
 """
 
 struct Parameterized{T}
@@ -35,7 +37,6 @@ end
 parameterize(object) = Parameterized(object), extract_parameters(object)
 
 # ---------------- Mean functions ----------------
-
 extract_parameters(::ZeroMean) = nothing
 apply_parameters(m::ZeroMean, θ) = m
 
@@ -48,7 +49,6 @@ extract_parameters(::CustomMean) = nothing
 apply_parameters(m::CustomMean, θ) = m
 
 # ---------------- Kernel functions ----------------
-
 # Kernels and transforms without parameters
 BaseKernelsWithoutParameters = Union{
     ZeroKernel, WhiteKernel, CosineKernel,
@@ -157,7 +157,6 @@ extract_parameters(t::ScaleTransform) = ParameterHandling.positive(t.s)
 apply_parameters(::ScaleTransform, θ) = ScaleTransform(θ)
 
 # ---------------- Gaussian Processes ----------------
-
 extract_parameters(f::GP) = (extract_parameters(f.mean), extract_parameters(f.kernel))
 apply_parameters(f::GP, θ) = GP(
     apply_parameters(f.mean, θ[1]), 
