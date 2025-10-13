@@ -17,8 +17,15 @@ function build_and_evaluate_gp(
     
     
     test_data = select(data, input)
-    evaluate!(gpr, test_data)
-    mean_and_var!(gpr, test_data)
+    evaluate!(gpr, test_data, mode=:mean_and_var)
+
+    # Try sampling the gp if observation noise is present (numerical stability)
+    # Sampling relies on AbstractGPs and therefore is not tested further
+    if isa(gp, UncertaintyQuantification.NoisyGP)
+        evaluate!(gpr, test_data, mode=:sample)
+        evaluate!(gpr, test_data, mode=:sample, n_samples=2)
+    end
+
     return test_data
 end
 
@@ -31,7 +38,7 @@ function build_and_evaluate_gp(
     input_transform::UncertaintyQuantification.AbstractDataTransform=UncertaintyQuantification.IdentityTransform(),
     output_transform::UncertaintyQuantification.AbstractDataTransform=UncertaintyQuantification.IdentityTransform()
 )
-    Random.seed!(1337)
+    Random.seed!(42)
     gpr = GaussianProcess(
             gp,
             input,
@@ -43,10 +50,16 @@ function build_and_evaluate_gp(
             optimization=NoHyperparameterOptimization()
         )
     
-    Random.seed!(42)
     test_data = sample(input, experimentaldesign)
-    evaluate!(gpr, test_data)
-    mean_and_var!(gpr, test_data)
+    evaluate!(gpr, test_data, mode=:mean_and_var)
+
+    # Try sampling the gp if observation noise is present (numerical stability)
+    # Sampling relies on AbstractGPs and therefore is not tested further
+    if isa(gp, UncertaintyQuantification.NoisyGP)
+        evaluate!(gpr, test_data, mode=:sample)
+        evaluate!(gpr, test_data, mode=:sample, n_samples=2)
+    end
+
     return test_data
 end
 
@@ -82,10 +95,8 @@ end
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
         
-        # evaluate! returns mean as standard
-        @test all(test_data[!, :y] .== test_data[!, :y_mean])
-        # outputs at trainingset should be very close
-        @test all(isapprox.(test_data[!, :y], y; atol=100*eps(Float64)))
+        # mean outputs at trainingset should be very close
+        @test all(isapprox.(test_data[!, :y_mean], y; atol=100*eps(Float64)))
         # variance should be very close to zero as we did not use observation noise
         @test all(isapprox.(test_data[!, :y_var], 0.0; atol=100*eps(Float64)))
 
@@ -102,6 +113,9 @@ end
         @test all(abs.(test_data_noisy[!, :y_var] .- σ²) .< 0.05σ²)
 
         # Test construction from UQInput + UQModel
+        # Note: Here we essentially just test if it runs. 
+        # Consistency checks should apply as internally the UQInput + UQModel are used to construct a DataFrame 
+        # and then the tested method above is called. 
         test_data_uqinput = build_and_evaluate_gp(
             xrv,
             model,
@@ -111,9 +125,6 @@ end
             input_transform=UncertaintyQuantification.IdentityTransform(),
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
-        
-        # evaluate! returns mean as standard
-        @test all(test_data_uqinput[!, :y] .== test_data_uqinput[!, :y_mean])
 
         test_data_uqinput_noisy = build_and_evaluate_gp(
             xrv,
@@ -124,9 +135,6 @@ end
             input_transform=UncertaintyQuantification.IdentityTransform(),
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
-
-        # evaluate! returns mean as standard
-        @test all(test_data_uqinput_noisy[!, :y] .== test_data_uqinput_noisy[!, :y_mean])
     end
 
     @testset "MultiDimensionalInput" begin
@@ -151,10 +159,8 @@ end
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
         
-        # evaluate! returns mean as standard
-        @test all(test_data[!, :y] .== test_data[!, :y_mean])
         # outputs at trainingset should be very close
-        @test all(isapprox.(test_data[!, :y], y; atol=100*eps(Float64)))
+        @test all(isapprox.(test_data[!, :y_mean], y; atol=100*eps(Float64)))
         # variance should be very close to zero as we did not use observation noise
         @test all(isapprox.(test_data[!, :y_var], 0.0; atol=100*eps(Float64)))
 
@@ -171,6 +177,9 @@ end
         @test all(abs.(test_data_noisy[!, :y_var] .- σ²) .< 0.05σ²)
 
         # Test construction from UQInput + UQModel
+        # Note: Here we essentially just test if it runs. 
+        # Consistency checks should apply as internally the UQInput + UQModel are used to construct a DataFrame 
+        # and then the tested method above is called. 
         test_data_uqinput = build_and_evaluate_gp(
             xrv,
             model,
@@ -180,9 +189,6 @@ end
             input_transform=UncertaintyQuantification.IdentityTransform(),
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
-        
-        # evaluate! returns mean as standard
-        @test all(test_data_uqinput[!, :y] .== test_data_uqinput[!, :y_mean])
 
         test_data_uqinput_noisy = build_and_evaluate_gp(
             xrv,
@@ -193,8 +199,5 @@ end
             input_transform=UncertaintyQuantification.IdentityTransform(),
             output_transform=UncertaintyQuantification.IdentityTransform()
         )
-
-        # evaluate! returns mean as standard
-        @test all(test_data_uqinput_noisy[!, :y] .== test_data_uqinput_noisy[!, :y_mean])
     end
 end
