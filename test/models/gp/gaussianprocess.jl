@@ -80,9 +80,9 @@ end
         data = DataFrame(:x => x, :y => y)
 
         # UQInput
-        xrv = RandomVariable(Uniform(0, 5), :x)
+        xrv = [Parameter(1.5, :p), RandomVariable(Uniform(0, 5), :x)]
         model = Model(
-            df -> sin.(df.x), :y
+            df -> df.p .* sin.(df.x), :y
         )
 
         # Test construction from DataFrame
@@ -144,9 +144,9 @@ end
         data = DataFrame(:x1 => x[:, 1], :x2 => x[:, 2], :y => y)
 
         # UQInput
-        xrv = RandomVariable.([Uniform(0, 5), Uniform(0, 5)], [:x1, :x2])
+        xrv = [Parameter(1.5, :p), RandomVariable(Uniform(0, 5), :x1), RandomVariable(Uniform(0, 5), :x2)]
         model = Model(
-            df -> sin.(df.x1) + cos.(df.x2), :y
+            df -> df.p .* sin.(df.x1) + df.p .* cos.(df.x2), :y
         )
         
         # Test construction from DataFrame

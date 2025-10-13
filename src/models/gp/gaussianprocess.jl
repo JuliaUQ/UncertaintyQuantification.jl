@@ -5,7 +5,42 @@ struct GaussianProcess <: UQModel
     standardizer::DataStandardizer
 end
 
-# ---------------- Build from DataFrame ----------------
+"""
+    GaussianProcess(
+        gp::Union{AbstractGPs.GP, NoisyGP}, 
+        data::DataFrame, 
+        output::Symbol; 
+        input_transform::AbstractDataTransform = IdentityTransform(), 
+        output_transform::AbstractDataTransform = IdentityTransform(),
+        optimization::AbstractHyperparameterOptimization = NoHyperparameterOptimization()
+    )
+
+Constructs a Gaussian process model for the given data and output variable.
+
+# Arguments
+- `gp`: A Gaussian process object, typically from `AbstractGPs`, defining the kernel and mean.
+- `data`: A `DataFrame` containing the input and output data.
+- `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
+
+# Keyword Arguments
+- `input_transform`: Transformation applied to input features before fitting.
+  Defaults to [`IdentityTransform()`](@ref).
+- `output_transform`: Transformation applied to output data before fitting.
+  Defaults to [`IdentityTransform()`](@ref).
+- `optimization`: Strategy for hyperparameter optimization.
+  Defaults to `NoHyperparameterOptimization()`.
+
+# Examples
+```jldoctest
+julia> using AbstractGPs
+
+julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+
+julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
+
+julia> gp_model = GaussianProcess(gp, data, :y);
+```
+"""
 function GaussianProcess(
     gp::Union{AbstractGPs.GP, NoisyGP},
     data::DataFrame,
@@ -38,7 +73,50 @@ function GaussianProcess(
     )
 end
 
-# ---------------- Build from UQModel ----------------
+"""
+    GaussianProcess(
+        gp::Union{AbstractGPs.GP, NoisyGP}, 
+        input::Union{UQInput, Vector{<:UQInput}},
+        model::Union{UQModel, Vector{<:UQModel}},
+        output::Symbol,
+        experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}; 
+        input_transform::AbstractDataTransform = IdentityTransform(), 
+        output_transform::AbstractDataTransform = IdentityTransform(),
+        optimization::AbstractHyperparameterOptimization = NoHyperparameterOptimization()
+    )
+
+Constructs a Gaussian process model for the given input and model. Evaluates the model using specified experimental design.
+
+# Arguments
+- `gp`: A Gaussian process object, typically from `AbstractGPs`, defining the kernel and mean.
+- `input`: Single input or vector of inputs. The Gaussian process will only consider inputs of type ['RandomVariable](@ref) as input features.
+- `model`: Single model or vector of models of supertype [`UQModel`](@ref) that the Gaussian process is supposed to model.
+- `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
+- `experimentaldesign`: The strategy utilized for sampling the input variables.
+
+# Keyword Arguments
+- `input_transform`: Transformation applied to input features before fitting.
+  Defaults to [`IdentityTransform()`](@ref).
+- `output_transform`: Transformation applied to output data before fitting.
+  Defaults to [`IdentityTransform()`](@ref).
+- `optimization`: Strategy for hyperparameter optimization.
+  Defaults to `NoHyperparameterOptimization()`.
+
+# Examples
+```jldoctest
+julia> using AbstractGPs
+
+julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+
+julia> input = RandomVariable(Uniform(0, 5), :x);
+        
+julia> model = Model(df -> sin.(df.x), :y);
+
+julia> design = LatinHypercubeSampling(10);
+
+julia> gp_model = GaussianProcess(gp, input, model, :y, design);
+```
+"""
 function GaussianProcess(
     gp::Union{AbstractGPs.GP, NoisyGP},
     input::Union{UQInput, Vector{<:UQInput}},
@@ -53,7 +131,8 @@ function GaussianProcess(
     data = sample(input, experimentaldesign)
     evaluate!(model, data)
 
-    # TODO: Deterministic input will break the GP kernel
+    # Repeated deterministic input will break the GP kernel
+    filter!(i -> isa(i, RandomVariable), input)
 
     # build in- and output transforms
     dts = DataStandardizer(
@@ -116,24 +195,3 @@ function evaluate!(
 
     return nothing
 end
-
-# function var!(gp::GaussianProcess, data::DataFrame)
-#     x = gp.standardizer.fᵢ(data)
-#     σ² = var(gp.gp(x))
-
-#     column_name = Symbol(string(gp.output, "_", "var"))
-#     data[!, column_name] = gp.standardizer.var_fₒ⁻¹(σ²)
-#     return nothing
-# end
-
-# function mean_and_var!(gp::GaussianProcess, data::DataFrame)
-#     x = gp.standardizer.fᵢ(data)
-#     μ = mean(gp.gp(x))
-#     σ² = var(gp.gp(x))
-
-#     column_name_mean = Symbol(string(gp.output, "_", "mean"))
-#     column_name_var = Symbol(string(gp.output, "_", "var"))
-#     data[!, column_name_mean] = gp.standardizer.fₒ⁻¹(μ)
-#     data[!, column_name_var] = gp.standardizer.var_fₒ⁻¹(σ²)
-#     return nothing
-# end
