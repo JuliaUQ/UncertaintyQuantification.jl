@@ -24,7 +24,9 @@ This prior GP specifies that any finite collection of function values follows a 
 To define a prior GP we use [`AbstractGPs.jl`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/) for the GP interface and mean function, and [`KernelFunctions.jl`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/) for the definition of a covariance kernel. Below, we construct a simple prior GP with a constant zero mean function and a scaled squared exponential kernel:
 
 ```@example gaussianprocess
+using UncertaintyQuantification # hide
 using AbstractGPs
+
 kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
 gp = GP(0.0, kernel)
 return nothing # hide
