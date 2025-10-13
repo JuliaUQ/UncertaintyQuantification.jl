@@ -139,7 +139,7 @@ end
 
 function DataStandardizer(
     data::DataFrame,
-    input::Union{Symbol, Vector{<:Symbol}, RandomVariable, Vector{<:RandomVariable}},
+    input::Union{Symbol, Vector{<:Symbol}, UQInput, Vector{<:UQInput}},
     output::Symbol,
     input_transform::InputTransform, 
     output_transform::OutputTransform

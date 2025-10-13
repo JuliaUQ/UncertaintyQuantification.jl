@@ -132,11 +132,12 @@ function GaussianProcess(
     evaluate!(model, data)
 
     # Repeated deterministic input will break the GP kernel
-    filter!(i -> isa(i, RandomVariable), input)
+    random_input = filter(i -> isa(i, RandomVariable), input)
 
     # build in- and output transforms
+    # note: this will let the gp model extract random inputs only from any evaluation input
     dts = DataStandardizer(
-        data, input, output, 
+        data, random_input, output, 
         InputTransform(input_transform), 
         OutputTransform(output_transform)
     )
@@ -157,7 +158,56 @@ function GaussianProcess(
     )
 end
 
-# what should this calculate? Calculates only mean for now
+"""
+    evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
+
+Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locations. 
+
+# Arguments
+- `gp`: Trained Gaussian process model to be evaluated.
+- `data`: A `DataFrame` containing the input locations at which predictions are computed.
+
+# Keyword Arguments
+- `mode`: A `Symbol` specifying the type of output to return. 
+    Supported options are:
+    - `:mean` - predictive mean (default)
+    - `:var` - predictive variance
+    - `:mean_and_var` - both mean and variance
+    - `:sample` - random samples from the predictive distribution
+- `n_samples`: Number of samples to draw when `mode = :sample`. Ignored otherwise.
+    (Note: Sampling can be unstable when input locations are very close together, leading to numerical issues in the covariance matrix.) 
+
+# Examples
+```jldoctest
+julia> using AbstractGPs
+
+julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+
+julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
+
+julia> gp_model = GaussianProcess(gp, data, :y);
+
+julia> df = DataFrame(x = [0.5, 1.5, 2.5, 5.5, 8.5]);
+
+julia> evaluate!(gp_model, df; mode=:mean_and_var);
+
+julia> df.y_mean |> DisplayAs.withcontext(:compact => true)
+5-element Vector{Float64}:
+  0.616222
+  1.98099
+  6.93425
+ 30.5658
+ 68.1663
+
+julia> df.y_var |> DisplayAs.withcontext(:compact => true)
+5-element Vector{Float64}:
+ 0.125804
+ 0.0143887
+ 0.0080906
+ 0.00622953
+ 0.0080906
+```
+"""
 function evaluate!(
     gp::GaussianProcess, 
     data::DataFrame;
