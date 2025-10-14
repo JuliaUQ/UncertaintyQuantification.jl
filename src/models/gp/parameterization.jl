@@ -185,8 +185,6 @@ matrix when evaluating the finite-dimensional projection of `gp`.
 
 # Examples
 ```jldoctest
-julia> using AbstractGPs
-
 julia> gp = GP(SqExponentialKernel());
 
 julia> noisy_gp = with_gaussian_noise(gp, 0.1);
