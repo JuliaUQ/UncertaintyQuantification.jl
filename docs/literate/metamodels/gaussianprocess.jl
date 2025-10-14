@@ -35,8 +35,6 @@ After that, we construct a prior GP model. Here we assume a constant mean of 0.0
 We also assume a small Gaussian noise term in the observations for numerical stability:
 ===#
 
-using AbstractGPs
-
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
 σ² = 1e-5
