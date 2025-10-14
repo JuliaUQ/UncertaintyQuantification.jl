@@ -1,5 +1,5 @@
 struct GaussianProcess <: UQModel
-    gp::AbstractGPs.PosteriorGP
+    gp::PosteriorGP
     input::Union{Symbol, Vector{Symbol}}
     output::Symbol
     standardizer::DataStandardizer
@@ -7,7 +7,7 @@ end
 
 """
     GaussianProcess(
-        gp::Union{AbstractGPs.GP, NoisyGP}, 
+        gp::Union{GP, NoisyGP}, 
         data::DataFrame, 
         output::Symbol; 
         input_transform::AbstractDataTransform = IdentityTransform(), 
@@ -32,8 +32,6 @@ Constructs a Gaussian process model for the given data and output variable.
 
 # Examples
 ```jldoctest
-julia> using AbstractGPs
-
 julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
 
 julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
@@ -42,7 +40,7 @@ julia> gp_model = GaussianProcess(gp, data, :y);
 ```
 """
 function GaussianProcess(
-    gp::Union{AbstractGPs.GP, NoisyGP},
+    gp::Union{GP, NoisyGP},
     data::DataFrame,
     output::Symbol;
     input_transform::AbstractDataTransform=IdentityTransform(),
@@ -75,7 +73,7 @@ end
 
 """
     GaussianProcess(
-        gp::Union{AbstractGPs.GP, NoisyGP}, 
+        gp::Union{GP, NoisyGP}, 
         input::Union{UQInput, Vector{<:UQInput}},
         model::Union{UQModel, Vector{<:UQModel}},
         output::Symbol,
@@ -104,8 +102,6 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 
 # Examples
 ```jldoctest
-julia> using AbstractGPs
-
 julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
 
 julia> input = RandomVariable(Uniform(0, 5), :x);
@@ -118,7 +114,7 @@ julia> gp_model = GaussianProcess(gp, input, model, :y, design);
 ```
 """
 function GaussianProcess(
-    gp::Union{AbstractGPs.GP, NoisyGP},
+    gp::Union{GP, NoisyGP},
     input::Union{UQInput, Vector{<:UQInput}},
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
@@ -179,8 +175,6 @@ Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locati
 
 # Examples
 ```jldoctest
-julia> using AbstractGPs
-
 julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
 
 julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
