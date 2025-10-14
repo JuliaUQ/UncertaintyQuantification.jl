@@ -1,4 +1,3 @@
-using AbstractGPs
 using DataFrames
 using Distributed
 using HCubature

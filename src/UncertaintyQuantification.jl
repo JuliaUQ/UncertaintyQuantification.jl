@@ -1,6 +1,5 @@
 module UncertaintyQuantification
 
-using AbstractGPs
 using Bootstrap
 using CovarianceEstimation
 using DataFrames
@@ -25,6 +24,7 @@ using Roots
 using StatsBase
 using Zygote
 
+@reexport using AbstractGPs
 @reexport using Distributions
 
 import Base: rand, names, copy, run, length
