@@ -12,7 +12,7 @@ Internally, the `DataStandardizer` constructs the functions required for evaluat
 # Examples
 ```jldoctest
 julia> id = UncertaintyQuantification.IdentityTransform()
-UncertaintyQuantification.IdentityTransform()
+IdentityTransform()
 ```
 """
 struct IdentityTransform <: AbstractDataTransform end
@@ -28,7 +28,7 @@ Internally, the `DataStandardizer` constructs the functions required for evaluat
 # Examples
 ```jldoctest
 julia> zscore = UncertaintyQuantification.ZScoreTransform()
-UncertaintyQuantification.ZScoreTransform()
+ZScoreTransform()
 ```
 """
 struct ZScoreTransform <: AbstractDataTransform end
@@ -44,7 +44,7 @@ Internally, the `DataStandardizer` constructs the functions required for evaluat
 # Examples
 ```jldoctest
 julia> unitrange = UncertaintyQuantification.UnitRangeTransform()
-UncertaintyQuantification.UnitRangeTransform()
+UnitRangeTransform()
 ```
 """
 struct UnitRangeTransform <: AbstractDataTransform end
