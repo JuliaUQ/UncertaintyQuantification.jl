@@ -220,7 +220,7 @@ function evaluate!(
     if mode === :mean
         μ = mean(finite_projection)
         col = Symbol(string(gp.output, "_mean"))
-        data[!, gp.output] = gp.standardizer.fₒ⁻¹(μ)
+        data[!, col] = gp.standardizer.fₒ⁻¹(μ)
     elseif mode === :var
         σ² = var(finite_projection)
         col = Symbol(string(gp.output, "_var"))
