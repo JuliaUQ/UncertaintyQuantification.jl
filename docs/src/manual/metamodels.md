@@ -87,26 +87,30 @@ df = DataFrame(x = x, y = y)
 
 σ² = 1e-5 
 gp = with_gaussian_noise(gp, σ²)
-posterior_gp = GaussianProcess(gp, df, :y)
+gp_model = GaussianProcess(gp, df, :y)
 return nothing # hide
 ```
 
+Now we can use our GP model to predict at new input locations `x_test`:
+
 ```@example gaussianprocess
 using Plots # hide
-x_plot = collect(range(0, 5, 500)) # hide
-y_true = sin.(x_plot) + 0.3 * cos.(2 .* x_plot) # hide
+x_test = collect(range(0, 5, 500))
+prediction = DataFrame(:x => x_test)
 
-prediction = DataFrame(:x => x_plot) # hide
-evaluate!(posterior_gp, prediction; mode=:mean_and_var) # hide
+evaluate!(gp_model, prediction; mode=:mean_and_var)
+
 prediction_mean = prediction[!, :y_mean] # hide
 prediction_std = sqrt.(prediction[!, :y_var]) # hide
 
-p = plot(x_plot, prediction_mean, color=:blue, label="Mean prediction") # hide
+p = plot(x_test, prediction_mean, color=:blue, label="Mean prediction") # hide
 plot!(
-    x_plot, prediction_mean, ribbon=2 .* prediction_std, 
+    x_test, prediction_mean, ribbon=2 .* prediction_std, 
     color=:grey, alpha=0.5, label="Confidence band"
 ) # hide
-plot!(x_plot, y_true, color=:red, label="True function") # hide
+
+y_true = sin.(x_test) + 0.3 * cos.(2 .* x_test) # hide
+plot!(x_test, y_true, color=:red, label="True function") # hide
 
 savefig(p, "posterior-gp.svg"); # hide
 return nothing # hide
@@ -114,7 +118,9 @@ return nothing # hide
 ![](posterior-gp.svg)
 
 #### Hyperparameter optimization
-Gaussian process models typically contain hyperparameters in their mean functions $m(x; \theta_m)$ and covariance kernel functions $k(x, x'; \theta_k)$. The observation noise variance $\sigma^2_{e}$ is also considered a hyperparameter related to the kernel. The choice of hyperparameters strongly affects the quality of the posterior GP. A common approach to selecting hyperparameters is maximum likelihood estimation (MLE) (see, e.g. [rasmussen2005gaussian](@cite)), where we maximize the likelihood of observing the training data $\mathcal{D}$ under the chosen GP prior.
+GP models typically contain hyperparameters in their mean functions $m(x; \theta_m)$ and covariance kernel functions $k(x, x'; \theta_k)$. The observation noise variance $\sigma^2_{e}$ is also considered a hyperparameter related to the kernel. The choice of hyperparameters strongly affects the quality of the posterior GP. 
+
+A common approach to selecting hyperparameters is maximum likelihood estimation (MLE) (see, e.g. [rasmussen2005gaussian](@cite)), where we maximize the likelihood of observing the training data $\mathcal{D}$ under the chosen GP prior.
 
 The marginal likelihood of the observed training outputs $\hat{f}$ is:
 
@@ -122,11 +128,45 @@ The marginal likelihood of the observed training outputs $\hat{f}$ is:
 p(\hat{f} \mid \hat{X}, \theta_m, \theta_k, \sigma^2_{e}) = \mathcal{N}(\hat{f} \mid \mu_{\theta_m}(\hat{X}), K_{\theta_k}(\hat{X}, \hat{X}) + \sigma^2_{e}I),
 ```
 
-where $\mu_{\theta_m}(\hat{X})$ and $K_{\theta_k}(\hat{X}, \hat{X})$ denote the parameter dependent versions of the previously defined quantities. For numerical reasons, the logarithm of the marginal likelihood is typically used. Maximizing the log marginal likelihood with respect to the hyperparameters then yields the parameters that best explain the observed data. After obtaining the optimal hyperparamters, the posterior GP can be constructed as described above.
+where $\mu_{\theta_m}(\hat{X})$ and $K_{\theta_k}(\hat{X}, \hat{X})$ denote the parameter dependent versions of the previously defined quantities. 
 
-- Custom mean functions [`CustomMean`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/api/#AbstractGPs.CustomMean)
-- Multi-output kernels [`MOKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#Multi-output-Kernels)
-- Neural kernel networks [`NeuralKernelNetwork`]
-- FunctionTransform
-- GibbsKernel
+For numerical reasons, the logarithm of the marginal likelihood is typically used. Maximizing the log marginal likelihood with respect to the hyperparameters then yields the parameters that best explain the observed data. After obtaining the optimal hyperparamters, the posterior GP can be constructed as described above.
+
+To optimize the hyperparameters of our GP model before computing the posterior GP, we can pass a gradient-based optimizer provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/) to the `GaussianProcess` constructor:
+
+```@example gaussianprocess
+posterior_gp = GaussianProcess(gp, df, :y; optimization=MaximumLikelihoodEstimation())
+
+prediction = DataFrame(:x => x_test)
+evaluate!(gp_model, prediction; mode=:mean_and_var)
+
+prediction_mean = prediction[!, :y_mean] # hide
+prediction_std = sqrt.(prediction[!, :y_var]) # hide
+
+p = plot(x_test, prediction_mean, color=:blue, label="Mean prediction") # hide
+plot!(
+    x_test, prediction_mean, ribbon=2 .* prediction_std, 
+    color=:grey, alpha=0.5, label="Confidence band"
+) # hide
+plot!(x_test, y_true, color=:red, label="True function") # hide
+
+savefig(p, "posterior-gp-optimized.svg"); # hide
+return nothing # hide
+```
+![](posterior-gp-optimized.svg)
+
+Internally, `MaximumLikelihoodEstimation()` defaults to using [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer that performs 10 optimization steps with standard optimization hyperparameters as defined [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
+
+During optimization, GP hyperparameters $\theta_m, \theta_k$ and $\sigma^2_{e}$ are automatically extracted and updated. 
+
+We support the automatic extraction of hyperparameters from mean functions provided by [`AbstractGPs.jl`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/api/#Mean-functions), with the exception of:
+- Custom mean functions [`CustomMean`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/api/#AbstractGPs.CustomMean). These are defined with a custom function that itself could depend on hyperparameters. These additional hyperparameters are ignored in the optimization.
+
+Kernel functions are defined with the kernels and transformations provided by [`KernelFunctions.jl`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/). For similar reasons as with `CustomMean`, we do not extract potential function hyperparameters from the following kernels or transforms:
+- Transforms defined with custom functions [`FunctionTransform`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/transform/#KernelFunctions.FunctionTransform),
+- The [`GibbsKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#KernelFunctions.GibbsKernel), which models a kernel lengthscale parameter with the help of a function.
+
+Further, GP models containing the following kernels are not supported for hyperparameter optimization currently:
+- Multi-output kernels [`MOKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#Multi-output-Kernels),
+- Neural kernel networks [`NeuralKernelNetwork`].
 
