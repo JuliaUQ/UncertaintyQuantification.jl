@@ -49,7 +49,7 @@ abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 """
     AbstractBayesianMethod
 
-Subtypes are used to dispatch to the differenct MCMC methods in [`bayesianupdating`](@ref).
+Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
 
 Subtypes are:
 
@@ -61,7 +61,7 @@ abstract type AbstractBayesianMethod end
 """
     AbstractBayesianPointEstimate
 
-Subtypes are used to dispatch to the differenct point estimation methods in [`bayesianupdating`](@ref).
+Subtypes are used to dispatch to the different point estimation methods in [`bayesianupdating`](@ref).
 
 Subtypes are:
 
@@ -92,6 +92,7 @@ export UQModel
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
+export BinnedData
 export BoxBehnken
 export CentralComposite
 export CentralFiniteDifferences
@@ -107,6 +108,7 @@ export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianCopula
+export GaussianMixtureModel
 export GaussianProcess
 export GaussQuadrature
 export HaltonSampling
@@ -163,6 +165,7 @@ export evaluate
 export evaluate!
 export gradient
 export gradient_in_standard_normal_space
+export linear_binning
 export mean
 export multivariate_indices
 export periodogram
@@ -181,6 +184,12 @@ export to_standard_normal_space
 export to_standard_normal_space!
 export with_gaussian_noise
 
+include("util/binning.jl")
+include("util/fourier-transform.jl")
+include("util/wrap.jl")
+include("util/imprecise.jl")
+include("util/kde.jl")
+
 include("inputs/empiricaldistribution.jl")
 include("inputs/inputs.jl")
 include("inputs/parameter.jl")
@@ -191,6 +200,7 @@ include("inputs/imprecise/p-box.jl")
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/copulas/gaussian.jl")
+include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
 
 include("dynamics/psd.jl")
@@ -232,10 +242,5 @@ include("simulations/importancesampling.jl")
 include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
-
-include("util/fourier-transform.jl")
-include("util/wrap.jl")
-include("util/imprecise.jl")
-include("util/kde.jl")
 
 end

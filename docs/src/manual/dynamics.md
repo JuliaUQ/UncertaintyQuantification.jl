@@ -6,7 +6,9 @@ Some examples that shall introduce stochastic dynamics in UQ.jl study the behavi
 
 ## Semi-empirical PSD functions
 
-Semi-empirical PSD functions describe the distribution of power across frequencies, combining theoretical models with experimental data for improved accuracy. Well established models in earthquake engineering are, for instance, the Kanai-Tajimi PSD model [kanai1957semi,tajimi1960statistical](@cite) or the Clough-Penzien PSD model [clough1975structures](@cite). The Clough-Penzien PSD model ``S^{CP}`` with frequency vector ``\omega`` reads as follows
+Semi-empirical PSD functions describe the distribution of power across frequencies, combining theoretical models with experimental data for improved accuracy. Well established models in earthquake engineering are, for instance, the Kanai-Tajimi PSD model [kanai1957semi,tajimi1960statistical](@cite) or the Clough-Penzien PSD model [clough1975structures](@cite). 
+
+The Clough-Penzien PSD model ``S^{CP}`` with frequency vector ``\omega`` reads as follows
 
 ```math
     S^{CP}(\omega, S_0, \omega_{f}, \zeta_{f}, \omega_{g}, \zeta_{g}) = S_0 \cdot \frac{{\omega^4}}{{(\omega_{f}^2-\omega^2)^2+4  \zeta_{f}^2  \omega_{f}^2  \omega^2}} \cdot \frac{{\omega_{g}^4+4  \zeta_{g}^2  \omega_{g}^2  \omega^2}}{{(\omega_{g}^2-\omega^2)^2+4  \zeta_{g}^2  \omega_{g}^2  \omega^2}},
@@ -14,12 +16,19 @@ Semi-empirical PSD functions describe the distribution of power across frequenci
 
 where the parameters ``S_0``, ``\omega_{f}``, ``\zeta_{f}``, ``\omega_{g}`` and ``\zeta_{g}`` characterize the soil conditions.
 
-## Stochastic Process Generation
-
-The spectral representation method (SRM) [shinozuka1991simulation](@cite) can be utilised to generate realisations of stochastic processes ``x(t)`` which are carrying the characteristics of a PSD function ``S(\omega)`` in time domain. The stochastic character of these processes is represented by random variables ``\varphi``. The spectral representation method reads as follows
+The Shinozuka Deodatis Function is another PSD function and is characterized as:
 
 ```math
-    x(t) = \sqrt{2} \sum \limits_{n=0}^{N_{\omega}-1}\sqrt{2 S(\omega_n) \Delta \omega} \cos(\omega_n t + \varphi),
+    S(\omega) = \frac{1}{4} \sigma^2 b^3 \omega^2 e^{-b \left| \omega \right|}
+```
+This function depends on the vector ``\omega``, which is uniformly distributed from 0 to the cut-off frequency ``\omega_u`` in intervals ``delta \omega = \omega_u/N``. Here is N the number of needed terms.
+
+## Stochastic Process Generation
+
+The spectral representation method (SRM) [shinozuka1991simulation](@cite) can be utilised to generate realisations of stochastic processes ``x(t)`` which are carrying the characteristics of a PSD function ``S(\omega)`` in time domain. The stochastic character of these processes is represented by random phase angles ``\varphi``. The spectral representation method reads as follows
+
+```math
+    x(t) = \sqrt{2} \sum \limits_{n=0}^{N_{\omega}-1}\sqrt{2 S(\omega_n) \Delta \omega} \cos(\omega_n t + \varphi_n),
 ```
 
 where ``\Delta \omega`` is the frequency increment, ``\omega_n`` is the frequency at coordinate ``n``, ``t`` is the time vector and ``N_{\omega}`` is the total number of frequency points.
@@ -33,10 +42,25 @@ If a time signal, such as an earthquake, is given in time domain and shall be st
 A frequently used estimator of the stationary PSD function from time records is the periodogram [li2009sdos](@cite). To transform a stationary stochastic process from time domain to frequency domain, the discrete Fourier transform (DFT) can be utilised. The periodogram is the squared absolute value of the DFT of the discrete time signal $x$ with data point index ``n``, such as
 
 ```math
-    \hat{S}_X(\omega_k) = \frac{\Delta t^2}{T} \left| \sum \limits_{n = 0}^{N_t-1} x_n e^{-2 \pi i k n / N} \right|^2,
+    \hat{S}_X(\omega_k) = \frac{\Delta t^2}{T} \left| \sum \limits_{n = 0}^{N_t-1} x_n e^{-2 \pi i k n / N_t} \right|^2,
 ```
 
 where ``\Delta t`` is the time discretisation, ``T`` is duration of the record, $N_t$ is the total number of data points, ``i`` is the imaginary unit and $k$ is the integer frequency for ``\omega_k = \frac{2 \pi k}{T}``.
+
+## Nyquist Frequency
+
+In the context of discretising continuous signals, the Nyquist frequency ``f_Ny`` is an essential concept. It is defined as half of the sampling frequency ``f_s``, i.e.
+
+```math
+    f_Ny = \frac{f_s}{2}.
+```
+Frequencies higher than ``f_Ny`` cannot be uniquely represented in the sampled signal. Instead, they appear as lower frequencies within the interval ``[0, f_Ny]``, a distortion known as *aliasing*. To avoid this effect, the sampling rate must be chosen such that the maximum frequency of the signal does not exceed the Nyquist frequency:
+
+```math
+    f_max < f_Ny
+```
+
+If the chosen parameters do not satisfy this condition, the code does not stop the computation, but issues a warning to indicate the potential occurrence of aliasing.
 
 ## Implementation
 
@@ -66,18 +90,18 @@ kt = KanaiTajimi(ω, 0.25, 5, 0.75)              # S_0=.25, ω_0=5, ζ=0.75
 
 `CloughPenzien` and `KanaiTajimi` are semi-empirical PSD functions used to model ground motion for earthquake engineering applications, for reference see [kanai1957semi](@cite), [tajimi1960statistical](@cite) and [clough1975structures](@cite).
 
-To go obtain the distribution of power over the frequencies call the `evaluate` function of the `PSD` object. To illustrate, we plot the created `ShinozukaDeodatis` power spectral density.
+To go obtain the distribution of power over the frequencies call the `evaluate` function of the `PSD` object, which was introduced as the periodogram. To illustrate, we plot the created `ShinozukaDeodatis` power spectral density.
 
 ```@example ShinozukaPSDestimation
 using Plots # hide
 p = evaluate(sd)
-plot(sd.ω, p; label="shinozuka")
+plot(sd.ω, p; label="shinozuka", xlabel = "Frequency ω", ylabel = "Power Spectral Density P(ω)", linewidth = 2)
 savefig("shinozuka.svg"); nothing # hide
 ```
 
 ![Example of the Shinozuka power spectral density](shinozuka.svg)
 
-, to the generation of signals in the time domain, we need to define the time domain.
+To the generation of signals in the time domain, we need to define the time domain.
 
 ```@example ShinozukaPSDestimation
 T0 = 2π/Δω              # Total simulation time
@@ -99,13 +123,13 @@ To sample random phase angles, call
 return nothing # hide
 ```
 
-ϕ is a `DataFrame`, with each row containing one random sample for the `N` phase angles. To draw multiple samples at once, pass the number of samples as a second argument to the `sample` function.
+``\varphi`` is a `DataFrame`, with each row containing one random sample for the `N` phase angles. To draw multiple samples at once, pass the number of samples as a second argument to the `sample` function.
 
-Finally, to retrieve the signal corresponding to the phase angles  pass them to the `evaluate` method. The `ϕnames` property of the `SpectralRepresentation` helps to conveniently select only the pahase angles from the `DataFrame` in case additional variables are present.
+Finally, to retrieve the signal corresponding to the phase angles  pass them to the `evaluate` method. The `ϕnames` property of the `SpectralRepresentation` helps to conveniently select only the phase angles from the `DataFrame` in case additional variables are present.
 
 ```@example ShinozukaPSDestimation
 x = evaluate(srm_obj, collect(ϕ[1, :]))
-plot(srm_obj.time, x; label="signal")
+plot(srm_obj.time, x; label="signal", xlabel = "time t", ylabel = "phase angle ϕ")
 savefig("signal.svg"); nothing # hide
 ```
 

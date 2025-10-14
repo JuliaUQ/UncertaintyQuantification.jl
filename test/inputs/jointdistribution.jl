@@ -15,7 +15,7 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test jd.m == marginals
             @test jd.d == copula
 
-            @test_throws ErrorException("Dimension mismatch between copula and marginals.") JointDistribution(
+            @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
                 GaussianCopula([1 0 0; 0 1 0; 0 0 1]), marginals
             )
         end
@@ -79,7 +79,7 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test jd.d == dist
             @test jd.m == m
 
-            @test_throws ErrorException(
+            @test_throws ArgumentError(
                 "Dimension mismatch between distribution and names."
             ) JointDistribution(dist, [:x, :y, :z])
         end

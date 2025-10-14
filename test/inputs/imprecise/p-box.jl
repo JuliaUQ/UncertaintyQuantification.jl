@@ -36,6 +36,16 @@
     @test mean(p_box) == Interval(0.5, 0.75)
     @test var(p_box) == Interval(0.25, 0.5625)
 
+    pbox = ProbabilityBox{Normal}([:μ => Interval(-1, 1), :σ => 1])
+    @test pbox.parameters == Dict(:μ => Interval(-1, 1), :σ => 1)
+    @test pbox.lb == -Inf
+    @test pbox.ub == Inf
+
+    pbox = ProbabilityBox{Normal}([:μ => Interval(-1, 1), :σ => 1], 0, Inf)
+    @test pbox.parameters == Dict(:μ => Interval(-1, 1), :σ => 1)
+    @test pbox.lb == 0
+    @test pbox.ub == Inf
+
     @test_logs (
         :warn,
         "ProbabilityBox() returns a UnivariateDistribution if no intervals are passed",
