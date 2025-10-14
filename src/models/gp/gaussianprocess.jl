@@ -1,5 +1,5 @@
 struct GaussianProcess <: UQModel
-    gp::PosteriorGP
+    gp::AbstractGPs.PosteriorGP
     input::Union{Symbol, Vector{Symbol}}
     output::Symbol
     standardizer::DataStandardizer
