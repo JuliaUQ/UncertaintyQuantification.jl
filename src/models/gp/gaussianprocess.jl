@@ -115,7 +115,7 @@ julia> gp_model = GaussianProcess(gp, input, model, :y, design);
 """
 function GaussianProcess(
     gp::Union{GP, NoisyGP},
-    input::Union{UQInput, Vector{<:UQInput}},
+    input::Vector{<:UQInput},
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
     experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
@@ -151,6 +151,28 @@ function GaussianProcess(
         names(input),
         output,
         dts
+    )
+end
+
+function GaussianProcess(
+    gp::Union{GP, NoisyGP},
+    input::UQInput,
+    model::Union{UQModel, Vector{<:UQModel}},
+    output::Symbol,
+    experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
+    input_transform::AbstractDataTransform=IdentityTransform(),
+    output_transform::AbstractDataTransform=IdentityTransform(),
+    optimization::AbstractHyperparameterOptimization=NoHyperparameterOptimization()
+)
+    return GaussianProcess(
+        gp, 
+        [input], 
+        model, 
+        output, 
+        experimentaldesign; 
+        input_transform=input_transform, 
+        output_transform=output_transform,
+        optimization=optimization
     )
 end
 
