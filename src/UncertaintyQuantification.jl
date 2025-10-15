@@ -46,7 +46,7 @@ abstract type AbstractMonteCarlo <: AbstractSimulation end
 abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 
 """
-    AbstractBayesianMethod
+	AbstractBayesianMethod
 
 Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
 
@@ -58,7 +58,7 @@ Subtypes are:
 abstract type AbstractBayesianMethod end
 
 """
-    AbstractBayesianPointEstimate
+	AbstractBayesianPointEstimate
 
 Subtypes are used to dispatch to the different point estimation methods in [`bayesianupdating`](@ref).
 
@@ -88,6 +88,7 @@ export UQInput
 export UQModel
 
 # Structs
+export AdditiveBasis
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
@@ -134,7 +135,6 @@ export Parameter
 export PlackettBurman
 export PolynomialChaosBasis
 export PolynomialChaosExpansion
-export PolyharmonicSpline
 export PolyharmonicRadialBasis
 export ProbabilityBox
 export RadialBasedImportanceSampling
@@ -205,6 +205,7 @@ include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
+include("models/basisfunctions/additivebasis.jl")
 include("models/basisfunctions/monomialbasis.jl")
 include("models/basisfunctions/radialbasis.jl")
 include("models/basisfunctions/basisfunctionmodels.jl")
@@ -213,8 +214,6 @@ include("models/external/extractor.jl")
 include("models/external/externalmodel.jl")
 include("models/model.jl")
 include("models/imprecise/propagation.jl")
-include("models/polyharmonicspline.jl")
-include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
 
 include("hpc/slurm.jl")
