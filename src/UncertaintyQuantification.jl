@@ -37,6 +37,8 @@ Abstract supertype for all model types
 """
 abstract type UQModel end
 
+abstract type AbstractBasis end
+
 abstract type Copula end
 
 abstract type AbstractSimulation end
@@ -89,6 +91,7 @@ export UQModel
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
+export BasisFunctionModel
 export BinnedData
 export BoxBehnken
 export CentralComposite
@@ -124,6 +127,7 @@ export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
 export Model
+export MonomialBasis
 export MonteCarlo
 export ParallelModel
 export Parameter
@@ -131,8 +135,10 @@ export PlackettBurman
 export PolynomialChaosBasis
 export PolynomialChaosExpansion
 export PolyharmonicSpline
+export PolyharmonicRadialBasis
 export ProbabilityBox
 export RadialBasedImportanceSampling
+export GaussianRadialBasis
 export RandomVariable
 export RandomSlicing
 export ResponseSurface
@@ -199,6 +205,9 @@ include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
+include("models/basisfunctions/monomialbasis.jl")
+include("models/basisfunctions/radialbasis.jl")
+include("models/basisfunctions/basisfunctionmodels.jl")
 include("models/external/solver.jl")
 include("models/external/extractor.jl")
 include("models/external/externalmodel.jl")

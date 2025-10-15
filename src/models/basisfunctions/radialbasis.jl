@@ -1,4 +1,4 @@
-abstract type AbstractRadialBasis end
+abstract type AbstractRadialBasis <:AbstractBasis end
 
 struct GaussianRadialBasis <: AbstractRadialBasis
     c::AbstractMatrix{<:Real}
