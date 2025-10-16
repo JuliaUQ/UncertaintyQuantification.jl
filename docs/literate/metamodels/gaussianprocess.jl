@@ -98,12 +98,12 @@ The mean prediction of our model in this case has an mse of about 65 and looks l
 #md A = repeat(collect(a)', length(b), 1) #hide
 #md B = repeat(collect(b), 1, length(a)) #hide
 #md df = DataFrame(x1 = vec(A), x2 = vec(B)) #hide
-#md evaluate!(gpr, df; mode=:mean_and_var) #hide
+#md evaluate!(gp_model, df; mode=:mean_and_var) #hide
 #md evaluate!(himmelblau, df) #hide
 #md gp_mean = reshape(df[:, :y_mean], length(b), length(a)) #hide
 #md gp_var = reshape(df[:, :y_var], length(b), length(a)) #hide
-#md himmelblau_f = reshape(df[:, :y], length(b), length(a)) #hide
-#md s1 = surface(a, b, himmelblau_f; plot_title="Himmelblau's function")
+#md himmelblau_values = reshape(df[:, :y], length(b), length(a)) #hide
+#md s1 = surface(a, b, himmelblau_values; plot_title="Himmelblau's function")
 #md s2 = surface(a, b, gp_mean; plot_title="GP posterior mean")
 #md plot(s1, s2, layout = (1, 2), legend = false)
 #md savefig("gp-mean-comparison.svg") # hide
