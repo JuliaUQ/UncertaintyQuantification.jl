@@ -102,15 +102,14 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 
 # Examples
 ```jldoctest
-julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
-
-julia> input = RandomVariable(Uniform(0, 5), :x);
-        
-julia> model = Model(df -> sin.(df.x), :y);
-
-julia> design = LatinHypercubeSampling(10);
-
-julia> gp_model = GaussianProcess(gp, input, model, :y, design);
+julia> begin # hide
+           gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+           x = RandomVariable(Uniform(0, 5), :x);
+           model = Model(df -> sin.(df.x), :y);
+           design = LatinHypercubeSampling(10);
+           gp_model = GaussianProcess(gp, x, model, :y, design);
+           nothing # hide
+       end # hide
 ```
 """
 function GaussianProcess(
