@@ -28,7 +28,7 @@ using UncertaintyQuantification
 
 kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
 gp = GP(0.0, kernel)
-return nothing # hide
+nothing # hide
 ```
 
 #### Posterior Gaussian Process
@@ -87,7 +87,7 @@ df = DataFrame(x = x, y = y)
 σ² = 1e-5 
 gp = with_gaussian_noise(gp, σ²)
 gp_model = GaussianProcess(gp, df, :y)
-return nothing # hide
+nothing # hide
 ```
 
 Now we can use our GP model to predict at new input locations `x_test`:
@@ -112,7 +112,7 @@ y_true = sin.(x_test) + 0.3 * cos.(2 .* x_test) # hide
 plot!(x_test, y_true, color=:red, label="True function") # hide
 
 savefig(p, "posterior-gp.svg"); # hide
-return nothing # hide
+nothing # hide
 ```
 ![](posterior-gp.svg)
 
@@ -134,7 +134,7 @@ For numerical reasons, the logarithm of the marginal likelihood is typically use
 To optimize the hyperparameters of our GP model before computing the posterior GP, we can pass a gradient-based optimizer provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/) to the `GaussianProcess` constructor:
 
 ```@example gaussianprocess
-posterior_gp = GaussianProcess(gp, df, :y; optimization=MaximumLikelihoodEstimation())
+gp_model = GaussianProcess(gp, df, :y; optimization=MaximumLikelihoodEstimation())
 
 prediction = DataFrame(:x => x_test)
 evaluate!(gp_model, prediction; mode=:mean_and_var)
@@ -149,10 +149,10 @@ plot!(
 ) # hide
 plot!(x_test, y_true, color=:red, label="True function") # hide
 
-savefig(p, "posterior-gp-optimized.svg"); # hide
-return nothing # hide
+savefig(p, "posterior-gp-opt.svg"); # hide
+nothing # hide
 ```
-![](posterior-gp-optimized.svg)
+![](posterior-gp-opt.svg)
 
 Internally, `MaximumLikelihoodEstimation()` defaults to using [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer that performs 10 optimization steps with standard optimization hyperparameters as defined [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
 
