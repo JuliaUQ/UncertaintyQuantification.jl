@@ -87,7 +87,7 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 
 # Arguments
 - `gp`: A Gaussian process object, typically from `AbstractGPs`, defining the kernel and mean.
-- `input`: Single input or vector of inputs. The Gaussian process will only consider inputs of type ['RandomVariable](@ref) as input features.
+- `input`: Single input or vector of inputs. The Gaussian process will only consider inputs of type [`RandomVariable`](@ref) as input features.
 - `model`: Single model or vector of models of supertype [`UQModel`](@ref) that the Gaussian process is supposed to model.
 - `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
 - `experimentaldesign`: The strategy utilized for sampling the input variables.
