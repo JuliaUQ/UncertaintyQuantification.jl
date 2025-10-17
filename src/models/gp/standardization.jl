@@ -54,7 +54,7 @@ struct UnitRangeTransform <: AbstractDataTransform end
 
 A normalization transform that transforms data to the standard normal space. 
 
-Can only be used as an input transformation in a [`GaussianProcess`](@ref) for inputs of type [`UQInput`](@ref). 
+Can only be used as an input transformation in a [`GaussianProcess`](@ref) for inputs of type [`RandomVariable`](@ref). 
 Internally, the `DataStandardizer` constructs the function required for evaluation.
 
 # Examples
@@ -73,63 +73,60 @@ struct OutputTransform{T <: AbstractDataTransform} end
 OutputTransform(::Type{T}) where {T <: AbstractDataTransform} = OutputTransform{T}()
 OutputTransform(x::AbstractDataTransform) = OutputTransform(typeof(x))
 
-# ---------------- Struct for bundled transform functions ----------------
-"""
-# Developer Note
+# ---
+# # Developer Note
 
-    DataStandardizer(fᵢ::Function, fₒ::Function, fₒ⁻¹::Function, var_fₒ⁻¹::Function) 
+# DataStandardizer bundles input and output transformation functions for Gaussian process models.
 
-Bundles input and output transformation functions for Gaussian process models.
+# # Fields
 
-# Fields
+# - `fᵢ` - function applied to input data.
+# - `fₒ` - function applied to output data.
+# - `fₒ⁻¹` - inverse function for the output transformation.
+# - `var_fₒ⁻¹` - function for transforming output variances.
 
-- `fᵢ` - function applied to input data.
-- `fₒ` - function applied to output data.
-- `fₒ⁻¹` - inverse function for the output transformation.
-- `var_fₒ⁻¹` - function for transforming output variances.
+# !!! note "Inverse output transformations"
 
-!!! note "Inverse output transformations"
+# Gaussian process regression requires two distinct inverse transformations for the output:
+# one for the mean predictions (this same transformation can also be applied to function samples) and one for the variance predictions.
 
-Gaussian process regression requires two distinct inverse transformations for the output:
-one for the mean predictions (this same transformation can also be applied to function samples) and one for the variance predictions.
+# Consider a z-score transformation of output ``y``:
+#     ```math
+#     \tilde{y} = \frac{y - μ}{σ}.
+#     ```
+# To recover the mean of the untransformed output, we can simply apply the inverse transformation:
+#     ```math
+#     E[y] = E[σ\tilde{y} + μ] = σE[\tilde{y}] + μ.
+#     ```
+# Analogously, sampled functions ``\tilde{y}_s`` from the Gaussian process regression model can be transformed back:
+#     ```math
+#     y_s = σ\tilde{y}_s + μ.
+#     ```
+# The variance, however, is untransformed as follows:
+#     ```math
+#     Var[y] = E[(σ\tilde{y} + μ - E[σ\tilde{y} + μ])^2] = E[(σ^2(\tilde{y} - E[\tilde{y}])^2] = σ^2 Var[\tilde{y}]
+#     ```
+# Hence, `fₒ⁻¹` and `var_fₒ⁻¹` must be implemented separately.
 
-Consider a z-score transformation of output ``y``:
-    ```math
-    \tilde{y} = \frac{y - μ}{σ}.
-    ```
-To recover the mean of the untransformed output, we can simply apply the inverse transformation:
-    ```math
-    E[y] = E[σ\tilde{y} + μ] = σE[\tilde{y}] + μ.
-    ```
-Analogously, sampled functions ``\tilde{y}_s`` from the Gaussian process regression model can be transformed back:
-    ```math
-    y_s = σ\tilde{y}_s + μ.
-    ```
-The variance, however, is untransformed as follows:
-    ```math
-    Var[y] = E[(σ\tilde{y} + μ - E[σ\tilde{y} + μ])^2] = E[(σ^2(\tilde{y} - E[\tilde{y}])^2] = σ^2 Var[\tilde{y}]
-    ```
-Hence, `fₒ⁻¹` and `var_fₒ⁻¹` must be implemented separately.
+# # Constructor
 
-# Constructor
+#     DataStandardizer(
+#         data::DataFrame, 
+#         input::Union{Symbol, Vector{<:Symbol}, UQInput, Vector{<:UQInput}}, 
+#         output::Symbol, 
+#         input_transform::InputTransform, 
+#         output_transform::OutputTransform
+#     )
 
-    DataStandardizer(
-        data::DataFrame, 
-        input::Union{Symbol, Vector{<:Symbol}, UQInput, Vector{<:UQInput}}, 
-        output::Symbol, 
-        input_transform::InputTransform, 
-        output_transform::OutputTransform
-    )
+# Constructs a set of transformation functions from the provided data and user-specified input/output transforms. 
+# Internally, it uses `build_datatransform` to create the actual functions.
 
-Constructs a set of transformation functions from the provided data and user-specified input/output transforms. 
-Internally, it uses `build_datatransform` to create the actual functions.
+# # Purpose
 
-# Purpose
-
-This struct allows [`GaussianProcess`](@ref) models to consistently apply input and output transformations 
-    (like `ZScoreTransform` or `IdentityTransform`) while keeping the API simple for end-users. 
-The `AbstractDataTransform` structs signal the desired behavior, and `DataStandardizer` converts them into callable functions for internal use.
-"""
+# This struct allows [`GaussianProcess`](@ref) models to consistently apply input and output transformations 
+#     (like `ZScoreTransform` or `IdentityTransform`) while keeping the API simple for end-users. 
+# The `AbstractDataTransform` structs signal the desired behavior, and `DataStandardizer` converts them into callable functions for internal use.
+# ---
 struct DataStandardizer
     fᵢ::Function
     fₒ::Function
@@ -149,12 +146,14 @@ function DataStandardizer(
     return DataStandardizer(fᵢ, fₒ, fₒ⁻¹, var_fₒ⁻¹)
 end
 
-# ---------------- Transform builders ----------------
-"""
-    build_datatransform(data, input/output, transform)
 
-Returns a function (or pair of functions for outputs) that applies the specified transformation to a dataframe.
-"""
+# ---
+# build_datatransform(data, input/output, transform)
+#
+# Returns a function (or pair of functions for outputs) that applies the specified 
+# transformation to a dataframe.
+# ---
+
 # ---------------- Input ----------------
 # No input transformation
 function build_datatransform(

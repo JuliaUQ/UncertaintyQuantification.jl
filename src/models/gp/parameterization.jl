@@ -163,11 +163,13 @@ apply_parameters(f::GP, θ) = GP(
     apply_parameters(f.kernel, θ[2])
 )
 
-"""
-    NoisyGP(gp::GP, σ²::Real)
-
-Wraps a Gaussian process `gp` and adds learnable Gaussian observation noise with zero mean and variance `σ²` to the diagonal of its finite-dimensional covariance matrix.
-"""
+# ---
+# NoisyGP(gp::GP, σ²::Real)
+#
+# Wraps a Gaussian process `gp` and adds learnable Gaussian observation noise
+# with zero mean and variance `σ²` to the diagonal of its finite-dimensional
+# covariance matrix.
+# ---
 struct NoisyGP{T<:GP,Tn<:Real}
     gp::T
     σ²::Tn
@@ -180,7 +182,7 @@ end
 
 Wraps a Gaussian process `gp` with additive Gaussian observation noise of variance `σ²`.
 
-This creates a [`NoisyGP`](@ref) object, which adds `σ²` to the diagonal of the covariance
+This creates a Gaussian process object, which adds `σ²` to the diagonal of the covariance
 matrix when evaluating the finite-dimensional projection of `gp`.
 
 # Examples
