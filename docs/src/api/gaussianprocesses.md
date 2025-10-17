@@ -24,4 +24,5 @@ StandardNormalTransform
 
 ```@docs
 evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
+with_gaussian_noise(gp::AbstractGPs.GP, σ²::Real)
 ```
