@@ -130,3 +130,15 @@ function bounds(
 
     return vcat(getindex.(b, 1)...), vcat(getindex.(b, 2)...)
 end
+
+var(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = var(jd.d)
+
+pdf(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = pdf(jd.d, x)
+
+logpdf(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = logpdf(jd.d, x)
+
+minimum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = minimum(jd.d)
+
+maximum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = maximum(jd.d)
+
+insupport(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = insupport(jd.d, x)

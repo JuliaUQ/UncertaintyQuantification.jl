@@ -12,6 +12,7 @@ using UncertaintyQuantification
 include("inputs/empiricaldistribution.jl")
 include("dynamics/psd.jl")
 include("inputs/parameter.jl")
+include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/interval.jl")
 include("inputs/imprecise/p-box.jl")

@@ -15,6 +15,8 @@ To use the `ProbabilityBox` in an analysis it has to be wrapped in a [`RandomVar
 - `ProbabilityBox{T}(parameters::Dict{Symbol, Union{Real, Interval}})`: Support bounds are inferred from the distribution type `T`.
 - `ProbabilityBox{T}(parameter::Interval)`: For univariate distributions with a single parameter, construct from a single interval.
 
+For convenience the first two constructors can also be called with a `Vector{Pair{Symbol,Union{Real,Interval}}}` to automatically create the `Dict`.
+
 # Examples
 
 ```jldoctest
@@ -26,6 +28,9 @@ ProbabilityBox{Normal}(Dict{Symbol, Union{Real, Interval}}(:μ => [0, 1], :σ =>
 
 julia> ProbabilityBox{Exponential}(Interval(0.1, 0.5))
 ProbabilityBox{Exponential}(Dict{Symbol, Union{Real, Interval}}(:θ => [0.1, 0.5]), 0.0, Inf)
+
+julia> ProbabilityBox{Normal}([:μ => Interval(0, 1), :σ => Interval(0.1, 1)])
+ProbabilityBox{Normal}(Dict{Symbol, Union{Real, Interval}}(:μ => [0, 1], :σ => [0.1, 1]), -Inf, Inf)
 ```
 """
 struct ProbabilityBox{T<:UnivariateDistribution}
@@ -92,6 +97,18 @@ function ProbabilityBox{T}(parameter::Interval) where {T<:UnivariateDistribution
     return ProbabilityBox{T}(
         Dict{Symbol,Union{Real,Interval}}(fieldnames(T)[1] => parameter)
     )
+end
+
+function ProbabilityBox{T}(
+    parameters::Vector{<:Pair{Symbol,<:Any}}
+) where {T<:UnivariateDistribution}
+    return ProbabilityBox{T}(Dict(parameters))
+end
+
+function ProbabilityBox{T}(
+    parameters::Vector{<:Pair{Symbol,<:Any}}, lb::Real, ub::Real
+) where {T<:UnivariateDistribution}
+    return ProbabilityBox{T}(Dict(parameters), lb, ub)
 end
 
 function map_to_precise(

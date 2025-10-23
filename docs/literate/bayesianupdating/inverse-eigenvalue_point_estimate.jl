@@ -11,7 +11,7 @@ We will set up the problem the same way as in the MCMC example.
 #md using UncertaintyQuantification # hide
 #md using Plots # hide
 
-#jl  using UncertaintyQuantification
+#jl using UncertaintyQuantification
 #jl using Plots
 
 Y = [
