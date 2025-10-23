@@ -9,6 +9,9 @@ DEFAULT_COLOUR_PDF = :blue
 DEFAULT_COLOUR_UPPER = :red
 DEFAULT_COLOUR_LOWER = :black
 
+DEFAULT_INTERVAL_WIDTH=1.5
+DEFAULT_INTERVAL_EDGE_ALPHA=1
+
 DEFAULT_PLOT_RANGE_EXTEND_DENSITY = 0.2
 DEFAULT_PLOT_RANGE_EXTEND = 0.2
 DEFAULT_PLOT_RANGE_INTERVAL = 0.4
@@ -155,7 +158,7 @@ end
 
     cols = ceil(Int, sqrt(N_inputs))  # Calculate the number of columns
     rows = ceil(Int, N_inputs / cols)  # Calculate the number of rows needed
-    layout := grid(rows, cols)  # Create a grid layout
+    layout := (rows, cols)  # Create a grid layout
 
     for i = 1:N_inputs
         @series begin
@@ -170,10 +173,16 @@ end
 ###
 
 # Plot a 2D IntervalBox:
-@recipe function _plot(x::Interval, y::Interval) #; customcolor = :green, alpha=0.5)
+@recipe function _plot(x::Interval, y::Interval)
 
     seriesalpha --> DEFAULT_ALPHA
     seriestype := :shape
+
+    label := false
+
+    linecolor --> :black                        # Explicitly set edge color
+    linewidth --> DEFAULT_INTERVAL_WIDTH        # Make edges more visible
+    linealpha --> DEFAULT_INTERVAL_EDGE_ALPHA
 
     x = [x.lb, x.ub, x.ub, x.lb]
     y = [y.lb, y.lb, y.ub, y.ub]
@@ -184,7 +193,14 @@ end
 # Plot a vector of 2D IntervalBoxes:
 @recipe function _plot(xx::Vector{T}, yy::Vector{T}) where T<:Interval
 
+    seriesalpha --> DEFAULT_ALPHA
     seriestype := :shape
+
+    label := false
+
+    linecolor := :black                         # Explicitly set edge color
+    linewidth --> DEFAULT_INTERVAL_WIDTH        # Make edges more visible
+    linealpha --> DEFAULT_INTERVAL_EDGE_ALPHA
 
     xs = Float64[]
     ys = Float64[]
@@ -199,7 +215,6 @@ end
 
     end
 
-    seriesalpha --> DEFAULT_ALPHA
     xs, ys
 
 end
