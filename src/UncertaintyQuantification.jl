@@ -21,7 +21,6 @@ using Random
 using Reexport
 using Roots
 using StatsBase
-using Plots
 using RecipesBase
 
 @reexport using Distributions
