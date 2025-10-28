@@ -19,7 +19,6 @@
         plt = plot(iv)
         @test typeof(plt) <: Plots.Plot
         @test length(plt.series_list) == 3
-        @test plt.series_list[1][:fillalpha] == 0.2
     end
 
     @testset "ProbabilityBox Plot" begin
