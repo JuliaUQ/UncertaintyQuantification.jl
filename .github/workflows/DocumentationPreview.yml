@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pr-${{github.event.number}}
-      url: https://friesischscott.github.io/UncertaintyQuantification.jl/previews/PR${{github.event.number}}
+      url: https://juliauq.github.io/UncertaintyQuantification.jl/previews/PR${{github.event.number}}
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v2
