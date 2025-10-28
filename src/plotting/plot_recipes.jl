@@ -83,10 +83,8 @@ end
 
     width = hi_grid - lo_grid
 
-    plot_lo = lo_grid - abs(width * DEFAULT_PLOT_RANGE_INTERVAL)
+    plot_lo = lo_grid - abs(width * DEFAULT_PLOT_RANGE_INTERVAL)    # For adding a slight width to the left and right side of the interval plot
     plot_hi = hi_grid + abs(width * DEFAULT_PLOT_RANGE_INTERVAL)
-
-    xlims := (plot_lo, plot_hi)
 
     x_grid = range(lo_grid, hi_grid, DEFAULT_PLOT_GRID_NUMBER)
 
@@ -109,6 +107,16 @@ end
         label := ""
         linewidth --> DEFAULT_DISTRIBUTION_WIDTH
         x_grid, cdf_lo
+    end
+
+    # Add invisible lines so interval bounds don't touch plot boundaries
+    @series begin
+        primary := false
+        seriestype := :path
+        alpha --> 0
+        label := ""
+        linewidth --> 0
+        range(plot_lo, plot_hi, 100), zeros(100)
     end
 
     # Plot fill
@@ -180,8 +188,6 @@ end
     end
 end
 
-using RecipesBase
-
 @recipe function _plot(x::Vector{T}) where {T<:UQInput}
     # Filter out Parameter objects
     x_no_params = filter(xi -> !isa(xi, Parameter), x)
@@ -189,7 +195,7 @@ using RecipesBase
     N = length(x_no_params)
     cols = ceil(Int, sqrt(N))
     rows = ceil(Int, N / cols)
-    layout := (rows, cols)
+    layout --> (rows, cols)
 
     # Choose a grid palette once (users can still override via plot(...; palette=...))
     # palette --> :default  # or :default, :Dark2_8, etc.
