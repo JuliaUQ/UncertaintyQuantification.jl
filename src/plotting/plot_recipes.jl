@@ -4,6 +4,7 @@ DEFAULT_GRID = false
 DEFAULT_LEGEND = true
 DEFAULT_CDF = false
 DEFAULT_FILL_DISTRIBUTION=true
+DEFAULT_FILL_IMPRECISE=true
 DEFAULT_DISTRIBUTION = :pdf
 DEFAULT_FILL = :gray
 DEFAULT_COLOUR_PDF = :blue
@@ -26,7 +27,7 @@ DEFAULT_TICK_SIZE = 12
 #   Plots for UQInputs
 ###
 @recipe function _plot(
-    x::RandomVariable{T}; cdf_on=DEFAULT_CDF
+    x::RandomVariable{T}; cdf_on=DEFAULT_CDF, shade=DEFAULT_FILL_DISTRIBUTION
 ) where {T<:UnivariateDistribution}
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
@@ -54,7 +55,7 @@ DEFAULT_TICK_SIZE = 12
     end
 
     # Optional fill for PDF only: reuse color, don't advance palette
-    if !cdf_on
+    if !cdf_on && shade
         @series begin
             primary := false          # <-- reuse the color from the primary line
             seriestype := :path
@@ -68,7 +69,7 @@ DEFAULT_TICK_SIZE = 12
     end
 end
 
-@recipe function _plot(x::IntervalVariable)
+@recipe function _plot(x::IntervalVariable; shade=DEFAULT_FILL_IMPRECISE)
     # --- plot-level defaults (soft) ---
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
@@ -111,20 +112,24 @@ end
     end
 
     # Plot fill
-    @series begin
-        primary := false
-        seriestype := :path
-        fillcolor := :match              # match this series' line color
-        fillrange := cdf_hi
-        color := DEFAULT_FILL
-        fillalpha := DEFAULT_ALPHA
-        linewidth --> 0                  # draw fill only here
-        label := ""
-        x_grid, cdf_lo
+    if shade
+        @series begin
+            primary := false
+            seriestype := :path
+            fillcolor := :match              # match this series' line color
+            fillrange := cdf_hi
+            color := DEFAULT_FILL
+            fillalpha := DEFAULT_ALPHA
+            linewidth --> 0                  # draw fill only here
+            label := ""
+            x_grid, cdf_lo
+        end
     end
 end
 
-@recipe function _plot(x::RandomVariable{T}) where {T<:ProbabilityBox}
+@recipe function _plot(
+    x::RandomVariable{T}; shade=DEFAULT_FILL_IMPRECISE
+) where {T<:ProbabilityBox}
     # --- plot-level defaults (soft) ---
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
@@ -161,15 +166,17 @@ end
     end
 
     # Plot fill
-    @series begin
-        primary := false
-        seriestype := :path
-        fillcolor := :match              # match this series' line color
-        fillrange := hi.(cdf_evals)
-        fillalpha --> DEFAULT_ALPHA
-        linewidth --> 0                  # draw fill only here
-        label := ""
-        x_grid, lo.(cdf_evals)
+    if shade
+        @series begin
+            primary := false
+            seriestype := :path
+            fillcolor := :match              # match this series' line color
+            fillrange := hi.(cdf_evals)
+            fillalpha --> DEFAULT_ALPHA
+            linewidth --> 0                  # draw fill only here
+            label := ""
+            x_grid, lo.(cdf_evals)
+        end
     end
 end
 
