@@ -1,7 +1,7 @@
 UncertaintyQuantification.jl
 ============================
 
-![Build Status](https://github.com/JuliaUQ/UncertaintyQuantification.jl/workflows/CI/badge.svg)
+![Build Status](https://github.com/JuliaUQ/UncertaintyQuantification.jl/actions/workflows/ci.yml/badge.svg?branch=master)
 [![Coverage Status](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl/branch/master/graph/badge.svg?token=LfslMAoWvA)](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3993816.svg)](https://doi.org/10.5281/zenodo.3993816)
 
