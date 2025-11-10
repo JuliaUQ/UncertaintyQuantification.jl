@@ -80,7 +80,7 @@ if !isempty(ARGS) && ARGS[1] == "vite"
 		repo = "github.com/JuliaUQ/UncertaintyQuantification.jl",
 		target = joinpath(@__DIR__, "build"),
 		branch = "gh-pages",
-		devbranch = "main",
+		devbranch = "master",
 		push_preview = true,
 	)
 end
