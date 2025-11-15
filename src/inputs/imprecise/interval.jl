@@ -44,6 +44,11 @@ function bounds(i::Interval)
     return i.lb, i.ub
 end
 
+hi(X::Interval) = X.ub
+lo(X::Interval) = X.lb
+hi(X::Real) = X
+lo(X::Real) = X
+
 """
     IntervalVariable(lb::Real, ub::Real, name::Symbol)
 
