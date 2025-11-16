@@ -117,7 +117,7 @@ function multivariate_indices(p::Int, d::Int, in_set::Symbol, param=0.5)
         return multivariate_indices(p, d, (idx,p) -> QB(idx,p,param))
     else
         errstr = "Unknown in_set=$in_set, choose from following\n"
-        errsrt *= "(:TD, :total_degree, :TP, :total_product"
+        errstr *= "(:TD, :total_degree, :TP, :total_product"
         errstr *= ", :HC, :hyperbolic_cross, :QB, :q_ball)"
         error(errstr)
     end
