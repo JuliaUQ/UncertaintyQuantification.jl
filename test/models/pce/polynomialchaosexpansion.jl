@@ -48,6 +48,42 @@
         @test var(pce) ≈ 0.5 rtol = 1e-10
     end
 
+    @testset "MultipleOutputs" begin
+        x1 = RandomVariable(Uniform(-2, 0), :x1)
+        x2 = RandomVariable(Uniform(-2, 0), :x2)
+
+        model_a = Model(df -> begin
+            return df.x1 .^ 2
+        end, :ya)
+
+        model_b = Model(df -> begin
+            return df.ya .* 2
+        end, :yb)
+
+        Ψ = PolynomialChaosBasis([LegendreBasis()], p)
+
+        ls = LeastSquares(SobolSampling(1000))
+        wafp = WeightedApproximateFetekePoints(SobolSampling(1000))
+        gq = GaussQuadrature()
+
+        pces_ls, _, mses_ls = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], ls)
+        pces_wafp, _, mses_wafp = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], wafp)
+        pces_gq, _ = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], gq)
+
+        @test isa(pces_ls, Vector{PolynomialChaosExpansion})
+        @test isa(mses_ls, Vector{<:Real})
+        @test isa(pces_wafp, Vector{PolynomialChaosExpansion})
+        @test isa(mses_wafp, Vector{<:Real})
+        @test isa(pces_gq, Vector{PolynomialChaosExpansion})
+
+        @test mean(pces_ls[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_ls[2]) ≈ 8/3 rtol = 1e-10
+        @test mean(pces_wafp[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_wafp[2]) ≈ 8/3 rtol = 1e-10
+        @test mean(pces_gq[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_ls[2]) ≈ 8/3 rtol = 1e-10
+    end
+
     @testset "Convenience Functions" begin
         x1 = RandomVariable(Uniform(-2, 0), :x1)
         x2 = RandomVariable(Uniform(-2, 0), :x2)
