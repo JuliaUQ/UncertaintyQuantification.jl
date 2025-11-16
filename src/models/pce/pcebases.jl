@@ -6,9 +6,9 @@ struct PolynomialChaosBasis
     d::Int
     α::Vector{Vector{Int64}}
 
-    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int)
+    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, in_set::Symbol=:TD, param=0.5)
         d = length(bases)
-        return new(bases, p, d, multivariate_indices(p, d))
+        return new(bases, p, d, multivariate_indices(p, d, in_set, param))
     end
 end
 
@@ -65,30 +65,62 @@ function He(x::Real, n::Integer)
     return He
 end
 
-function multivariate_indices(p::Int, d::Int)
-    No = binomial(p + d, d)
+function TD(idx::Vector{Int}, p::Int)
+    return sum(idx) <= p
+end
 
-    idx = vcat(zeros(Int64, 1, d), Matrix(I, d, d), zeros(Int64, No - d - 1, d))
+function TP(idx::Vector{Int}, p::Int)
+    return maximum(idx) <= p
+end
 
-    pᵢ = ones(Int64, d, No)
+function HC(idx::Vector{Int}, p::Int)
+    return prod(idx .+ 1) <= (p + 1)
+end
 
-    for k in 2:No
+function QB(idx::Vector{Int}, p::Int, q::Float64=0.5)
+    return norm(idx, q) <= p
+end
+
+function multivariate_indices(p::Int, d::Int, in_set::Function=TD)
+    idx = zeros(Int, d)
+    index_set = [copy(idx)]
+    if p == 0
+        return index_set
+    end
+    idx[1] += 1
+    while true
+        # Add to index set
+        push!(index_set, copy(idx))
+        # Update idx
         for i in 1:d
-            pᵢ[i, k] = sum(pᵢ[i:d, k - 1])
+            idx[i] += 1
+            if in_set(idx, p)
+                break
+            end
+            idx[i] = 0
+        end
+        if all(iszero, idx)
+            break
         end
     end
+    return index_set
+end
 
-    P = d + 1
-    for k in 2:p
-        L = P
-        for j in 1:d, m in (L - pᵢ[j, k] + 1):L
-            P += 1
-            idx[P, :] = idx[m, :]
-            idx[P, j] = idx[P, j] + 1
-        end
+function multivariate_indices(p::Int, d::Int, in_set::Symbol, param=0.5)
+    if in_set in (:TD, :total_degree)
+        return multivariate_indices(p, d, TD)
+    elseif in_set in (:TP, :total_product)
+        return multivariate_indices(p, d, TP)
+    elseif in_set in (:HC, :hyperbolic_cross)
+        return multivariate_indices(p, d, HC)
+    elseif in_set in (:QB, :q_ball)
+        return multivariate_indices(p, d, (idx,p) -> QB(idx,p,param))
+    else
+        errstr = "Unknown in_set=$in_set, choose from following\n"
+        errsrt *= "(:TD, :total_degree, :TP, :total_product"
+        errstr *= ", :HC, :hyperbolic_cross, :QB, :q_ball)"
+        error(errstr)
     end
-
-    return map(collect, eachrow(idx))
 end
 
 function map_to_base(_::LegendreBasis, x::AbstractVector)

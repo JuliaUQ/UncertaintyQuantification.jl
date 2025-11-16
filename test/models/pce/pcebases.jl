@@ -74,8 +74,11 @@
 
     @testset "multivariate_indices" begin
         @test multivariate_indices(2, 1) == [[0], [1], [2]]
-        @test multivariate_indices(2, 2) == [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2]]
-        @test multivariate_indices(2, 3) == [
+        @test Set(multivariate_indices(2, 2)) == Set([
+            [0, 0], [1, 0], [0, 1], 
+            [2, 0], [1, 1], [0, 2]
+        ])
+        @test Set(multivariate_indices(2, 3)) == Set([
             [0, 0, 0],
             [1, 0, 0],
             [0, 1, 0],
@@ -86,6 +89,15 @@
             [0, 2, 0],
             [0, 1, 1],
             [0, 0, 2],
-        ]
+        ])
+        @test Set(multivariate_indices(2, 2, :TP)) == Set([
+            [0, 0], [0, 1], [0, 2], 
+            [1, 0], [1, 1], [1, 2],
+            [2, 0], [2, 1], [2, 2],
+        ])
+        @test Set(multivariate_indices(3, 2, :HC)) == Set([
+            [0, 0], [0, 1], [0, 2], [0, 3],
+            [1, 1], [1, 0], [2, 0], [3, 0]
+        ])
     end
 end
