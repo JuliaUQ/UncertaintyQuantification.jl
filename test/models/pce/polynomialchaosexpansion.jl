@@ -60,15 +60,15 @@
             return df.ya .* 2
         end, :yb)
 
-        Ψ = PolynomialChaosBasis([LegendreBasis()], p)
+        Ψ0 = PolynomialChaosBasis([LegendreBasis()], p)
 
         ls = LeastSquares(SobolSampling(1000))
         wafp = WeightedApproximateFetekePoints(SobolSampling(1000))
         gq = GaussQuadrature()
 
-        pces_ls, _, mses_ls = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], ls)
-        pces_wafp, _, mses_wafp = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], wafp)
-        pces_gq, _ = polynomialchaos(x1, [model_a, model_b], Ψ, [:ya,:yb], gq)
+        pces_ls, _, mses_ls = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], ls)
+        pces_wafp, _, mses_wafp = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], wafp)
+        pces_gq, _ = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], gq)
 
         @test isa(pces_ls, Vector{PolynomialChaosExpansion})
         @test isa(mses_ls, Vector{<:Real})
