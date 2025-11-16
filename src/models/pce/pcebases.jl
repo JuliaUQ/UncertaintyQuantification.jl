@@ -77,18 +77,19 @@ function HC(idx::Vector{Int}, p::Int)
     return prod(idx .+ 1) <= (p + 1)
 end
 
-function QB(idx::Vector{Int}, p::Int, q::Float64=0.5)
+function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
+    @assert q > 0
     return norm(idx, q) <= p
 end
 
-function multivariate_indices(p::Int, d::Int, in_set::Function=TD)
+function multivariate_indices(p::Int, d::Int, in_set::Function=TD; max_size=1_000_000_000_000)
     idx = zeros(Int, d)
     index_set = [copy(idx)]
     if p == 0
         return index_set
     end
     idx[1] += 1
-    while true
+    for _ in 1:max_size
         # Add to index set
         push!(index_set, copy(idx))
         # Update idx
