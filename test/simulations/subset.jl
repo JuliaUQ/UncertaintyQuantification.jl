@@ -17,6 +17,29 @@
     @test_logs (:warn, "A proposal pdf with large variance (≥ 2) can be inefficient.") SubSetSimulation(
         2000, 0.2, 10, Uniform(-4, 4)
     )
+    @testset "nextlevelsamples - 1 sample per chain" begin
+        x = RandomVariable(Normal(), :x)
+        function dummy_model(x)
+            if x > 3
+                return x
+            else
+                return 1
+            end
+        end
+        inputs = [x]
+        models = Model(df -> dummy_model.(df.x), :y)
+        sim = SubSetSimulation(10, 0.1, 10, Uniform(-0.2, 0.2))
+        performancefunction = df -> df.y
+        threshold = 1
+        samples = sample(x, 1)
+        evaluate!(models, samples)
+        performance = samples[:, :y]
+
+        res = UncertaintyQuantification.nextlevelsamples(
+            samples, performance, 1, models, performancefunction, [x], sim
+        )
+        @test !isnothing(res)
+    end
 end
 
 @testset "SubSetInfinity" begin
@@ -67,10 +90,9 @@ end
     @test subset.λ == 1
     @test subset.s == 1
 
-
-    @test_throws ErrorException(
-        "standard deviation must be between 0.0 and 1.0"
-    ) SubSetInfinityAdaptive(2000, 0.1, 10, 2, 1, 3)
+    @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinityAdaptive(
+        2000, 0.1, 10, 2, 1, 3
+    )
 
     @test_throws ErrorException(
         "Scaling parameter must be between 0.0 and 1.0. A good initial choice is 1.0"
@@ -79,10 +101,10 @@ end
     @test_throws ErrorException(
         "Scaling parameter must be between 0.0 and 1.0. A good initial choice is 1.0"
     ) SubSetInfinityAdaptive(2000, 0.1, 10, 4, -2.0)
-    
-    @test_throws ErrorException("Number of partitions Na must be a multiple of `n` * `target`") SubSetInfinityAdaptive(
-        2000, 0.1, 10, 9, 1
-    )
+
+    @test_throws ErrorException(
+        "Number of partitions Na must be a multiple of `n` * `target`"
+    ) SubSetInfinityAdaptive(2000, 0.1, 10, 9, 1)
 
     @test_throws ErrorException("Number of partitions Na must be less than `n` * `target`") SubSetInfinityAdaptive(
         2000, 0.1, 10, 400, 1
