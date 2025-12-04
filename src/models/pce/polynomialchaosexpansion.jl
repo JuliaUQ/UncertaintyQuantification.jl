@@ -35,8 +35,8 @@ function polynomialchaos(
     outputs::Union{Symbol,<:AbstractVector{Symbol}},
     ls::LeastSquares,
 )
-    inputs = isa(inputs, UQInput) ? [inputs] : inputs
-    outputs = isa(outputs, Symbol) ? [outputs] : outputs
+    inputs = wrap(inputs)
+    outputs = wrap(outputs)
 
     samples = sample(inputs, ls.sim)
     evaluate!(model, samples)
@@ -83,8 +83,8 @@ function polynomialchaos(
     outputs::Union{Symbol,<:AbstractVector{Symbol}},
     wafp::WeightedApproximateFetekePoints
 )
-    inputs = isa(inputs, UQInput) ? [inputs] : inputs
-    outputs = isa(outputs, Symbol) ? [outputs] : outputs
+    inputs = wrap(inputs)
+    outputs = wrap(outputs)
 
     samples = sample(inputs, wafp.sim)
     random_inputs = filter(i -> isa(i, RandomUQInput), inputs)
@@ -151,8 +151,8 @@ function polynomialchaos(
     outputs::Union{Symbol,<:AbstractVector{Symbol}},
     _::GaussQuadrature,
 )
-    inputs = isa(inputs, UQInput) ? [inputs] : inputs
-    outputs = isa(outputs, Symbol) ? [outputs] : outputs
+    inputs = wrap(inputs)
+    outputs = wrap(outputs)
 
     random_inputs = filter(i -> isa(i, RandomUQInput), inputs)
     deterministic_inputs = filter(i -> isa(i, DeterministicUQInput), inputs)
