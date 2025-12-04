@@ -1,6 +1,7 @@
 module UncertaintyQuantification
 
 using Bootstrap
+using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
@@ -36,8 +37,6 @@ abstract type RandomUQInput <: UQInput end
 Abstract supertype for all model types
 """
 abstract type UQModel end
-
-abstract type Copula end
 
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
@@ -171,7 +170,6 @@ export quadrature_weights
 export rand
 export sample
 export sobolindices
-export to_copula_space
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
@@ -191,7 +189,6 @@ include("inputs/imprecise/p-box.jl")
 
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
-include("inputs/copulas/gaussian.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
 

@@ -1,4 +1,5 @@
 [deps]
+Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
@@ -6,6 +7,5 @@ HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 QuasiMonteCarlo = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
