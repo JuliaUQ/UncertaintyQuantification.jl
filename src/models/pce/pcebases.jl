@@ -6,9 +6,9 @@ struct PolynomialChaosBasis
     d::Int
     α::Vector{Vector{Int64}}
 
-    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, in_set::Symbol=:TD, param=0.5)
+    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, index_set::Symbol=:TD; param=0.5)
         d = length(bases)
-        return new(bases, p, d, multivariate_indices(p, d, in_set, param))
+        return new(bases, p, d, multivariate_indices(p, d, index_set; param=param))
     end
 end
 
@@ -82,7 +82,7 @@ function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
     return norm(idx, q) <= p
 end
 
-function multivariate_indices(p::Int, d::Int, in_set::Function=TD; max_size=1_000_000_000_000)
+function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_size=1_000_000_000_000)
     idx = zeros(Int, d)
     index_set = [copy(idx)]
     if p == 0
@@ -95,7 +95,7 @@ function multivariate_indices(p::Int, d::Int, in_set::Function=TD; max_size=1_00
         # Update idx
         for i in 1:d
             idx[i] += 1
-            if in_set(idx, p)
+            if in_index_set(idx, p)
                 break
             end
             idx[i] = 0
@@ -107,17 +107,17 @@ function multivariate_indices(p::Int, d::Int, in_set::Function=TD; max_size=1_00
     return index_set
 end
 
-function multivariate_indices(p::Int, d::Int, in_set::Symbol, param=0.5)
-    if in_set in (:TD, :total_degree)
+function multivariate_indices(p::Int, d::Int, index_set::Symbol; param=0.5)
+    if index_set in (:TD, :total_degree)
         return multivariate_indices(p, d, TD)
-    elseif in_set in (:TP, :total_product)
+    elseif index_set in (:TP, :total_product)
         return multivariate_indices(p, d, TP)
-    elseif in_set in (:HC, :hyperbolic_cross)
+    elseif index_set in (:HC, :hyperbolic_cross)
         return multivariate_indices(p, d, HC)
-    elseif in_set in (:QB, :q_ball)
+    elseif index_set in (:QB, :q_ball)
         return multivariate_indices(p, d, (idx,p) -> QB(idx,p,param))
     else
-        errstr = "Unknown in_set=$in_set, choose from following\n"
+        errstr = "Unknown index_set=$index_set, choose from following\n"
         errstr *= "(:TD, :total_degree, :TP, :total_product"
         errstr *= ", :HC, :hyperbolic_cross, :QB, :q_ball)"
         error(errstr)
