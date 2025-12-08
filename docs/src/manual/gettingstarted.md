@@ -115,9 +115,6 @@ return nothing # hide
 
 An error is thrown if the dimension of the copula does not agree with the number of marginals.
 
-!!! note "Rosenblatt transform"
-Transformations to standard normal space for copulas require the Rosenblatt transform [rosenblattRemarksMultivariateTransformation1952](@cite). So far this is only available for a subset of the copulas such as the *Gaussian* and all *Archimedean* copulas. We refer to the documentation of *Copulas.jl* for more information.
-
 ## Models
 
 In this section we present the models included in *UncertaintyQuantification*. A model, in its most basic form, is a relationship between a set of input variables ``x \in \mathbb{R}^{n_x}`` and an output ``y \in \mathbb{R}``. Currently, most models are assumed to return single-valued outputs. However, as seen later, the `ExternalModel` is capable of extracting an arbitrary number of outputs from a single run of an external solver.
