@@ -105,7 +105,7 @@ return nothing # hide
 
 Note, that the marginals are not restricted to `UnivariateDistribution`. Dependent p-boxes can be constructed by passing a [`ProbabilityBox`](@ref) instead.
 
-Next, we define the copula to model the dependence. *UncertaintyQuantification* supports Gaussian copulas for multivariate ``d \geq 2`` dependence. Here, we define a Gaussian copula by passing the correlation matrix and then build the `JointDistribution` from the copula and the marginals.
+Next, we define the copula to model the dependence. *UncertaintyQuantification* accepts all copulas provided by *Copulas.jl*[lavernyCopulasjlFullyDistributionsjlcompliant2024](@cite). Here, we define a Gaussian copula by passing the correlation matrix and then build the`JointDistribution` from the copula and the marginals.
 
 ```@example copula
 cop = GaussianCopula([1 0.8; 0.8 1])
@@ -114,6 +114,9 @@ return nothing # hide
 ```
 
 An error is thrown if the dimension of the copula does not agree with the number of marginals.
+
+!!! note "Rosenblatt transform"
+Transformations to standard normal space for copulas require the Rosenblatt transform [rosenblattRemarksMultivariateTransformation1952](@cite). So far this is only available for a subset of the copulas such as the *Gaussian* and all *Archimedean* copulas. We refer to the documentation of *Copulas.jl* for more information.
 
 ## Models
 
