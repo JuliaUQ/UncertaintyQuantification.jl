@@ -97,6 +97,7 @@ In line with Sklar's theorem we build the joint distribution of two dependent ra
 
 ```@example copula
 using UncertaintyQuantification # hide
+using Copulas # hide
 x = RandomVariable(Normal(), :x)
 y = RandomVariable(Uniform(), :y)
 marginals = [x, y]
