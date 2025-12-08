@@ -43,7 +43,7 @@ abstract type AbstractMonteCarlo <: AbstractSimulation end
 abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 
 """
-    AbstractBayesianMethod
+	AbstractBayesianMethod
 
 Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
 
@@ -55,7 +55,7 @@ Subtypes are:
 abstract type AbstractBayesianMethod end
 
 """
-    AbstractBayesianPointEstimate
+	AbstractBayesianPointEstimate
 
 Subtypes are used to dispatch to the different point estimation methods in [`bayesianupdating`](@ref).
 
@@ -103,7 +103,6 @@ export FORM
 export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
-export GaussianCopula
 export GaussianMixtureModel
 export GaussQuadrature
 export HaltonSampling
