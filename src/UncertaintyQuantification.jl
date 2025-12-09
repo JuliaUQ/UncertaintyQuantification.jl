@@ -88,7 +88,6 @@ export UQInput
 export UQModel
 
 # Structs
-export AdditiveBasis
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
@@ -136,6 +135,7 @@ export PlackettBurman
 export PolynomialChaosBasis
 export PolynomialChaosExpansion
 export PolyharmonicRadialBasis
+export PolyharmonicSpline
 export ProbabilityBox
 export RadialBasedImportanceSampling
 export GaussianRadialBasis
@@ -205,7 +205,6 @@ include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
-include("models/basisfunctions/additivebasis.jl")
 include("models/basisfunctions/monomialbasis.jl")
 include("models/basisfunctions/radialbasis.jl")
 include("models/basisfunctions/basisfunctionmodels.jl")
@@ -214,6 +213,7 @@ include("models/external/extractor.jl")
 include("models/external/externalmodel.jl")
 include("models/model.jl")
 include("models/imprecise/propagation.jl")
+include("models/polyharmonicspline.jl")
 include("models//slicingmodel.jl")
 
 include("hpc/slurm.jl")
