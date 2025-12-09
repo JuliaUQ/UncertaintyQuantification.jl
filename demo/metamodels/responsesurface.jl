@@ -10,7 +10,8 @@ design = FullFactorial([5, 5])
 
 training_data = sample(x, design)
 evaluate!(himmelblau, training_data)
-rs = ResponseSurface(training_data, :y, 4)
+basis = MonomialBasis(2, 4)
+rs = BasisFunctionModel(training_data, :y, basis)
 
 test_data = sample(x, 1000)
 evaluate!(rs, test_data)
