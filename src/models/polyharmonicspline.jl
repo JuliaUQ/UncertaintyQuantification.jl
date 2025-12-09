@@ -14,7 +14,7 @@ PolyharmonicSpline([1.14733, -0.449609, 0.0140379, -1.02859, -0.219204, 0.900367
 struct PolyharmonicSpline <: UQModel
     w::Vector{Float64}
     v::Vector{Float64}
-    c::Matrix{Float64}
+    b::PolyharmonicRadialBasis
     k::Int64
     n::Vector{Symbol}
     output::Symbol
@@ -23,48 +23,29 @@ struct PolyharmonicSpline <: UQModel
         f = data[:, output]
 
         centers = select(data, Not(output))
-        n = propertynames(centers)
-        centers = Matrix{Float64}(centers)
+        names = propertynames(centers)
+        centers = permutedims(Matrix{Float64}(centers))
+
+        n = size(centers, 2)
+        phbasis = PolyharmonicRadialBasis(centers, k)
 
         dim = size(centers, 1)
 
-        A = zeros(dim, dim)
-        for i in 1:dim, j in 1:dim
-            if i == j
-                continue
-            end
-            r = sqrt(sum((centers[i, :] - centers[j, :]) .^ 2))
-            A[i, j] = ϕ(r, k)
-        end
+        A = phbasis(centers)
 
-        B = [ones(dim, 1) centers]
+        B = permutedims(vcat(ones(1, n), centers))
 
-        M = [A B; transpose(B) zeros(size(B, 2), size(B, 2))]
-        F = [f; zeros(size(B, 2))]
+        M = [A B; B' zeros(dim + 1, dim + 1)]
+
+        F = [f; zeros(dim + 1)]
 
         wv = vec(M \ F)
 
-        w = wv[1:dim]
-        v = wv[(dim + 1):end]
+        w = wv[1:n]
+        v = wv[(n + 1):end]
 
-        return new(w, v, centers, k, n, output)
+        return new(w, v, phbasis, k, names, output)
     end
-end
-
-function ϕ(r::Float64, k::Int64)
-    if k % 2 != 0
-        return r^k
-    elseif r < 1
-        return r^(k - 1) * log(r^r)
-    else
-        return r^k * log(r)
-    end
-end
-
-function calc(ps::PolyharmonicSpline, x::Vector{Float64})
-    r = sqrt.(sum((ps.c .- transpose(x)) .^ 2; dims=2))
-    f = sum(ϕ.(r, ps.k) .* ps.w)
-    return f += (transpose(ps.v) * [1; x])[1]
 end
 
 """
@@ -93,6 +74,6 @@ julia> df.y |> DisplayAs.withcontext(:compact => true)
 function evaluate!(ps::PolyharmonicSpline, df::DataFrame)
     x = Matrix{Float64}(df[:, ps.n]) # convert to matrix and order variables by ps.n
 
-    out = map(row -> calc(ps, convert(Array, row)), eachrow(x))
+    out = map(row -> dot(ps.w, ps.b(vec(row))) + dot(ps.v, [1, vec(row)...]), eachrow(x))
     return df[!, ps.output] = out
 end
