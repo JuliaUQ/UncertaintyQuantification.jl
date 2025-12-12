@@ -91,7 +91,7 @@ export UQModel
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
-export BasisFunctionModel
+export LinearBasisFunctionModel
 export BinnedData
 export BoxBehnken
 export CentralComposite

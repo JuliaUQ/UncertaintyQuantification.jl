@@ -70,7 +70,8 @@ That functions degree is set as an Integer in the constructor.
 
 training_data = sample(x, design)
 evaluate!(himmelblau, training_data)
-rs = ResponseSurface(training_data, :y, 4)
+basis = MonomialBasis(2, 4)
+rs = LinearBasisFunctionModel(training_data, :y, basis)
 
 test_data = sample(x, 1000)
 evaluate!(rs, test_data)

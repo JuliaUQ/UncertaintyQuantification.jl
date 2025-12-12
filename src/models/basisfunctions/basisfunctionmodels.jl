@@ -1,9 +1,9 @@
-struct BasisFunctionModel{T<:AbstractBasis} <: UQModel
+struct LinearBasisFunctionModel{T<:AbstractBasis} <: UQModel
     b::T
     β::Vector{<:Real}
     inputs::Vector{Symbol}
     out::Symbol
-    function BasisFunctionModel(
+    function LinearBasisFunctionModel(
         df::DataFrame,
         out::Symbol,
         b::T,
@@ -17,11 +17,10 @@ struct BasisFunctionModel{T<:AbstractBasis} <: UQModel
     end
 end
 
-function evaluate!(bfm::BasisFunctionModel, df::DataFrame)
+function evaluate!(bfm::LinearBasisFunctionModel, df::DataFrame)
     x = permutedims(Matrix{Float64}(df[:, bfm.inputs])) # convert to matrix, sort by bfm.inputs
     out = map(x -> dot(x, bfm.β), eachcol(bfm.b(x)))
 
     df[!, bfm.out] = out
     return nothing
 end
-

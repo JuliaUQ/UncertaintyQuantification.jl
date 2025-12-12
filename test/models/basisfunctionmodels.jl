@@ -1,4 +1,4 @@
-@testset "BasisFunctionModel" begin
+@testset "LinearBasisFunctionModel" begin
     @testset "MonomialBasis" begin
         x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
         himmelblau = Model(
@@ -9,7 +9,7 @@
         evaluate!(himmelblau, data)
 
         basis = MonomialBasis(2, 4)
-        bfm = BasisFunctionModel(data, :y, basis)
+        bfm = LinearBasisFunctionModel(data, :y, basis)
 
         test_data = sample(x, SobolSampling(1024))
         validate_data = copy(test_data)
