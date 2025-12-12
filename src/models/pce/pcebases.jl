@@ -10,6 +10,12 @@ struct PolynomialChaosBasis
         d = length(bases)
         return new(bases, p, d, multivariate_indices(p, d, index_set; param=param))
     end
+
+    # in_index_set must take in (idx,p) and return boolean whether or not in multi-index set
+    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, in_index_set::Function)
+        d = length(bases)
+        return new(bases, p, d, multivariate_indices(p, d, in_index_set))
+    end
 end
 
 function evaluate(Ψ::PolynomialChaosBasis, x::AbstractVector{Float64})
@@ -65,18 +71,22 @@ function He(x::Real, n::Integer)
     return He
 end
 
+# Total degree multi-index set (sum of polynomial degrees <= p)
 function TD(idx::Vector{Int}, p::Int)
     return sum(idx) <= p
 end
 
+# Tensor product multi-index set (maximal polynomial degree <= p)
 function TP(idx::Vector{Int}, p::Int)
     return maximum(idx) <= p
 end
 
+# Hyperbolic cross multi-index set (Sparse alternative to TD or TP)
 function HC(idx::Vector{Int}, p::Int)
     return prod(idx .+ 1) <= (p + 1)
 end
 
+# Q-ball multi-index set (Sparse alternative to TD or TP when q < 1, same as TD when q=1, same as TP when q=Inf)
 function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
     @assert q > 0
     return norm(idx, q) <= p
