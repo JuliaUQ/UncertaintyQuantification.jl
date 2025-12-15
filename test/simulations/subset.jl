@@ -110,3 +110,47 @@ end
         2000, 0.1, 10, 400, 1
     )
 end
+
+@testset "nextlevelsamples" begin
+    x = RandomVariable(Uniform(0.0, 1.0), :x)
+    y = RandomVariable(Uniform(0.0, 1.0), :y)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    inputs = [x, y]
+    performancefunction = df -> df.z
+    sim = SubSetSimulation(10, 0.1, 10, Uniform(-0.2, 0.2))
+    threshold = 0.1
+
+    samples = sample(inputs, 10)
+    evaluate!(model, samples)
+    performance = samples[:, :z]
+
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, model, performancefunction, inputs, sim
+    )
+
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_samples[:, :y]))
+    @test all(isfinite.(next_level_performance))
+
+    ## test for only 1 sample for the mcmc
+    x = RandomVariable(Normal(), :x)
+    function dummy_model(x)
+        if x > 3
+            return x
+        else
+            return 1
+        end
+    end
+    inputs = [x]
+    models = Model(df -> dummy_model.(df.x), :z)
+
+    samples = sample(inputs, 1)
+    evaluate!(models, samples)
+
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, models, performancefunction, inputs, sim
+    )
+
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_performance))
+end
