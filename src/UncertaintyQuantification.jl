@@ -22,12 +22,14 @@ using Random
 using Reexport
 using Roots
 using StatsBase
+using TransportMaps
 
 @reexport using Distributions
 
 import Base: rand, names, copy, run, length
 import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
 import Statistics: mean, var
+import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -211,6 +213,7 @@ include("models/pce/polynomialchaosexpansion.jl")
 
 include("modelupdating/bayesianMAP.jl")
 include("modelupdating/bayesianupdating.jl")
+include("modelupdating/transportmaps.jl")
 
 include("sensitivity/finitedifferences.jl")
 include("sensitivity/gradient.jl")
