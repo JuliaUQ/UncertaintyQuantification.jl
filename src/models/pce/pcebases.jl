@@ -92,7 +92,7 @@ function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
     return norm(idx, q) <= p
 end
 
-function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_size=1_000_000_000_000)
+function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_size=BigInt(p+1)^d)
     idx = zeros(Int, d)
     index_set = [copy(idx)]
     if p == 0
@@ -110,7 +110,7 @@ function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_siz
             end
             idx[i] = 0
         end
-        if all(iszero, idx)
+        if iszero(idx)
             break
         end
     end
