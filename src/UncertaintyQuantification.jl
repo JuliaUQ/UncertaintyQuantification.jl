@@ -6,6 +6,7 @@ using CovarianceEstimation
 using DataFrames
 using Dates
 using Dierckx
+using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -13,6 +14,7 @@ using Format
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
+using Mooncake: Mooncake
 using Mustache
 using Optim
 using Primes
@@ -145,7 +147,9 @@ export SubSetInfinity
 export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
+export TransportMap
 export TwoLevelFactorial
+export UQTargetDensity
 
 # Methods
 export bayesianupdating
