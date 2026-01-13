@@ -73,6 +73,8 @@ abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
 
+abstract type AbstractTransportMap end
+
 # Types
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
@@ -82,6 +84,7 @@ export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractQuasiMonteCarlo
 export AbstractSimulation
+export AbstractTransportMap
 export Copula
 export DeterministicUQInput
 export RandomUQInput
