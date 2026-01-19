@@ -10,12 +10,6 @@ struct PolynomialChaosBasis
         d = length(bases)
         return new(bases, p, d, multivariate_indices(p, d, index_set; param=param))
     end
-
-    # in_index_set must take in (idx,p) and return boolean whether or not in multi-index set
-    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, in_index_set::Function)
-        d = length(bases)
-        return new(bases, p, d, multivariate_indices(p, d, in_index_set))
-    end
 end
 
 function evaluate(Ψ::PolynomialChaosBasis, x::AbstractVector{Float64})
