@@ -1,5 +1,6 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
 using CovarianceEstimation
 using DataFrames
@@ -25,6 +26,7 @@ using Roots
 using StatsBase
 using TransportMaps
 
+@reexport using TransportMaps
 @reexport using Distributions
 
 import Base: rand, names, copy, run, length

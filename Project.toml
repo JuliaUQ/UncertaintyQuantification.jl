@@ -4,6 +4,7 @@ version = "0.13.0"
 authors = ["Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>", "Ander Gray <ander.gray@ukaea.uk>"]
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Bootstrap = "e28b5b4c-05e8-5b66-bc03-6f0c0a0a06e0"
 CovarianceEstimation = "587fd27a-f159-11e8-2dae-1979310e6154"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -33,6 +34,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TransportMaps = "6fd49bf0-03ac-4dd1-b9b3-42e511274d6e"
 
 [compat]
+ADTypes = "1.21.0"
 Bootstrap = "2.2"
 CovarianceEstimation = "0.2"
 DataFrames = "0.22, 1.0"
@@ -55,5 +57,5 @@ Reexport = "0.2, 1.0"
 Roots = "2.2.2"
 Statistics = "1"
 StatsBase = "0.33, 0.34"
-TransportMaps = "1.0.0"
+TransportMaps = "0.1.0"
 julia = "1.10"
