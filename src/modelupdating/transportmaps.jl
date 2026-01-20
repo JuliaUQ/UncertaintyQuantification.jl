@@ -33,6 +33,48 @@ function inverse(tm::TransportMap, X::Matrix{<:Real})
     return TransportMaps.inverse(tm.map, X)
 end
 
+function sample(tm::TransportMap, n::Integer=1)
+    Z = randn(n, numberdimensions(tm.map))
+    X = evaluate(tm, Z)
+    return _to_dataframe(X, tm.names)
+end
+
+function to_physical_space!(tm::TransportMap, Z::DataFrame)
+    X = evaluate(tm, Matrix(Z[!, tm.names]))
+    Z[!, tm.names] .= X
+    return nothing
+end
+
+function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
+    Z = inverse(tm, Matrix(X[!, tm.names]))
+    X[!, tm.names] .= Z
+    return nothing
+end
+
+function Base.show(io::IO, tm::TransportMap)
+    print(io, "TransportMap(")
+    print(io, "map=$(tm.map), ")
+    print(io, "target=$(tm.target), ")
+    print(io, "quadrature=$(tm.quadrature), ")
+    print(io, "names=$(tm.names)")
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ::MIME"text/plain", tm::TransportMap)
+    println(io, "Transport Map:")
+    println(io, "  Map: $(tm.map)")
+    println(io, "  Target: $(tm.target)")
+    println(io, "  Quadrature: $(tm.quadrature)")
+    println(io, "  Names: $(tm.names)")
+    return nothing
+end
+
+# todo: add variance diagnostic
+# todo: add map-from-samples and adaptive map
+# todo: maybe have a more general implementation in a different file and here only bmu-specific interface?
+
+
 function _logprior(df::DataFrame, prior::Vector{<:RandomVariable{<:UnivariateDistribution}})
     return vec(sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), prior)...); dims=2))
 end
@@ -62,7 +104,7 @@ end
 function _logposterior(
     x::AbstractVecOrMat{<:Real},
     model::ParallelModel,
-    prior::Function,
+    logprior::Function,
     loglikelihood::Function,
     names::Vector{Symbol},
 )
@@ -70,49 +112,21 @@ function _logposterior(
 
     _evaluate!(model, df)
 
-    val = prior(df) + loglikelihood(df)
+    val = logprior(df) + loglikelihood(df)
     return isa(x, Vector) ? only(val) : val
 end
 
 # Overloaded `TransportMaps.logpdf` to use matrix-valued evaluation of model
 logpdf(density::TransportMaps.MapTargetDensity, X::Matrix{<:Real}) = density.logdensity(X)
 
-"""
-    bayesianupdating(prior::Vector{<:RandomVariable{<:UnivariateDistribution}}, loglikelihood::Function, model::UQModel, transportmap::TransportMaps.PolynomialMap, quadrature::TransportMaps.AbstractQuadratureWeights)
-
-Perform Bayesian updating using transport maps to construct an optimized map for transforming between standard normal space and physical space.
-
-This method optimizes a polynomial transport map to approximate the posterior distribution based on the given prior, log-likelihood, and model.
-
-# Arguments
-
-- `prior::Vector{<:RandomVariable{<:UnivariateDistribution}}`: A vector of random variables defining the prior distributions.
-- `loglikelihood::Function`: A function that computes the log-likelihood for a DataFrame of samples.
-- `model::UQModel`: The model to evaluate during updating.
-- `transportmap::TransportMaps.PolynomialMap`: The initial polynomial transport map to optimize.
-- `quadrature::TransportMaps.AbstractQuadratureWeights`: The quadrature weights used in the optimization process.
-
-# Returns
-
-A `TransportMap` object containing the optimized map, target density, quadrature, and variable names.
-
-### Notes
-
-`loglikelihood` must be a Julia function defined in terms of a `DataFrame` of samples, evaluating the log-likelihood for each row.
-
-For example, a log-likelihood based on a normal distribution with observed data `Data`:
-
-```julia
-loglikelihood(df) = [sum(logpdf.(Normal.(df_i.x, 1), Data)) for df_i in eachrow(df)]
-```
-If model evaluation is required, ensure `model`` is provided and compatible with the inputs.
-"""
-function bayesianupdating(
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}, #! make this work for different kinds of inputs!
+# Internal implementation
+function _transportmap_updating(
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}, #! needs to be adjusted, so far only
     likelihood::Function,
-    model::UQModel, #! only works with one model
+    model::UQModel,
     transportmap::TransportMaps.PolynomialMap,
     quadrature::TransportMaps.AbstractQuadratureWeights,
+    autodiff_backend::AbstractADType,
 )
     # Check that all RandomVariables have univariate distributions
     if !all(rv -> rv.dist isa UnivariateDistribution, prior)
@@ -124,63 +138,77 @@ function bayesianupdating(
     posterior =
         x -> _logposterior(x, model, df -> _logprior(df, prior), likelihood, names(prior))
 
-    if model isa Model
-        # If model is `Model`: use auto diff with Mooncake and prepared gradient
-        autodiff_backend = AutoMooncake()
-        @warn "Initializing model with Mooncake. This may take a while."
-        target = MapTargetDensity(posterior, autodiff_backend, length(prior))
+    @warn "Initializing model with $(autodiff_backend)."
 
-    elseif model isa ExternalModel
-        # If model is `ExternalModel`: use finite differences
-        autodiff_backend = AutoFiniteDiff()
-        @warn "Using finite difference approximation."
+    # Create target density
+    if !isa(autodiff_backend, AutoFiniteDiff)
+        target = MapTargetDensity(posterior, autodiff_backend, length(prior))
+    else
         target = MapTargetDensity(posterior, autodiff_backend)
-
-    elseif model isa ParallelModel
-        # If model is `ParallelModel`: use auto diff with Mooncake and prepared gradient
-        autodiff_backend = AutoMooncake()
-        @warn "Initializing model with Mooncake. This may take a while."
-        target = MapTargetDensity(posterior, autodiff_backend, length(prior))
     end
 
     @warn "Starting Map Optimization..."
-
     optimize!(transportmap, target, quadrature)
 
     return TransportMap(transportmap, target, quadrature, names(prior))
 end
 
-function sample(tm::TransportMap, n::Integer=1)
-    Z = randn(n, numberdimensions(tm.map))
-    X = evaluate(tm, Z)
-    return _to_dataframe(X, tm.names)
+"""
+    bayesianupdating(prior, loglikelihood, model::Model, transportmap, quadrature; autodiff_backend=AutoMooncake())
+
+Perform Bayesian updating using transport maps with a `Model`.
+
+Uses Mooncake autodiff by default for gradient computation.
+"""
+function bayesianupdating(
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+    likelihood::Function,
+    model::Model,
+    transportmap::TransportMaps.PolynomialMap,
+    quadrature::TransportMaps.AbstractQuadratureWeights;
+    autodiff_backend::AbstractADType=AutoMooncake(),
+)
+    return _transportmap_updating(
+        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    )
 end
 
-function to_physical_space!(tm::TransportMap, Z::DataFrame)
-    X = evaluate(tm, Matrix(Z[!, tm.names]))
-    Z[!, tm.names] .= X
-    return nothing
+"""
+    bayesianupdating(prior, loglikelihood, model::ParallelModel, transportmap, quadrature; autodiff_backend=AutoMooncake())
+
+Perform Bayesian updating using transport maps with a `ParallelModel`.
+
+Uses Mooncake autodiff by default for gradient computation.
+"""
+function bayesianupdating(
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+    likelihood::Function,
+    model::ParallelModel,
+    transportmap::TransportMaps.PolynomialMap,
+    quadrature::TransportMaps.AbstractQuadratureWeights;
+    autodiff_backend::AbstractADType=AutoMooncake(),
+)
+    return _transportmap_updating(
+        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    )
 end
 
-function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
-    Z = inverse(tm, Matrix(X[!, tm.names]))
-    X[!, tm.names] .= Z
-    return nothing
-end
+"""
+    bayesianupdating(prior, loglikelihood, model::ExternalModel, transportmap, quadrature; autodiff_backend=AutoFiniteDiff())
 
-function Base.show(io::IO, tm::TransportMap)
-    print(io, "TransportMap(")
-    print(io, "map=$(tm.map), ")
-    print(io, "target=$(tm.target), ")
-    print(io, "quadrature=$(tm.quadrature), ")
-    print(io, "names=$(tm.names)")
-    return print(io, ")")
-end
+Perform Bayesian updating using transport maps with an `ExternalModel`.
 
-function Base.show(io::IO, ::MIME"text/plain", tm::TransportMap)
-    println(io, "Transport Map:")
-    println(io, "  Map: $(tm.map)")
-    println(io, "  Target: $(tm.target)")
-    println(io, "  Quadrature: $(tm.quadrature)")
-    return println(io, "  Names: $(tm.names)")
+Uses finite difference approximation by default since external models typically don't support autodiff.
+"""
+function bayesianupdating(
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+    likelihood::Function,
+    model::ExternalModel,
+    transportmap::TransportMaps.PolynomialMap,
+    quadrature::TransportMaps.AbstractQuadratureWeights;
+    autodiff_backend::AbstractADType=AutoFiniteDiff(),
+)
+    return _transportmap_updating(
+        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    )
 end
