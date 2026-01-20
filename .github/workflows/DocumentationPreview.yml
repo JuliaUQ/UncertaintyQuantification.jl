@@ -7,6 +7,10 @@ on:
 
 jobs:
   build:
+    permissions:
+      contents: write
+      pull-requests: read
+      statuses: write
     runs-on: ubuntu-latest
     environment:
       name: pr-${{github.event.number}}
@@ -18,6 +22,5 @@ jobs:
           version: "1.11"
       - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
         run: ./scripts/buildVitePressDocs.sh
