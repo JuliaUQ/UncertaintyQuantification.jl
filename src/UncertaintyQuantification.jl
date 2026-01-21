@@ -155,6 +155,7 @@ export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
 export TransportMap
+export TransportMapFromSamples
 export TwoLevelFactorial
 export UQTargetDensity
 
@@ -186,6 +187,7 @@ export to_copula_space
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
+export variancediagnostic
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
@@ -205,6 +207,7 @@ include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/copulas/gaussian.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
+include("inputs/transportmaps.jl")
 
 include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
