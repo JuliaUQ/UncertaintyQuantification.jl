@@ -156,6 +156,7 @@ export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
 export TransportMap
 export TransportMapFromSamples
+export TransportMapBMU
 export TwoLevelFactorial
 export UQTargetDensity
 

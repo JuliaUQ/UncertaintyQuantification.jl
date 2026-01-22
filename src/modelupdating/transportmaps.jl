@@ -1,24 +1,76 @@
 # BMU-specific TM implementation, the general implementation is found in `inputs/transportmaps.jl`
+struct TransportMapBMU <: AbstractBayesianMethod #! this needs a better name...
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
+    transportmap::AbstractTriangularMap
+    quadrature::AbstractQuadratureWeights
+    islog::Bool
 
-# Todo: Look into MAP stuff from Jan and setup in a similar manner (maybe merge files)
-
-function _logprior(df::DataFrame, prior::Vector{<:RandomVariable{<:UnivariateDistribution}})
-    return vec(sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), prior)...); dims=2))
+    function TransportMapBMU(
+        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+        transportmap::AbstractTriangularMap,
+        quadrature::AbstractQuadratureWeights,
+        islog::Bool=true,
+    )
+        @assert length(prior) == size(quadrature.points, 2) #! make `TransportMaps.numberdimensions(quad::AbstractQuadratureWeights)`
+        @assert length(prior) == numberdimensions(transportmap)
+        return new(prior, transportmap, quadrature, islog)
+    end
 end
 
-function _logposterior(
-    x::AbstractVecOrMat{<:Real},
-    model::UQModel,
-    prior::Function,
-    loglikelihood::Function,
-    names::Vector{Symbol},
+function setupoptimizationproblem(
+    prior::Union{Function,Nothing},
+    likelihood::Function,
+    model::UQModel, #! make work with Vector{<:UQModel}
+    transportmap::TransportMapBMU,
+    autodiff_backend::AbstractADType,
 )
-    df = _to_dataframe(x, names)
 
-    evaluate!(model, df)
+    # if no prior is given, generate prior function from transportmap.prior
+    if isnothing(prior)
+        prior = if transportmap.islog
+            df -> vec(
+                sum(
+                    hcat(
+                        map(rv -> logpdf.(rv.dist, df[:, rv.name]), transportmap.prior)...,
+                    );
+                    dims=2,
+                ),
+            )
+        else
+            df -> vec(
+                prod(
+                    hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), transportmap.prior)...);
+                    dims=2,
+                ),
+            )
+        end
+    end
 
-    val = prior(df) + loglikelihood(df)
-    return isa(x, Vector) ? only(val) : val
+    posterior = if transportmap.islog
+        df -> prior(df) .+ likelihood(df)
+    else
+        df -> log.(prior(df)) .+ log.(likelihood(df))
+    end
+
+    rv_names = names(transportmap.prior)
+    target_density = x -> begin
+        df = _to_dataframe(x, rv_names)
+        _evaluate!(model, df)
+
+        val = posterior(df)
+        return isa(x, Vector) ? only(val) : val
+    end
+
+    # Create target density
+    if autodiff_backend ∉ [AutoFiniteDiff, AutoFiniteDifferences]
+        target = MapTargetDensity(
+            target_density, autodiff_backend, length(transportmap.prior)
+        )
+    else
+        target = MapTargetDensity(target_density, autodiff_backend)
+    end
+
+    return target
 end
 
 # New version of `evaluate!` to use `map` instead of `pmap` for `ParallelModel`
@@ -27,56 +79,13 @@ function _evaluate!(m::ParallelModel, df::DataFrame)
     return nothing
 end
 
-# Version for parallel model, since we can't use `evaluate!` with `pmap` with `Mooncake`
-function _logposterior(
-    x::AbstractVecOrMat{<:Real},
-    model::ParallelModel,
-    logprior::Function,
-    loglikelihood::Function,
-    names::Vector{Symbol},
-)
-    df = _to_dataframe(x, names)
-
-    _evaluate!(model, df)
-
-    val = logprior(df) + loglikelihood(df)
-    return isa(x, Vector) ? only(val) : val
-end
+_evaluate!(m::UQModel, df::DataFrame) = evaluate!(m, df)
 
 # Overloaded `logpdf` to use matrix-valued evaluation of model
 logpdf(density::MapTargetDensity, X::Matrix{<:Real}) = density.logdensity(X)
 
-# Internal implementation
-function _transportmap_updating(
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}, #! needs to be adjusted, so far only
-    likelihood::Function,
-    model::UQModel,
-    transportmap::PolynomialMap,
-    quadrature::AbstractQuadratureWeights,
-    autodiff_backend::AbstractADType,
-)
-    # Check that all RandomVariables have univariate distributions
-    if !all(rv -> rv.dist isa UnivariateDistribution, prior)
-        error(
-            "All prior distributions must be univariate. Multivariate distributions are not supported.",
-        )
-    end
-
-    posterior =
-        x -> _logposterior(x, model, df -> _logprior(df, prior), likelihood, names(prior))
-
-    @warn "Initializing model with $(autodiff_backend)."
-
-    # Create target density
-    if !isa(autodiff_backend, AutoFiniteDiff)
-        target = MapTargetDensity(posterior, autodiff_backend, length(prior))
-    else
-        target = MapTargetDensity(posterior, autodiff_backend)
-    end
-
-    @warn "Starting Map Optimization..."
-
-    return mapfromdensity(transportmap, target, quadrature, names(prior))
+function mapfromdensity(tm::TransportMapBMU, target::MapTargetDensity)
+    return mapfromdensity(tm.transportmap,target,tm.quadrature, names(tm.prior))
 end
 
 """
@@ -87,16 +96,17 @@ Perform Bayesian updating using transport maps with a `Model`.
 Uses Mooncake autodiff by default for gradient computation.
 """
 function bayesianupdating(
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
     likelihood::Function,
     model::Model,
-    transportmap::PolynomialMap,
-    quadrature::AbstractQuadratureWeights;
+    transportmap::TransportMapBMU,
+    prior::Union{Function,Nothing}=nothing,
     autodiff_backend::AbstractADType=AutoMooncake(),
 )
-    return _transportmap_updating(
-        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    target = setupoptimizationproblem(
+        prior, likelihood, model, transportmap, autodiff_backend
     )
+
+    return mapfromdensity(transportmap, target)
 end
 
 """
@@ -107,16 +117,17 @@ Perform Bayesian updating using transport maps with a `ParallelModel`.
 Uses Mooncake autodiff by default for gradient computation.
 """
 function bayesianupdating(
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
     likelihood::Function,
     model::ParallelModel,
-    transportmap::PolynomialMap,
-    quadrature::AbstractQuadratureWeights;
+    transportmap::TransportMapBMU,
+    prior::Union{Function,Nothing}=nothing,
     autodiff_backend::AbstractADType=AutoMooncake(),
 )
-    return _transportmap_updating(
-        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    target = setupoptimizationproblem(
+        prior, likelihood, model, transportmap, autodiff_backend
     )
+
+    return mapfromdensity(transportmap, target)
 end
 
 """
@@ -127,14 +138,15 @@ Perform Bayesian updating using transport maps with an `ExternalModel`.
 Uses finite difference approximation by default since external models typically don't support autodiff.
 """
 function bayesianupdating(
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
     likelihood::Function,
     model::ExternalModel,
-    transportmap::PolynomialMap,
-    quadrature::AbstractQuadratureWeights;
+    transportmap::TransportMapBMU,
+    prior::Union{Function,Nothing}=nothing,
     autodiff_backend::AbstractADType=AutoFiniteDiff(),
 )
-    return _transportmap_updating(
-        prior, likelihood, model, transportmap, quadrature, autodiff_backend
+    target = setupoptimizationproblem(
+        prior, likelihood, model, transportmap, autodiff_backend
     )
+
+    return mapfromdensity(transportmap, target)
 end

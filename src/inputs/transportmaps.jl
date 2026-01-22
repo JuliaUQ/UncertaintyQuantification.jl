@@ -36,14 +36,11 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMap)
     return nothing
 end
 
-function _to_dataframe(X::AbstractMatrix{<:Real}, names::Vector{Symbol})
-    return DataFrame(X, names)
-end
+"""
+    sample(tm::TransportMapFromSamples, n::Integer=1)
 
-function _to_dataframe(x::AbstractVector{<:Real}, names::Vector{Symbol})
-    return DataFrame(permutedims(x), names)
-end
-
+Generate samples in the physical space `X` using the transport map `tm`.
+"""
 function sample(tm::TransportMap, n::Integer=1)
     Z = randn(n, numberdimensions(tm.map))
     X = evaluate(tm, Z)
@@ -62,12 +59,21 @@ function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
     return nothing
 end
 
-# variance diagnostic to estimate the quality of the fit
+"""
+    variancediagnostic(tm::TransportMap, Z::DataFrame)
+
+Evaluate the variance-based diagnostic for assessing the quality of a transport map.
+"""
 function variancediagnostic(tm::TransportMap, Z::DataFrame)
     return variance_diagnostic(tm.map, tm.target, Matrix(Z[!, tm.names]))
 end
 
-# Fit a transport map from density
+"""
+    mapfromdensity(transportmap::AbstractTriangularMap, target::MapTargetDensity, quadrature::AbstractQuadratureWeights, names::Vector{Symbol})
+
+Optimize a transport map from the given target density by minimizing the KL-divergence.
+The KL-divergence is evaluated at the given quadrature points.
+"""
 function mapfromdensity(
     transportmap::AbstractTriangularMap,
     target::MapTargetDensity,
@@ -80,8 +86,6 @@ function mapfromdensity(
 end
 
 # todo: adaptive map construction (from density)
-
-
 
 """
     TransportMapFromSamples
@@ -98,7 +102,28 @@ struct TransportMapFromSamples <: AbstractTransportMap
     names::Vector{Symbol}
 end
 
-# Fit a transport map from samples (no target, no auto-diff required)
+function Base.show(io::IO, tm::TransportMapFromSamples)
+    print(io, "TransportMapFromSamples(")
+    print(io, "map=$(tm.map), ")
+    print(io, "names=$(tm.names) ")
+    print(io, "number_samples=$(nrow(tm.samples))")
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ::MIME"text/plain", tm::TransportMapFromSamples)
+    println(io, "Transport Map (from samples):")
+    println(io, "  Map: $(tm.map)")
+    println(io, "  Names: $(tm.names)")
+    println(io, "  Samples: $(tm.samples)")
+    return nothing
+end
+
+"""
+    mapfromsamples(transportmap::AbstractTriangularMap, X::DataFrame)
+
+Fit a transportmap from samples.
+"""
 function mapfromsamples(transportmap::AbstractTriangularMap, X::DataFrame)
     target_samples = Matrix(X)
 
@@ -125,31 +150,18 @@ function to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
     return nothing
 end
 
+"""
+    sample(tm::TransportMapFromSamples, n::Integer=1)
+
+Generate samples in the physical space `X` using the transport map `tm`.
+"""
 function sample(tm::TransportMapFromSamples, n::Integer=1)
     Z = randn(n, numberdimensions(tm.map))
     X = inverse(tm, Z)
     return _to_dataframe(X, tm.names)
 end
 
-function Base.show(io::IO, tm::TransportMapFromSamples)
-    print(io, "TransportMapFromSamples(")
-    print(io, "map=$(tm.map), ")
-    print(io, "names=$(tm.names) ")
-    print(io, "number_samples=$(nrow(tm.samples))")
-    print(io, ")")
-    return nothing
-end
-
-function Base.show(io::IO, ::MIME"text/plain", tm::TransportMapFromSamples)
-    println(io, "Transport Map (from samples):")
-    println(io, "  Map: $(tm.map)")
-    println(io, "  Names: $(tm.names)")
-    println(io, "  Samples: $(tm.samples)")
-    return nothing
-end
-
 # todo: adaptive map construction (from samples)
-
 
 #* General methods that work for both "ways"
 
@@ -166,12 +178,26 @@ end
 """
     pdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
 
-PDF of the transport map in the physical space X.
+Probability density function of the transport map in the physical space X.
 """
 function pdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
     return TransportMaps.pullback(tm.map, x)
 end
 
+"""
+    logpdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
+
+Log-Probability density function of the transport map in the physical space X.
+"""
 function logpdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
     return log.(pdf(tm, x))
+end
+
+# Helper functions
+function _to_dataframe(X::AbstractMatrix{<:Real}, names::Vector{Symbol})
+    return DataFrame(X, names)
+end
+
+function _to_dataframe(x::AbstractVector{<:Real}, names::Vector{Symbol})
+    return DataFrame(permutedims(x), names)
 end
