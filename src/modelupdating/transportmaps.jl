@@ -84,8 +84,15 @@ _evaluate!(m::UQModel, df::DataFrame) = evaluate!(m, df)
 # Overloaded `logpdf` to use matrix-valued evaluation of model
 logpdf(density::MapTargetDensity, X::Matrix{<:Real}) = density.logdensity(X)
 
-function mapfromdensity(tm::TransportMapBMU, target::MapTargetDensity)
-    return mapfromdensity(tm.transportmap,target,tm.quadrature, names(tm.prior))
+function mapfromdensity(
+    tm::TransportMapBMU,
+    target::MapTargetDensity,
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    optim_options::Optim.Options=Optim.Options(),
+)
+    return mapfromdensity(
+        tm.transportmap, target, tm.quadrature, names(tm.prior), optimizer, optim_options
+    )
 end
 
 """
@@ -97,16 +104,18 @@ Uses Mooncake autodiff by default for gradient computation.
 """
 function bayesianupdating(
     likelihood::Function,
-    model::Model,
+    model::Model, #! make work for Vector{Model}
     transportmap::TransportMapBMU,
     prior::Union{Function,Nothing}=nothing,
-    autodiff_backend::AbstractADType=AutoMooncake(),
+    autodiff_backend::AbstractADType=AutoMooncake(),#! maybe this should be moved to `TransportMapBMU`?
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    optim_options::Optim.Options=Optim.Options(),
 )
     target = setupoptimizationproblem(
         prior, likelihood, model, transportmap, autodiff_backend
     )
 
-    return mapfromdensity(transportmap, target)
+    return mapfromdensity(transportmap, target, optimizer, optim_options)
 end
 
 """
@@ -122,12 +131,14 @@ function bayesianupdating(
     transportmap::TransportMapBMU,
     prior::Union{Function,Nothing}=nothing,
     autodiff_backend::AbstractADType=AutoMooncake(),
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    optim_options::Optim.Options=Optim.Options(),
 )
     target = setupoptimizationproblem(
         prior, likelihood, model, transportmap, autodiff_backend
     )
 
-    return mapfromdensity(transportmap, target)
+    return mapfromdensity(transportmap, target, optimizer, optim_options)
 end
 
 """
@@ -143,10 +154,12 @@ function bayesianupdating(
     transportmap::TransportMapBMU,
     prior::Union{Function,Nothing}=nothing,
     autodiff_backend::AbstractADType=AutoFiniteDiff(),
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    optim_options::Optim.Options=Optim.Options(),
 )
     target = setupoptimizationproblem(
         prior, likelihood, model, transportmap, autodiff_backend
     )
 
-    return mapfromdensity(transportmap, target)
+    return mapfromdensity(transportmap, target, optimizer, optim_options)
 end
