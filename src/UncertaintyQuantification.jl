@@ -114,6 +114,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares
