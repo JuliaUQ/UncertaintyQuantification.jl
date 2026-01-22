@@ -8,7 +8,7 @@ For more information on job arrays, see: [job arrays](https://slurm.schedmd.com/
 
 ## Slurm Interface
 
-When `SlurmInterface` is passed to an `ExternalModel`, a slurm job array script is automatically generated and executed. Julia waits for this job to finish before extracting results and proceeding.
+When a `SlurmInterface` is passed to an `ExternalModel`, a slurm job array script is automatically generated and executed. Julia waits for this job to finish before extracting results and proceeding.
 
 ```@example hpc
 using UncertaintyQuantification #hide
