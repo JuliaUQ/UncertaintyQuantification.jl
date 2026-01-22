@@ -79,8 +79,10 @@ function mapfromdensity(
     target::MapTargetDensity,
     quadrature::AbstractQuadratureWeights,
     names::Vector{Symbol},
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    options::Optim.Options=Optim.Options(),
 )
-    optimize!(transportmap, target, quadrature)
+    optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
 
     return TransportMap(transportmap, target, quadrature, names)
 end
@@ -124,13 +126,20 @@ end
 
 Fit a transportmap from samples.
 """
-function mapfromsamples(transportmap::AbstractTriangularMap, X::DataFrame)
+function mapfromsamples(
+    transportmap::AbstractTriangularMap,
+    X::DataFrame,
+    optimizer::Optim.AbstractOptimizer=LBFGS(),
+    options::Optim.Options=Optim.Options(),
+)
     target_samples = Matrix(X)
 
     # First, fit a linear map
     linear_map = LinearMap(target_samples)
     # Optimize transportmap
-    optimize!(transportmap, target_samples, linear_map)
+    optimize!(
+        transportmap, target_samples, linear_map; optimizer=optimizer, options=options
+    )
     # define ComposedMap
     composed_map = ComposedMap(linear_map, transportmap)
 
