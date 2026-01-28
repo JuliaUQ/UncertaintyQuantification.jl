@@ -20,9 +20,9 @@ end
 function setupoptimizationproblem(
     prior::Union{Function,Nothing},
     likelihood::Function,
-    model::UQModel, #! make work with Vector{<:UQModel}
+    models::Vector{<:UQModel},
     transportmap::TransportMapBMU,
-    autodiff_backend::AbstractADType,
+    gradient::Union{AbstractADType,Function},
 )
 
     # if no prior is given, generate prior function from transportmap.prior
@@ -55,19 +55,23 @@ function setupoptimizationproblem(
     rv_names = names(transportmap.prior)
     target_density = x -> begin
         df = _to_dataframe(x, rv_names)
-        _evaluate!(model, df)
+
+        if !isempty(models)
+            _evaluate!(models, df)
+        end
 
         val = posterior(df)
         return isa(x, Vector) ? only(val) : val
     end
 
-    # Create target density
-    if autodiff_backend ∉ [AutoFiniteDiff, AutoFiniteDifferences]
-        target = MapTargetDensity(
-            target_density, autodiff_backend, length(transportmap.prior)
-        )
+    if isa(gradient, Function) ||
+        isa(gradient, AutoFiniteDiff) ||
+        isa(gradient, AutoFiniteDifferences)
+        # Analytical gradient or auto-diff with finite differences
+        target = MapTargetDensity(target_density, gradient)
     else
-        target = MapTargetDensity(target_density, autodiff_backend)
+        @warn "Setting up automatic differentiation. This may take a while."
+        target = MapTargetDensity(target_density, gradient, length(transportmap.prior))
     end
 
     return target
@@ -81,8 +85,30 @@ end
 
 _evaluate!(m::UQModel, df::DataFrame) = evaluate!(m, df)
 
+function _evaluate!(models::Vector{<:UQModel}, df::DataFrame)
+    for m in models
+        _evaluate!(m, df)
+    end
+    return nothing
+end
+
+#! Test this
+_evaluate!(models::Vector{ExternalModel}, df::DataFrame) = evaluate!(models, df)
+
 # Overloaded `logpdf` to use matrix-valued evaluation of model
-logpdf(density::MapTargetDensity, X::Matrix{<:Real}) = density.logdensity(X)
+TransportMaps.logpdf(density::MapTargetDensity, X::Matrix{<:Real}) = density.logdensity(X)
+
+# todo: Implement custom finite-diff when using external model (writing files and stuff)
+# function TransportMaps.grad_logpdf(density::MapTargetDensity, X::Matrix{<:Real})
+
+#     # Custem AutoDiff implementation when using the external model to deal with files,
+#     # specially with the creation of folders, input and output files (not-unique)
+#     if isa(density.ad_backend, AutoFiniteDiff) || isa(density.ad_backend, AutoFiniteDifferences)
+
+
+#     end
+
+# end
 
 function mapfromdensity(
     tm::TransportMapBMU,
@@ -96,70 +122,43 @@ function mapfromdensity(
 end
 
 """
-    bayesianupdating(prior, loglikelihood, model::Model, transportmap, quadrature; autodiff_backend=AutoMooncake())
+    bayesianupdating(prior, loglikelihood, models, transportmap, quadrature; gradient=AutoMooncake())
 
-Perform Bayesian updating using transport maps with a `Model`.
-
-Uses Mooncake autodiff by default for gradient computation.
-"""
-function bayesianupdating(
-    likelihood::Function,
-    model::Model, #! make work for Vector{Model}
-    transportmap::TransportMapBMU,
-    prior::Union{Function,Nothing}=nothing,
-    autodiff_backend::AbstractADType=AutoMooncake(),#! maybe this should be moved to `TransportMapBMU`?
-    optimizer::Optim.AbstractOptimizer=LBFGS(),
-    optim_options::Optim.Options=Optim.Options(),
-)
-    target = setupoptimizationproblem(
-        prior, likelihood, model, transportmap, autodiff_backend
-    )
-
-    return mapfromdensity(transportmap, target, optimizer, optim_options)
-end
-
-"""
-    bayesianupdating(prior, loglikelihood, model::ParallelModel, transportmap, quadrature; autodiff_backend=AutoMooncake())
-
-Perform Bayesian updating using transport maps with a `ParallelModel`.
+Perform Bayesian updating using transport maps with internal models `Vector{Model}` or `Vector{ParallelModel}`.
 
 Uses Mooncake autodiff by default for gradient computation.
 """
 function bayesianupdating(
     likelihood::Function,
-    model::ParallelModel,
+    models::Vector{<:UQModel},
     transportmap::TransportMapBMU,
     prior::Union{Function,Nothing}=nothing,
-    autodiff_backend::AbstractADType=AutoMooncake(),
+    gradient::Union{AbstractADType,Function}=AutoMooncake(),
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     optim_options::Optim.Options=Optim.Options(),
 )
-    target = setupoptimizationproblem(
-        prior, likelihood, model, transportmap, autodiff_backend
-    )
+    target = setupoptimizationproblem(prior, likelihood, models, transportmap, gradient)
 
     return mapfromdensity(transportmap, target, optimizer, optim_options)
 end
 
 """
-    bayesianupdating(prior, loglikelihood, model::ExternalModel, transportmap, quadrature; autodiff_backend=AutoFiniteDiff())
+    bayesianupdating(prior, loglikelihood, model::ExternalModel, transportmap, quadrature; gradient=AutoFiniteDiff())
 
 Perform Bayesian updating using transport maps with an `ExternalModel`.
 
-Uses finite difference approximation by default since external models typically don't support autodiff.
+Uses finite difference approximation by default for external solvers.
 """
 function bayesianupdating(
     likelihood::Function,
     model::ExternalModel,
     transportmap::TransportMapBMU,
     prior::Union{Function,Nothing}=nothing,
-    autodiff_backend::AbstractADType=AutoFiniteDiff(),
+    gradient::Union{AbstractADType,Function}=AutoFiniteDiff(),
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     optim_options::Optim.Options=Optim.Options(),
 )
-    target = setupoptimizationproblem(
-        prior, likelihood, model, transportmap, autodiff_backend
-    )
+    target = setupoptimizationproblem(prior, likelihood, [model], transportmap, gradient)
 
     return mapfromdensity(transportmap, target, optimizer, optim_options)
 end

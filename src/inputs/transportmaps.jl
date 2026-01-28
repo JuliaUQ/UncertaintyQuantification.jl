@@ -117,7 +117,7 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMapFromSamples)
     println(io, "Transport Map (from samples):")
     println(io, "  Map: $(tm.map)")
     println(io, "  Names: $(tm.names)")
-    println(io, "  Samples: $(tm.samples)")
+    println(io, "  Number of Samples: $(nrow(tm.samples))")
     return nothing
 end
 
