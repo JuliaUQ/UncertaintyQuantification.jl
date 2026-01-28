@@ -214,6 +214,7 @@ include("models/external/externalmodel.jl")
 include("models/model.jl")
 include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
+include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
 
 include("hpc/slurm.jl")

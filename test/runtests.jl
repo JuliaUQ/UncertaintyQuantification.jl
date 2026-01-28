@@ -30,6 +30,7 @@ include("models/model.jl")
 include("models/polyharmonicspline.jl")
 include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
+include("models/responsesurface.jl")
 include("models/basisfunctionmodels.jl")
 include("models/imprecise/propagation.jl")
 
