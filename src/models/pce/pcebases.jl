@@ -6,14 +6,20 @@ struct PolynomialChaosBasis
     d::Int
     α::Vector{Vector{Int64}}
 
-    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int)
+    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, index_set::Symbol=:TD; param=0.5)
         d = length(bases)
-        return new(bases, p, d, multivariate_indices(p, d))
+        return new(bases, p, d, multivariate_indices(p, d, index_set; param=param))
     end
 end
 
 function evaluate(Ψ::PolynomialChaosBasis, x::AbstractVector{Float64})
-    return [prod(evaluate.(Ψ.bases, x, α)) for α in Ψ.α]
+    res = ones(length(Ψ.α))
+    for (i,α) in enumerate(Ψ.α)
+        for (j,order) in enumerate(α)
+            res[i] *= evaluate(Ψ.bases[j], x[j], order)
+        end
+    end
+    return res
 end
 
 struct LegendreBasis <: AbstractOrthogonalBasis
@@ -59,30 +65,67 @@ function He(x::Real, n::Integer)
     return He
 end
 
-function multivariate_indices(p::Int, d::Int)
-    No = Int64(factorial(p + d) / factorial(p) / factorial(d))
+# Total degree multi-index set (sum of polynomial degrees <= p)
+function TD(idx::Vector{Int}, p::Int)
+    return sum(idx) <= p
+end
 
-    idx = vcat(zeros(Int64, 1, d), Matrix(I, d, d), zeros(Int64, No - d - 1, d))
+# Tensor product multi-index set (maximal polynomial degree <= p)
+function TP(idx::Vector{Int}, p::Int)
+    return maximum(idx) <= p
+end
 
-    pᵢ = ones(Int64, d, No)
+# Hyperbolic cross multi-index set (Sparse alternative to TD or TP)
+function HC(idx::Vector{Int}, p::Int)
+    return prod(idx .+ 1) <= (p + 1)
+end
 
-    for k in 2:No
+# Q-ball multi-index set (Sparse alternative to TD or TP when q < 1, same as TD when q=1, same as TP when q=Inf)
+function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
+    @assert q > 0
+    return norm(idx, q) <= p
+end
+
+function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_size=BigInt(p+1)^d)
+    idx = zeros(Int, d)
+    index_set = [copy(idx)]
+    if p == 0
+        return index_set
+    end
+    idx[1] += 1
+    for _ in 1:max_size
+        # Add to index set
+        push!(index_set, copy(idx))
+        # Update idx
         for i in 1:d
-            pᵢ[i, k] = sum(pᵢ[i:d, k - 1])
+            idx[i] += 1
+            if in_index_set(idx, p)
+                break
+            end
+            idx[i] = 0
+        end
+        if iszero(idx)
+            break
         end
     end
+    return index_set
+end
 
-    P = d + 1
-    for k in 2:p
-        L = P
-        for j in 1:d, m in (L - pᵢ[j, k] + 1):L
-            P += 1
-            idx[P, :] = idx[m, :]
-            idx[P, j] = idx[P, j] + 1
-        end
+function multivariate_indices(p::Int, d::Int, index_set::Symbol; param=0.5)
+    if index_set in (:TD, :total_degree)
+        return multivariate_indices(p, d, TD)
+    elseif index_set in (:TP, :total_product)
+        return multivariate_indices(p, d, TP)
+    elseif index_set in (:HC, :hyperbolic_cross)
+        return multivariate_indices(p, d, HC)
+    elseif index_set in (:QB, :q_ball)
+        return multivariate_indices(p, d, (idx,p) -> QB(idx,p,param))
+    else
+        errstr = "Unknown index_set=$index_set, choose from following\n"
+        errstr *= "(:TD, :total_degree, :TP, :total_product"
+        errstr *= ", :HC, :hyperbolic_cross, :QB, :q_ball)"
+        error(errstr)
     end
-
-    return map(collect, eachrow(idx))
 end
 
 function map_to_base(_::LegendreBasis, x::AbstractVector)
