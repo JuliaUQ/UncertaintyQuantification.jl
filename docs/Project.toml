@@ -1,4 +1,5 @@
 [deps]
+Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

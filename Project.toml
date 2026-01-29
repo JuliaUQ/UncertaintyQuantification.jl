@@ -1,13 +1,11 @@
 name = "UncertaintyQuantification"
 uuid = "7183a548-a887-11e9-15ce-a56ab60bad7a"
-authors = [
-    "Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>",
-    "Ander Gray <ander.gray@ukaea.uk>",
-]
 version = "0.13.0"
+authors = ["Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>", "Ander Gray <ander.gray@ukaea.uk>"]
 
 [deps]
 Bootstrap = "e28b5b4c-05e8-5b66-bc03-6f0c0a0a06e0"
+Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
 CovarianceEstimation = "587fd27a-f159-11e8-2dae-1979310e6154"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -34,6 +32,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 Bootstrap = "2.2"
+Copulas = "0.1.33"
 CovarianceEstimation = "0.2"
 DataFrames = "0.22, 1.0"
 DelimitedFiles = "1"

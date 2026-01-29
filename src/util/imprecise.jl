@@ -6,7 +6,7 @@ function isimprecise(input::UQInput)
     return isa(input, IntervalVariable) ||
            isa(input, RandomVariable{<:ProbabilityBox}) ||
            (
-               isa(input, JointDistribution{<:Copula,<:RandomVariable}) &&
+               isa(input, JointDistribution{<:Copulas.Copula,<:RandomVariable}) &&
                any(isa.(input.m, RandomVariable{<:ProbabilityBox}))
            )
 end
