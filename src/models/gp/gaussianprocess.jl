@@ -1,8 +1,8 @@
 struct GaussianProcess <: UQModel
-    gp::AbstractGPs.PosteriorGP
-    input::Union{Symbol, Vector{Symbol}}
-    output::Symbol
-    standardizer::DataStandardizer
+    posterior_gp::AbstractGPs.PosteriorGP
+    prior_gp::Union{GP, NoisyGP}
+    input_transformer::GaussianProcessInputTransformer
+    output_transformer::GaussianProcessOutputTransformer
 end
 
 """
@@ -10,9 +10,8 @@ end
         gp::Union{GP, NoisyGP}, 
         data::DataFrame, 
         output::Symbol; 
-        input_transform::AbstractDataTransform = IdentityTransform(), 
-        output_transform::AbstractDataTransform = IdentityTransform(),
-        optimization::AbstractHyperparameterOptimization = NoHyperparameterOptimization()
+        input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+        output_transform::AbstractTransformChoice=IdentityTransformChoice()
     )
 
 Constructs a Gaussian process model for the given data and output variable.
@@ -23,12 +22,10 @@ Constructs a Gaussian process model for the given data and output variable.
 - `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
 
 # Keyword Arguments
-- `input_transform`: Transformation applied to input features before fitting.
-  Defaults to [`IdentityTransform()`](@ref).
-- `output_transform`: Transformation applied to output data before fitting.
-  Defaults to [`IdentityTransform()`](@ref).
-- `optimization`: Strategy for hyperparameter optimization.
-  Defaults to `NoHyperparameterOptimization()`.
+- `input_transform`: Choice of transformation that is applied to input features before fitting.
+  Defaults to [`IdentityTransformChoice()`](@ref).
+- `output_transform`: Choice of transformation that is applied to output data before fitting.
+  Defaults to [`IdentityTransformChoice()`](@ref).
 
 # Examples
 ```jldoctest
@@ -43,31 +40,26 @@ function GaussianProcess(
     gp::Union{GP, NoisyGP},
     data::DataFrame,
     output::Symbol;
-    input_transform::AbstractDataTransform=IdentityTransform(),
-    output_transform::AbstractDataTransform=IdentityTransform(),
-    optimization::AbstractHyperparameterOptimization=NoHyperparameterOptimization()
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice()
 ) 
     input = propertynames(data[:, Not(output)]) # Is this always the case?
 
     # build in- and output transforms
-    dts = DataStandardizer(
-        data, input, output, 
-        InputTransform(input_transform), 
-        OutputTransform(output_transform)
-    )
+    input_transformer = fit_input_transform(data, input, input_transform)
+    output_transformer = fit_output_transform(data, output, output_transform)
 
     # transform data
-    x = dts.fᵢ(data)
-    y = dts.fₒ(data)
+    x = transform(data, input_transformer)
+    y = transform(data, output_transformer)
 
     # build posterior gp
-    optimized_gp = optimize_hyperparameters(gp, x, y, optimization)
-    posterior_gp = posterior(optimized_gp(x), y)
+    posterior_gp = posterior(gp(x), y)
     return GaussianProcess(
         posterior_gp,
-        input,
-        output,
-        dts
+        gp,
+        input_transformer,
+        output_transformer
     )
 end
 
@@ -78,9 +70,8 @@ end
         model::Union{UQModel, Vector{<:UQModel}},
         output::Symbol,
         experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}; 
-        input_transform::AbstractDataTransform = IdentityTransform(), 
-        output_transform::AbstractDataTransform = IdentityTransform(),
-        optimization::AbstractHyperparameterOptimization = NoHyperparameterOptimization()
+        input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+        output_transform::AbstractTransformChoice=IdentityTransformChoice()
     )
 
 Constructs a Gaussian process model for the given input and model. Evaluates the model using specified experimental design.
@@ -93,12 +84,10 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 - `experimentaldesign`: The strategy utilized for sampling the input variables.
 
 # Keyword Arguments
-- `input_transform`: Transformation applied to input features before fitting.
-  Defaults to [`IdentityTransform()`](@ref).
-- `output_transform`: Transformation applied to output data before fitting.
-  Defaults to [`IdentityTransform()`](@ref).
-- `optimization`: Strategy for hyperparameter optimization.
-  Defaults to `NoHyperparameterOptimization()`.
+- `input_transform`: Choice of transformation that is applied to input features before fitting.
+  Defaults to [`IdentityTransformChoice()`](@ref).
+- `output_transform`: Choice of transformation that is applied to output data before fitting.
+  Defaults to [`IdentityTransformChoice()`](@ref).
 
 # Examples
 ```jldoctest
@@ -118,9 +107,8 @@ function GaussianProcess(
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
     experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
-    input_transform::AbstractDataTransform=IdentityTransform(),
-    output_transform::AbstractDataTransform=IdentityTransform(),
-    optimization::AbstractHyperparameterOptimization=NoHyperparameterOptimization()
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice()
 )
     # build DataFrame
     data = sample(input, experimentaldesign)
@@ -131,25 +119,20 @@ function GaussianProcess(
 
     # build in- and output transforms
     # note: this will let the gp model extract random inputs only from any evaluation input
-    dts = DataStandardizer(
-        data, random_input, output, 
-        InputTransform(input_transform), 
-        OutputTransform(output_transform)
-    )
+    input_transformer = fit_input_transform(data, random_input, input_transform)
+    output_transformer = fit_output_transform(data, output, output_transform)
 
     # transform data
-    x = dts.fᵢ(data)
-    y = dts.fₒ(data)
+    x = transform(data, input_transformer)
+    y = transform(data, output_transformer)
 
     # build posterior gp
-    optimized_gp = optimize_hyperparameters(gp, x, y, optimization)
-    posterior_gp = posterior(optimized_gp(x), y)
-
+    posterior_gp = posterior(gp(x), y)
     return GaussianProcess(
         posterior_gp,
-        names(input),
-        output,
-        dts
+        gp,
+        input_transformer,
+        output_transformer
     )
 end
 
@@ -159,21 +142,54 @@ function GaussianProcess(
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
     experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
-    input_transform::AbstractDataTransform=IdentityTransform(),
-    output_transform::AbstractDataTransform=IdentityTransform(),
-    optimization::AbstractHyperparameterOptimization=NoHyperparameterOptimization()
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice()
 )
     return GaussianProcess(
-        gp, 
-        [input], 
-        model, 
-        output, 
-        experimentaldesign; 
-        input_transform=input_transform, 
-        output_transform=output_transform,
-        optimization=optimization
+        gp, [input], model, output, experimentaldesign; 
+        input_transform=input_transform, output_transform=output_transform
     )
 end
+
+"""
+    optimize_hyperparameters(gp_model::GaussianProcess, optimization::AbstractHyperparameterOptimization)
+
+Optimizes the hyperparameters of a [`GaussianProcess`](@ref) model. 
+
+# Arguments
+- `gp_model`: An instatiated [`GaussianProcess`](@ref) model.
+- `optimization`: An optimization routine.
+
+# Examples
+```jldoctest
+julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+
+julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
+
+julia> gp_model = GaussianProcess(gp, data, :y);
+
+julia> optimized_gp_model = optimize_hyperparameters(gp_model, MaximumLikelihoodEstimation());
+```
+"""
+function optimize_hyperparameters(
+    gp_model::GaussianProcess, 
+    optimization::AbstractHyperparameterOptimization
+)
+    # retrieve data used for fitting the posterior gp
+    # note: PosteriorGP stores targets y implicitly as δ = y - m,
+    # where m is the mean of the prior at fitting inputs x
+    x = gp_model.gp.data.x
+    y = gp_model.gp.data.δ + mean(gp_model.prior_gp(x))
+    optimized_gp = optimize_hyperparameters(gp_model.prior_gp, x, y, optimization)
+    posterior_gp = posterior(optimized_gp(x), y)
+
+    return GaussianProcess(
+        posterior_gp,
+        optimized_gp,
+        gp_model.input_transformer,
+        gp_model.output_transformer
+    ) 
+end 
 
 """
     evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
