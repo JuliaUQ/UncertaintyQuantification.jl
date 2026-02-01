@@ -3,20 +3,6 @@ using DifferentiationInterface
 abstract type AbstractHyperparameterOptimization end
 
 """
-    NoHyperparameterOptimization()
-
-Creates a configuration that disables hyperparameter optimization for a Gaussian process model.
-
-# Examples
-
-```jldoctest
-julia> NoHyperparameterOptimization()
-NoHyperparameterOptimization()
-```
-"""
-struct NoHyperparameterOptimization <: AbstractHyperparameterOptimization end
-
-"""
     MaximumLikelihoodEstimation(optimizer::Optim.FirstOrderOptimizer, options::Optim.Options)
 
 Represents a hyperparameter optimization strategy that maximizes the log marginal likelihood
@@ -49,15 +35,6 @@ MaximumLikelihoodEstimation() = MaximumLikelihoodEstimation(
     Optim.LBFGS(),
     Optim.Options(; iterations=10, show_trace=false)
 )
-
-function optimize_hyperparameters(
-    gp::Union{AbstractGPs.GP, NoisyGP}, 
-    ::Union{RowVecs{<:Real}, Vector{<:Real}}, 
-    ::Vector{<:Real}, 
-    ::NoHyperparameterOptimization
-)
-    return gp
-end
 
 objective(
     f::Union{AbstractGPs.GP, NoisyGP}, 
