@@ -20,7 +20,7 @@ or a multivariate distribution and a vector of variable names.
 
 ```jldoctest
 julia> JointDistribution(GaussianCopula([1.0 0.71; 0.71 1.0]), [RandomVariable(Normal(), :x), RandomVariable(Uniform(), :y)])
-JointDistribution{Copula, RandomVariable}(GaussianCopula([1.0 0.71; 0.71 1.0]), RandomVariable[RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x), RandomVariable{Uniform{Float64}}(Uniform{Float64}(a=0.0, b=1.0), :y)])
+JointDistribution{Copula, RandomVariable}(GaussianCopula([1.0 0.71; 0.71 1.0]), RandomVariable{<:UnivariateDistribution}[RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x), RandomVariable{Uniform{Float64}}(Uniform{Float64}(a=0.0, b=1.0), :y)])
 ```
 
 ```jldoctest
@@ -133,12 +133,27 @@ end
 
 var(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = var(jd.d)
 
-pdf(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = pdf(jd.d, x)
+function pdf(
+    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
+    x::Union{Vector{<:Real},<:Real},
+)
+    return pdf(jd.d, x)
+end
 
-logpdf(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = logpdf(jd.d, x)
+function logpdf(
+    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
+    x::Union{Vector{<:Real},<:Real},
+)
+    return logpdf(jd.d, x)
+end
 
 minimum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = minimum(jd.d)
 
 maximum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = maximum(jd.d)
 
-insupport(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::Union{Vector{<:Real}, <:Real}) = insupport(jd.d, x)
+function insupport(
+    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
+    x::Union{Vector{<:Real},<:Real},
+)
+    return insupport(jd.d, x)
+end
