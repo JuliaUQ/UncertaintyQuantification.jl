@@ -4,19 +4,25 @@ struct TransportMapBMU <: AbstractBayesianMethod #! this needs a better name...
     transportmap::AbstractTriangularMap
     quadrature::AbstractQuadratureWeights
     islog::Bool
+    transformprior::Bool
 
     function TransportMapBMU(
         prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
         transportmap::AbstractTriangularMap,
         quadrature::AbstractQuadratureWeights,
         islog::Bool=true,
+        transformprior::Bool=true
     )
         @assert length(prior) == size(quadrature.points, 2) #! make `TransportMaps.numberdimensions(quad::AbstractQuadratureWeights)`
         @assert length(prior) == numberdimensions(transportmap)
-        return new(prior, transportmap, quadrature, islog)
+        return new(prior, transportmap, quadrature, islog, transformprior)
     end
 end
 
+"""
+    Set up optimization problem to find the coefficients of a polynomial transport map.
+
+"""
 function setupoptimizationproblem(
     prior::Union{Function,Nothing},
     likelihood::Function,
@@ -24,14 +30,17 @@ function setupoptimizationproblem(
     transportmap::TransportMapBMU,
     gradient::Union{AbstractADType,Function},
 )
+    # Transform the prior to be standard normal (in this case, ignore the given prior)
+    if transpormap.transformprior
+        if !isnothing(prior)
+            @warn "Prior function given while transforming to standard normal space. Given prior will be ignored."
+        end
 
-    # if no prior is given, generate prior function from transportmap.prior
-    if isnothing(prior)
         prior = if transportmap.islog
             df -> vec(
                 sum(
                     hcat(
-                        map(rv -> logpdf.(rv.dist, df[:, rv.name]), transportmap.prior)...,
+                        map(rv -> logpdf.(Normal(), df[:, rv.name]), transportmap.prior)...,
                     );
                     dims=2,
                 ),
@@ -39,10 +48,38 @@ function setupoptimizationproblem(
         else
             df -> vec(
                 prod(
-                    hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), transportmap.prior)...);
+                    hcat(map(rv -> pdf.(Normal(), df[:, rv.name]), transportmap.prior)...);
                     dims=2,
                 ),
             )
+        end
+
+    else
+
+        # if no prior is given, generate prior function from transportmap.prior
+        if isnothing(prior)
+            prior = if transportmap.islog
+                df -> vec(
+                    sum(
+                        hcat(
+                            map(
+                                rv -> logpdf.(rv.dist, df[:, rv.name]),
+                                transportmap.prior,
+                            )...,
+                        );
+                        dims=2,
+                    ),
+                )
+            else
+                df -> vec(
+                    prod(
+                        hcat(
+                            map(rv -> pdf.(rv.dist, df[:, rv.name]), transportmap.prior)...,
+                        );
+                        dims=2,
+                    ),
+                )
+            end
         end
     end
 
@@ -56,8 +93,18 @@ function setupoptimizationproblem(
     target_density = x -> begin
         df = _to_dataframe(x, rv_names)
 
+        # Transform to physical space for model evaluation
+        if transpormap.transformprior
+            to_physical_space!(transportmap.prior, df)
+        end
+
         if !isempty(models)
             _evaluate!(models, df)
+        end
+
+        # Back to standard normal space for posterior evaluation
+        if transpormap.transformprior
+            to_standard_normal_space!(transportmap.prior, df)
         end
 
         val = posterior(df)
@@ -105,7 +152,6 @@ TransportMaps.logpdf(density::MapTargetDensity, X::Matrix{<:Real}) = density.log
 #     # specially with the creation of folders, input and output files (not-unique)
 #     if isa(density.ad_backend, AutoFiniteDiff) || isa(density.ad_backend, AutoFiniteDifferences)
 
-
 #     end
 
 # end
@@ -119,6 +165,13 @@ function mapfromdensity(
     return mapfromdensity(
         tm.transportmap, target, tm.quadrature, names(tm.prior), optimizer, optim_options
     )
+
+    if tm.transformprior
+        # todo need transformation back to physical space
+        # both for samples (easy with to_physical_space!), also for density (Jacobian needed!)
+
+        # return ComposedMap{AnalyticalTransform, PolynomialMap}?
+    end
 end
 
 """
