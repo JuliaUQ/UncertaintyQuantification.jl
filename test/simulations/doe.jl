@@ -1,6 +1,6 @@
 @testset "Design of Experiments" begin
     for doe in subtypes(AbstractDesignOfExperiments)
-        @test hasfield(doe, :σ)
+        @test hasfield(doe, :q)
     end
 
     @testset "TwoLevelFactorial" begin
@@ -307,24 +307,24 @@
         x = RandomVariable(Uniform(-1, 1), :x)
         y = RandomVariable(Uniform(0, 1), :y)
 
-        ff = FullFactorial([3, 3])
+        ff = FullFactorial([3, 3], 1.0 - 1e-12)
 
         samples = sample([x, y], ff)
 
-        @test samples.x ≈ [-1, 0, 1, -1, 0, 1, -1, 0, 1] atol = 1e-12
-        @test samples.y ≈ [0, 0, 0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0] atol = 1e-12
+        @test cdf.(x, samples.x) ≈ [0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0]
+        @test cdf.(y, samples.y) ≈ [0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0]
 
-        x = RandomVariable(Normal(1,1), :x)
+        x = RandomVariable(Normal(1, 1), :x)
         y = RandomVariable(Exponential(2), :y)
 
-        ff = FullFactorial([5, 5])
+        ff = FullFactorial([5, 5], 1.0 - 1e-12)
 
         samples = sample([x, y], ff)
 
         @test all(isfinite.(samples.x))
         @test all(isfinite.(samples.y))
 
-        @test samples.x[1:5] ≈ [0.0, 0.5, 1.0, 1.5, 2.0] atol = 1e-12
-        @test samples.y[1:5:end] ≈ [0, 1, 2, 3, 4] atol = 1e-12
+        @test cdf.(x, samples.x[1:5]) ≈ [0.0, 0.25, 0.5, 0.75, 1.0]
+        @test cdf.(y, samples.y[1:5:end]) ≈ [0.0, 0.25, 0.5, 0.75, 1.0]
     end
 end

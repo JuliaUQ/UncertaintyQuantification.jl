@@ -1,6 +1,6 @@
 @testset "Interval propagation" begin
-    X1 = ProbabilityBox{Normal}([Interval(-1, 2, :μ), Parameter(1, :σ)], :X1)
-    X2 = ProbabilityBox{Normal}([Interval(-2, 1, :μ), Parameter(2, :σ)], :X2)
+    X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1)), :X1)
+    X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
     X3 = RandomVariable(Normal(0, 1), :X3)
     X4 = Parameter(5, :X4)
 

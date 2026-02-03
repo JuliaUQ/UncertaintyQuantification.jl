@@ -42,6 +42,15 @@ function SpectralRepresentation(
     psd::AbstractPowerSpectralDensity, time::AbstractVector{<:Real}, name::Symbol
 )
     Δω = psd.ω[2] - psd.ω[1]
+    ω_u = psd.ω[end] + Δω
+    Δt = time[2] - time[1]
+    f_max = ω_u/(2π)        # Frequency of the signal
+    f_s = 1/Δt              # Sampling Frequency
+    f_ny = f_s/2            # Nyquist Frequency
+
+    if f_max > f_ny
+        @warn "The frequency of the signal ($f_max Hz) is bigger than the Nyquist frequency ($f_ny Hz). There is a risk for aliasing!"
+    end
 
     A = sqrt.(2 * psd.p * Δω)
     A[iszero.(psd.ω)] .= 0.0
@@ -53,7 +62,7 @@ function SpectralRepresentation(
         Δω,
         A,
         name,
-        [Symbol("$(name)_$i") for i in 1:length(psd.ω)],
+        [Symbol("$(name)_ϕ_$i") for i in 1:length(psd.ω)],
     )
 end
 

@@ -7,7 +7,7 @@ end
 
 # evaluates the transformed SNS problem
 function evaluate!(m::SlicingModel, df::DataFrame)
-    intervals = filter(x -> isa(x, Interval), m.inputs)
+    intervals = filter(x -> isa(x, IntervalVariable), m.inputs)
 
     physical = copy(df)
 

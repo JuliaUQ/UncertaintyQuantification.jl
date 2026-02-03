@@ -68,6 +68,21 @@ include("../../test_utilities/read_write_utils.jl")
         result = UncertaintyQuantification.getresult(ext, dirname)
 
         @test isapprox(result[1], sqrt.(df.x[1] .^ 2 + df.y[1] .^ 2))
+
+        ext = ExternalModel(
+            sourcedir,
+            sourcefile,
+            radius,
+            solver;
+            workdir=tempname(),
+            formats=numberformats,
+            extras="",
+        )
+        UncertaintyQuantification.makedirectory(ext, df[1, :], dirname)
+        @test isdir(dirname)
+        @test isfile(joinpath(dirname, "radius.jl"))
+        @test !isnotanywhere(joinpath(dirname, "radius.jl"), formatted_inputs[1])
+        @test !isnotanywhere(joinpath(dirname, "radius.jl"), formatted_inputs[2])
     end
 
     @testset "No Cleanup" begin

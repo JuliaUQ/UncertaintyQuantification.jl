@@ -58,6 +58,6 @@ Special algorithms must be used to propagate the epistemic uncertainty through m
 In *UncertaintyQuantification.jl* the four categories of uncertainties are described using the following objects:
 
 - Category I: [`Parameter`](@ref)
-- Category II: [`Interval`](@ref)
+- Category II: [`IntervalVariable`](@ref)
 - Category III: [`RandomVariable`](@ref)
 - Category IV: [`ProbabilityBox`](@ref).

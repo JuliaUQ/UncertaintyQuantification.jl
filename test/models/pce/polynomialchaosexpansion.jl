@@ -27,12 +27,61 @@
         @test mse ≈ ϵ atol = eps()
     end
 
+    @testset "WeightedApproximateFetekePoints" begin
+        wafp = WeightedApproximateFetekePoints(SobolSampling(1000))
+        pce, samples, mse = polynomialchaos(x, model, Ψ, :y, wafp)
+
+        new_samples = samples[:, Not(:y1, :y)]
+        evaluate!(pce, new_samples)
+        ϵ = mean((new_samples.y .- samples.y) .^ 2)
+
+        @test mean(pce) ≈ -1.5 rtol = 1e-10
+        @test var(pce) ≈ 0.5 rtol = 1e-10
+        @test mse ≈ ϵ atol = eps()
+    end
+
     @testset "GaussQuadrature" begin
         gq = GaussQuadrature()
         pce, _ = polynomialchaos(x, model, Ψ, :y, gq)
 
         @test mean(pce) ≈ -1.5 rtol = 1e-10
         @test var(pce) ≈ 0.5 rtol = 1e-10
+    end
+
+    @testset "MultipleOutputs" begin
+        x1 = RandomVariable(Uniform(-2, 0), :x1)
+        x2 = RandomVariable(Uniform(-2, 0), :x2)
+
+        model_a = Model(df -> begin
+            return df.x1 .^ 2
+        end, :ya)
+
+        model_b = Model(df -> begin
+            return df.ya .* 2
+        end, :yb)
+
+        Ψ0 = PolynomialChaosBasis([LegendreBasis()], p)
+
+        ls = LeastSquares(SobolSampling(1000))
+        wafp = WeightedApproximateFetekePoints(SobolSampling(1000))
+        gq = GaussQuadrature()
+
+        pces_ls, _, mses_ls = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], ls)
+        pces_wafp, _, mses_wafp = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], wafp)
+        pces_gq, _ = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya,:yb], gq)
+
+        @test isa(pces_ls, Vector{PolynomialChaosExpansion})
+        @test isa(mses_ls, Vector{<:Real})
+        @test isa(pces_wafp, Vector{PolynomialChaosExpansion})
+        @test isa(mses_wafp, Vector{<:Real})
+        @test isa(pces_gq, Vector{PolynomialChaosExpansion})
+
+        @test mean(pces_ls[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_ls[2]) ≈ 8/3 rtol = 1e-10
+        @test mean(pces_wafp[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_wafp[2]) ≈ 8/3 rtol = 1e-10
+        @test mean(pces_gq[1]) ≈ 4/3 rtol = 1e-10
+        @test mean(pces_ls[2]) ≈ 8/3 rtol = 1e-10
     end
 
     @testset "Convenience Functions" begin

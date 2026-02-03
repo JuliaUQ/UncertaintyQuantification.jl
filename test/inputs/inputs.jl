@@ -1,10 +1,10 @@
-pi = Parameter(3.14, :π)
+p = Parameter(3.14, :π)
 x = RandomVariable(Normal(0, 1), :x)
 y = RandomVariable(Normal(1, 1), :y)
 z = RandomVariable(Normal(0, 1), :z)
-jd = JointDistribution([x, y], GaussianCopula([1 0; 0 1]))
+jd = JointDistribution(GaussianCopula([1 0; 0 1]), [x, y])
 
-inputs = [pi, jd, z]
+inputs = [p, jd, z]
 
 @testset "Inputs" begin
     @testset "sample" begin

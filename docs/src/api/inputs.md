@@ -10,10 +10,12 @@ Pages = ["inputs.md"]
 
 ```@docs
 Parameter
-RandomVariable
-EmpiricalDistribution
 Interval
 ProbabilityBox
+RandomVariable
+IntervalVariable
+EmpiricalDistribution
+JointDistribution
 ```
 
 ## Functions
@@ -21,5 +23,5 @@ ProbabilityBox
 ```@docs
 sample(rv::RandomVariable, n::Integer=1)
 sample(inputs::Vector{<:UQInput}, n::Integer=1)
-
+GaussianMixtureModel
 ```

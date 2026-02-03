@@ -149,14 +149,18 @@ Alternative constructors
 
 """
 struct TransitionalMarkovChainMonteCarlo <: AbstractBayesianMethod # Transitional Markov Chain Monte Carlo
-    prior::Vector{RandomVariable}
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
     n::Int
     burnin::Int
     β::Real
     islog::Bool
 
     function TransitionalMarkovChainMonteCarlo(
-        prior::Vector{RandomVariable}, n::Int, burnin::Int, β::Real=0.2, islog::Bool=true
+        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+        n::Int,
+        burnin::Int,
+        β::Real=0.2,
+        islog::Bool=true,
     )
         if n <= 0
             error("Number of samples `n` must be positive")
@@ -203,13 +207,11 @@ function bayesianupdating(
 
         weights = FrequencyWeights(wⱼ ./ sum(wⱼ))
 
-        idx = StatsBase.sample(
-            collect(1:(tmcmc.n)), FrequencyWeights(wⱼ ./ sum(wⱼ)), tmcmc.n; replace=true
-        )
+        idx = StatsBase.sample(collect(1:(tmcmc.n)), weights, tmcmc.n; replace=true)
 
         θⱼ⁺ = θⱼ[idx, :]
 
-        Σⱼ = tmcmc.β^2 * cov(covariance_method, Matrix(θⱼ[:, rv_names]), weights)
+        Σⱼ = tmcmc.β^2 * cov(covariance_method, Matrix(θⱼ⁺[:, rv_names]))
 
         # Run inner MH algorithm
 

@@ -55,21 +55,26 @@ println("Model Calls = $(length(samples_MC.x1))")
 # Imprecise Analysis
 println("Performing Imprecise Reliability Analysis")
 
-mean = Interval(-0.2, 0.2, :μ)
-std = Interval(0.8, 1.2, :σ)
-x_pbox = ProbabilityBox{Normal}.(Ref([mean, std]), [:x1, :x2])
+μ = Interval(-0.2, 0.2)
+σ = Interval(0.8, 1.2)
+
+x = RandomVariable.(ProbabilityBox{Normal}(Dict(:μ => μ, :σ => σ)), [:x1, :x2])
 
 # Perform Line Sampling
-@time pf_ls_DL = probability_of_failure(
-    [y], g, x_pbox, DoubleLoop(LineSampling(numberlines, collect(0.5:0.5:8)))
+@time pf_ls_DL, x_lb_ls, x_ub_ls = probability_of_failure(
+    [y], g, x, DoubleLoop(LineSampling(numberlines, collect(0.5:0.5:8)))
 )
-@time pf_ls_RS, σ_pf_ls_RS, samples_ls_RS = probability_of_failure([y], g, x_pbox, RandomSlicing(LineSampling(numberlines, collect(0.5:0.5:8))))
+@time pf_ls_RS, σ_pf_ls_RS, samples_ls_RS = probability_of_failure(
+    [y], g, x, RandomSlicing(LineSampling(numberlines, collect(0.5:0.5:8)))
+)
 
 # Perform Advanced Line Sampling
-@time pf_als_DL = probability_of_failure(
-    [y], g, x_pbox, DoubleLoop(AdvancedLineSampling(numberlines, collect(0.5:0.5:8)))
+@time pf_als_DL, x_lb_als, x_ub_als = probability_of_failure(
+    [y], g, x, DoubleLoop(AdvancedLineSampling(numberlines, collect(0.5:0.5:8)))
 )
-@time pf_als_RS, σ_pf_als_RS, samples_als_RS = probability_of_failure([y], g, x_pbox, RandomSlicing(AdvancedLineSampling(numberlines, collect(0.5:0.5:8))))
+@time pf_als_RS, σ_pf_als_RS, samples_als_RS = probability_of_failure(
+    [y], g, x, RandomSlicing(AdvancedLineSampling(numberlines, collect(0.5:0.5:8)))
+)
 
 println("Double Loop:")
 println("Line Sampling pf = [$(pf_ls_DL.lb), $(pf_ls_DL.ub)]")

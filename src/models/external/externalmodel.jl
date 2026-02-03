@@ -68,6 +68,9 @@ function makedirectory(m::ExternalModel, sample, path::String)
     end
 
     for file in m.extras
+        if isempty(file)
+            continue
+        end
         cp(joinpath(m.sourcedir, file), joinpath(path, file))
     end
     return nothing

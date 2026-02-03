@@ -34,7 +34,14 @@ function gradient_in_standard_normal_space(
 )
     samples = copy(reference)
 
-    random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
+    random_names = names(
+        filter(
+            i ->
+                isa(i, RandomVariable{<:UnivariateDistribution}) ||
+                    isa(i, JointDistribution),
+            inputs,
+        ),
+    )
 
     function f(x)
         samples[:, random_names] .= x

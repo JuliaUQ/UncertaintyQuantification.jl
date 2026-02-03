@@ -10,8 +10,8 @@ IS = ImportanceSampling(10^4)
 
 ## Alvarez model, from 10^6 interval MC he gets pf = [2.590 × 10−4, 0.503]
 
-X1 = ProbabilityBox{Normal}([Interval(-1, 2, :μ), Parameter(1, :σ)], :X1)
-X2 = ProbabilityBox{Normal}([Interval(-2, 1, :μ), Parameter(2, :σ)], :X2)
+X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1)), :X1)
+X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
 
 inputs = [X1, X2]
 models = Model(df -> df.X1 .^ 2 .+ df.X2, :g)

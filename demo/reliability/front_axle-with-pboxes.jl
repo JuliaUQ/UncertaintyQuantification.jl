@@ -1,7 +1,11 @@
 using UncertaintyQuantification
 
-a = ProbabilityBox{Normal}([Interval(11, 13, :μ), Parameter(1.2, :σ)], :a, 0, Inf)
-t = ProbabilityBox{Normal}([Interval(13, 15, :μ), Parameter(1.4, :σ)], :t, 0, Inf)
+a = RandomVariable(
+    ProbabilityBox{Normal}(Dict(:μ => Interval(11, 13), :σ => 1.2), 0, Inf), :a
+)
+t = RandomVariable(
+    ProbabilityBox{Normal}(Dict(:μ => Interval(13, 15), :σ => 1.4), 0, Inf), :t
+)
 
 b = RandomVariable(truncated(Normal(65, 6.5), 0, Inf), :b)
 h = RandomVariable(truncated(Normal(85, 8.5), 0, Inf), :h)

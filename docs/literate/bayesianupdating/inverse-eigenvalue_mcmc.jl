@@ -59,7 +59,7 @@ To begin the Bayesian model updating procedure we start by defining the data, th
 #md using UncertaintyQuantification # hide
 #md using Plots # hide
 
-#jl  using UncertaintyQuantification
+#jl using UncertaintyQuantification
 #jl using Plots
 
 Y = [

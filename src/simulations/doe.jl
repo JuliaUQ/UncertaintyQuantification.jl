@@ -1,78 +1,64 @@
 
 struct TwoLevelFactorial <: AbstractDesignOfExperiments
-    σ::Int
-    function TwoLevelFactorial(σ::Int=1)
-        σ < 1 && error("sigma must be >= 1")
-        return new(σ)
+    q::Real
+    function TwoLevelFactorial(q::Real=0.99)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(q)
     end
 end
 
 struct FullFactorial <: AbstractDesignOfExperiments
     levels::Vector{<:Integer}
-    σ::Int
-    function FullFactorial(levels::Vector{<:Integer}, σ::Int=1)
+    q::Real
+    function FullFactorial(levels::Vector{<:Integer}, q::Real=0.99)
         any(levels .< 2) && error("Levels must be >= 2")
-        σ < 1 && error("sigma must be >= 1")
-        return new(levels, σ)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(levels, q)
     end
 end
 
 struct FractionalFactorial <: AbstractDesignOfExperiments
     columns::Vector{String}
-    σ::Int
-    function FractionalFactorial(columns::Vector{String}, σ::Int=1)
-        σ < 1 && error("sigma must be >= 1")
-        return new(columns, σ)
+    q::Real
+    function FractionalFactorial(columns::Vector{String}, q::Real=0.99)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(columns, q)
     end
 end
 
 struct BoxBehnken <: AbstractDesignOfExperiments
     centers::Union{Int,Nothing}
-    σ::Int
-    function BoxBehnken(centers::Union{Int,Nothing}=nothing, σ::Int=1)
+    q::Real
+    function BoxBehnken(centers::Union{Int,Nothing}=nothing, q::Real=0.99)
         if !isnothing(centers) && centers < 0
             error("centers must be nonnegative")
         end
-        σ < 1 && error("sigma must be >= 1")
-        return new(centers, σ)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(centers, q)
     end
 end
 
 struct CentralComposite <: AbstractDesignOfExperiments
     type::Symbol
-    σ::Int
-    function CentralComposite(type::Symbol, σ::Int=1)
+    q::Real
+    function CentralComposite(type::Symbol, q::Real=0.99)
         type ∉ [:inscribed, :face] && error("type must be :inscribed or :face.")
-        σ < 1 && error("sigma must be >= 1")
-        return new(type, σ)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(type, q)
     end
 end
 
 struct PlackettBurman <: AbstractDesignOfExperiments
-    σ::Int
-    function PlackettBurman(σ::Int=1)
-        σ < 1 && error("sigma must be >= 1")
-        return new(σ)
+    q::Real
+    function PlackettBurman(q::Real=0.99)
+        !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
+        return new(q)
     end
 end
 
 function full_factorial_matrix(levels::Vector{<:Integer})
     ranges = [range(0.0, 1.0; length=l) for l in levels]
     return mapreduce(t -> [t...]', vcat, Iterators.product(ranges...))
-end
-
-function bounds(r::RandomVariable, σ::Int)
-    lb = minimum(r)
-    lb = isinf(lb) ? mean(r.dist) - std(r.dist) * σ : lb
-
-    ub = maximum(r)
-    ub = isinf(ub) ? mean(r.dist) + std(r.dist) * σ : ub
-
-    return [lb ub]
-end
-
-function bounds(jd::JointDistribution, σ::Int)
-    return reduce(vcat, bounds.(jd.marginals, σ))
 end
 
 function sample(inputs::Array{<:UQInput}, design::AbstractDesignOfExperiments)
@@ -82,19 +68,17 @@ function sample(inputs::Array{<:UQInput}, design::AbstractDesignOfExperiments)
 
     n_rv = mapreduce(dimensions, +, random_inputs)
 
-    samples = doe_samples(design, n_rv)
-    b = reduce(vcat, bounds.(random_inputs, design.σ))
-
-    for i in 1:n_rv
-        samples[:, i] = samples[:, i] .* (b[i, 2] - b[i, 1]) .+ b[i, 1]
-    end
-
+    # samples are transformed to be in [1-q,q]
+    samples = max.(doe_samples(design, n_rv) .* design.q, 1.0 - design.q)
+    samples = quantile.(Normal(), samples)
     samples = DataFrame(names(random_inputs) .=> eachcol(samples))
 
     if !isempty(deterministic_inputs)
         #add deterministic inputs to each row (each point)
         DataFrames.hcat!(samples, sample(deterministic_inputs, size(samples, 1)))
     end
+
+    to_physical_space!(inputs, samples)
 
     return samples
 end

@@ -271,3 +271,122 @@ pf_sus, std_sus, samples = probability_of_failure(y, g, x, subset)
 println("Probability of failure: $pf_sus")
 println("Coefficient of variation: $(std_sus/pf_sus)")
 ```
+
+## Imprecise Reliability Analysis
+
+if *epistemic* uncertainty is considered in the input variables it must also be propagated through the analysis, converting the probability of failure into an interval itself. The goal of the reliability analysis is then to find the lower bound ``\underline{p}_f`` and upper bound ``\overline{p}_f`` of the probability of failure such that ``p_f \in [\underline{p}*f, \overline{p}*f]``. Formally, this can be defined as
+
+```math
+    \underline{p}*f = \min*{\vartheta \in \mathbf{\theta}} \int \mathbb{I}[g(x)]f*{\mathbf{X}}(x, \vartheta) dx
+```
+
+and
+
+```math
+\overline{p}*f = \max*{\vartheta \in \mathbf{\theta}} \int  \mathbb{I}[g(x)]f*{\mathbf{X}}(x, \vartheta) dx,
+```
+
+where ``\theta`` represents the epistemic parameters characterizing the inputs.
+
+The following two sections provide two possible solutions to this challenging problem.
+
+### Double-loop Monte Carlo Simulation
+
+The simplest way to solve the imprecise reliability analysis is by double-loop simulation. The name refers to the need for two loops in comparison to a standard reliability analysis. The outer-loop essentially solves two optimisation problems over the parameter space of the epistemic inputs to find the combinations that minimize and maximize the probability of failure. The inner-loop requires a reliability calculation, with the current combination of parameters under consideration being mapped to precise inputs. In practice, [`IntervalVariable`](@ref) is mapped to a [`Parameter`](@ref) while a [`ProbabilityBox`](@ref) nested inside a [`RandomVariable`](@ref) yields a regular `RandomVariable`. Therefore, the double-loop simulation treats p-boxes as parametric. Then, a comprehensive reliability analysis using these purely *aleatory* inputs is carried out. This repeated analysis in the inner-loop makes the double-loop simulation computationally demanding. If a Monte Carlo simulation is applied in the inner-loop this is known as double-loop Monte Carlo simulation.
+
+Special attention must be paid to the type of optimisation algorithm used, as random sampling in the inner-loop leads to non-smooth objective functions. Here we have chosen to apply mesh adaptive direct search (MADS) algorithms which are specifically designed for such cases [abramsonOrthoMADSDeterministicMADS2009](@cite). However, exploration of alternative methods is part of the ongoing development.
+
+Estimating the probability of failure is effectively separated into two independent problems, one for each bound. This provides the ability to apply different types of analyses. For example, using a larger number of samples for the lower bound.
+
+As an example, consider the function
+
+```math
+     f(x_1,x_2) = x_1 +x_2,
+```
+
+where ``x_1 \in [-1,1]`` is an interval and ``x_2 \sim N(0, [1,2])`` is distributed as a Gaussian p-box. The associated performance function is
+
+```math
+     g(x) = 9 + f(x),
+```
+
+i.e., failures are ``f(x) \leq -9``. The analytical solution to this problem is known to be
+
+```math
+    \underline{p}_f = \Phi(-9; 1, 1)
+```
+
+and
+
+```math
+     \overline{p}_f = \Phi(-9; -1, 2),
+```
+
+where ``\Phi(x; \mu, \sigma)`` is the Gaussian CDF with mean ``\mu`` and standard deviation ``\sigma``. The follow code shows how to set up this problem in *UncertaintyQuantification.jl*.
+
+```@example reliability
+     x1 = IntervalVariable(-1,1,:x1)
+     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(1,2,))), :x2)
+     f = Model(df -> df.x1 .+ df.x2, :f)
+     return nothing # hide
+```
+
+Then, the relibility analysis is again run through the  [`probability_of_failure`](@ref) function. As the final argument we we pass the inner simulation wrapped inside a [`DoubleLoop`](@ref). For this simple example we apply the first order reliability method (FORM), as this can reliably estimate the small failure probability of the lower bound which is \(\approx 7.6e-24\). The bounds on the ```p_\text{f}``` can be obtained from the output interval through `pf.lb` and `pf.ub`. The epistemic uncertainty is propagated correctly and matches the analytical solution. On top of the probability of failure, the double-loop analysis also returns the parameters that lead to the lower and upper bound. Here, they are correctly identified as ``([1,1]`` and ``[-1,2]``.
+
+```@example reliability
+     pf, x_lb, x_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], DoubleLoop(FORM()))
+```
+
+### Random Slicing
+
+An alternative method for computing probability bounds for reliability problems is based on random-set theory, as outlined by [alvarez2018estimation](@cite). We colloquially call this "random slicing", as will become apparent. As opposed to double-loop Monte Carlo, random slicing is a *distribution-free* or a *non-parametric* technique, as it does not make use of distribution parameters or family. For this reason, it is slightly more general, but can provide wider probability intervals in certain simulations.
+
+In random slicing, we make use of the fact that a p-box is a random-set [fersonConstructingProbabilityBoxes2015](@cite) to simulate random realisations (random intervals) from the inverses of the bounding CDFs
+
+```math
+     \Gamma(\alpha)=[\overline{F}^{-1}(\alpha), \underline{F}^{-1}(\alpha)],
+```
+
+where ``\alpha \sim U(0,1)`` is a sample from a uniform distribution. This interval can be visualised as a horizontal cut (or slice) of the p-box at an ``\alpha \in [0,1]``. This interval is then propagated through the model ``f`` or performance function ``g`` using an optimiser or surrogate model,
+
+```math
+     \underline{g}(\alpha) = \min_{x \in \Gamma(\alpha)}g(x),
+```
+
+```math
+
+     \overline{g}(\alpha) = \max_{x \in \Gamma(\alpha)}g(x).
+```
+
+In *UncertaintyQuantification.jl* the intervals are also propagated using MADS. In the multivariate case, we can combine two correlated intervals using a Cartesian product
+
+```math
+     [\overline{F}_X^{-1}(\alpha_X), \underline{F}_X^{-1}(\alpha_X)] \times [\overline{F}_Y^{-1}(\alpha_Y), \underline{F}_Y^{-1}(\alpha_Y)],
+```
+
+where ``(\alpha_X, \alpha_Y) \sim C_{XY}`` are samples of the copula between ``X`` and ``Y``.
+
+The reliability analysis can be written as thus:
+
+```math
+     \underline{p}*{\text{f}} = \int_U \mathbb{I}[\overline{g}(\alpha)] dC,(\alpha)
+```
+
+```math
+     \overline{p}*{\text{f}} = \int_U \mathbb{I}[\underline{g}(\alpha)] dC.(\alpha)
+```
+
+In some sense, the two loops from the double-loop method have been reversed, where now the outer-loop handles the random (aleatory) component, and the inner-loop handles the interval propagation (epistemic). Describing the analysis this way essentially gives two separate reliability calculations, with ``\underline{g}`` and ``\overline{g}`` as the two target performance functions. Rosenblatt transformations may be used to associate a standard normal distribution to the copula $C$, and one may then use any standard reliability method to compute the performance bounds.
+
+The software implementation is such that this imprecise reliability method can be coupled to any simulation method (FORM, line sampling, etc.) in a straightforward way. As with the double-loop, one can apply different simulations for each bound if desired.
+
+The problem setup for random slicing is identical to that of the double-loop. The only difference is that a [`RandomSlicing`](@ref) instance is passed instead of [`DoubleLoop](@ref).
+
+Here, the lower bound is again estimated using FORM, while we apply subset simulation to obtain the upper bound. The result for the lower bound matches the analytical solution perfectly. The upper bound is estimated accurately as ``\overline{p}_f \approx 3.884325e-5``. Note, that in addition to the probability of failure, random slicing also returns other outputs of the underlying simulations, such as the coefficient of variation and the evaluated samples for potential post-processing.
+
+```@example reliability
+     subset = SubSetSimulation(2000, 0.1, 10, Normal())
+     pf, out_lb, out_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], RandomSlicing(FORM(), subset))
+```
+
+As outlined by [alvarez2018estimation], other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.
