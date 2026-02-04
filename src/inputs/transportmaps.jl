@@ -14,6 +14,7 @@ struct TransportMap <: AbstractTransportMap
     map::AbstractTriangularMap
     target::MapTargetDensity
     quadrature::AbstractQuadratureWeights
+    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}}
     names::Vector{Symbol}
 end
 
@@ -44,19 +45,76 @@ Generate samples in the physical space `X` using the transport map `tm`.
 function sample(tm::TransportMap, n::Integer=1)
     Z = randn(n, numberdimensions(tm.map))
     X = evaluate(tm, Z)
-    return _to_dataframe(X, tm.names)
+
+    df = _to_dataframe(X, tm.names)
+
+    if !isnothing(tm.transform_density)
+        to_physical_space!(tm.transform_density, df)
+    end
+
+    return df
 end
 
 function to_physical_space!(tm::TransportMap, Z::DataFrame)
     X = evaluate(tm, Matrix(Z[!, tm.names]))
     Z[!, tm.names] .= X
+    if !isnothing(tm.transform_density)
+        to_physical_space!(tm.transform_density, Z)
+    end
     return nothing
 end
 
 function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
     Z = inverse(tm, Matrix(X[!, tm.names]))
     X[!, tm.names] .= Z
+    if !isnothing(tm.transform_density)
+        to_physical_space!(tm.transform_density, X)
+    end
     return nothing
+end
+
+"""
+    pdf(tm::TransportMap, x::AbstractVector{<:Real})
+
+Probability density function of the transport map in the physical space X.
+"""
+function pdf(tm::TransportMap, x::AbstractVector{<:Real})
+    if !isnothing(tm.transform_density)
+        # transform from physical space x to auxilary space ξ
+        ξ = _to_standard_normal(tm.transform_density, x)
+
+        if any(isinf.(ξ))
+            # when input x is outside the bounds of the RandomVariable
+            return 0
+        else
+            J = jacobian(tm.transform_density, x, ξ)
+            return TransportMaps.pullback(tm.map, ξ) * J
+        end
+    else
+        return TransportMaps.pullback(tm.map, x)
+    end
+end
+
+function pdf(tm::TransportMap, X::AbstractMatrix{<:Real})
+    return [pdf(tm, xᵢ) for xᵢ in eachrow(X)]
+end
+
+# Helper function to transform vector to standard normal
+function _to_standard_normal(
+    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, x::AbstractVector{<:Real}
+)
+    return [quantile(Normal(), cdf(rv.dist, x[i])) for (i, rv) in enumerate(inputs)]
+end
+
+# Helper function to get Jacobian of densitry transformation from standard normal to physical
+function jacobian(
+    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}},
+    x::AbstractVector{<:Real},
+    ξ::AbstractVector{<:Real},
+)
+    return abs(
+        prod(pdf(Normal(), ξ[i]) / pdf(rv.dist, x[i]) for (i, rv) in enumerate(inputs))
+    )
 end
 
 """
@@ -79,12 +137,13 @@ function mapfromdensity(
     target::MapTargetDensity,
     quadrature::AbstractQuadratureWeights,
     names::Vector{Symbol},
+    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}},
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     options::Optim.Options=Optim.Options(),
 )
     optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
 
-    return TransportMap(transportmap, target, quadrature, names)
+    return TransportMap(transportmap, target, quadrature, transform_density, names)
 end
 
 # todo: adaptive map construction (from density)
@@ -170,6 +229,15 @@ function sample(tm::TransportMapFromSamples, n::Integer=1)
     return _to_dataframe(X, tm.names)
 end
 
+"""
+    pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
+
+Probability density function of the transport map in the physical space X.
+"""
+function pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
+    return TransportMaps.pullback(tm.map, x)
+end
+
 # todo: adaptive map construction (from samples)
 
 #* General methods that work for both "ways"
@@ -182,15 +250,6 @@ end
 
 function inverse(tm::AbstractTransportMap, X::Matrix{<:Real})
     return TransportMaps.inverse(tm.map, X)
-end
-
-"""
-    pdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
-
-Probability density function of the transport map in the physical space X.
-"""
-function pdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
-    return TransportMaps.pullback(tm.map, x)
 end
 
 """

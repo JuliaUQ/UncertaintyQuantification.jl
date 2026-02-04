@@ -11,7 +11,7 @@ struct TransportMapBMU <: AbstractBayesianMethod #! this needs a better name...
         transportmap::AbstractTriangularMap,
         quadrature::AbstractQuadratureWeights,
         islog::Bool=true,
-        transformprior::Bool=true
+        transformprior::Bool=true,
     )
         @assert length(prior) == size(quadrature.points, 2) #! make `TransportMaps.numberdimensions(quad::AbstractQuadratureWeights)`
         @assert length(prior) == numberdimensions(transportmap)
@@ -31,7 +31,7 @@ function setupoptimizationproblem(
     gradient::Union{AbstractADType,Function},
 )
     # Transform the prior to be standard normal (in this case, ignore the given prior)
-    if transpormap.transformprior
+    if transportmap.transformprior
         if !isnothing(prior)
             @warn "Prior function given while transforming to standard normal space. Given prior will be ignored."
         end
@@ -94,7 +94,7 @@ function setupoptimizationproblem(
         df = _to_dataframe(x, rv_names)
 
         # Transform to physical space for model evaluation
-        if transpormap.transformprior
+        if transportmap.transformprior
             to_physical_space!(transportmap.prior, df)
         end
 
@@ -103,7 +103,7 @@ function setupoptimizationproblem(
         end
 
         # Back to standard normal space for posterior evaluation
-        if transpormap.transformprior
+        if transportmap.transformprior
             to_standard_normal_space!(transportmap.prior, df)
         end
 
@@ -162,16 +162,30 @@ function mapfromdensity(
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     optim_options::Optim.Options=Optim.Options(),
 )
-    return mapfromdensity(
-        tm.transportmap, target, tm.quadrature, names(tm.prior), optimizer, optim_options
-    )
-
+    # transform back to physical space if map is fitted in standard normal space
     if tm.transformprior
-        # todo need transformation back to physical space
-        # both for samples (easy with to_physical_space!), also for density (Jacobian needed!)
-
-        # return ComposedMap{AnalyticalTransform, PolynomialMap}?
+        transport_map = mapfromdensity(
+            tm.transportmap,
+            target,
+            tm.quadrature,
+            names(tm.prior),
+            tm.prior,
+            optimizer,
+            optim_options,
+        )
+    else
+        transport_map = mapfromdensity(
+            tm.transportmap,
+            target,
+            tm.quadrature,
+            names(tm.prior),
+            nothing,
+            optimizer,
+            optim_options,
+        )
     end
+
+    return transport_map
 end
 
 """
