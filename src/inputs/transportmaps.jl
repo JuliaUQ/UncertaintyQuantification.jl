@@ -113,7 +113,7 @@ function jacobian(
     ξ::AbstractVector{<:Real},
 )
     return abs(
-        prod(pdf(Normal(), ξ[i]) / pdf(rv.dist, x[i]) for (i, rv) in enumerate(inputs))
+        prod(pdf(rv.dist, x[i]) / pdf(Normal(), ξ[i]) for (i, rv) in enumerate(inputs))
     )
 end
 
