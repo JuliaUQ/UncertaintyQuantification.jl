@@ -74,23 +74,41 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
     return sample(inputs, sim.n)
 end
 
-function sample(inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo)
+function sample(
+    inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo; keep_intervals::Bool=true
+)
     random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
-    deterministic_inputs = filter(i -> isa(i, Parameter) || isa(i, Interval), inputs)
+    parameters = filter(i -> isa(i, Parameter), inputs)
+    intervals = filter(i -> isa(i, IntervalVariable), inputs)
 
-    n_rv = count_rvs(random_inputs)
-
-    u = qmc_samples(sim, n_rv)
-
-    samples = quantile.(Normal(), u)
-    samples = DataFrame(names(random_inputs) .=> eachrow(samples))
-
-    if !isempty(deterministic_inputs)
-        DataFrames.hcat!(samples, sample(deterministic_inputs, size(samples, 1)))
+    n_rv = if keep_intervals
+        count_rvs(random_inputs)
+    else
+        count_rvs(random_inputs) + length(intervals)
     end
 
-    to_physical_space!(inputs, samples)
+    u = qmc_samples(sim, n_rv)
+    samples = quantile.(Normal(), u)
 
+    if keep_intervals
+        samples = DataFrame(names(random_inputs) .=> eachrow(samples))
+        to_physical_space!(random_inputs, samples)
+        if !isempty(parameters) || !isempty(intervals)
+            DataFrames.hcat!(
+                samples, sample([parameters..., intervals...], size(samples, 1))
+            )
+        end
+    else
+        @show names([random_inputs..., intervals...])
+        samples = DataFrame(names([random_inputs..., intervals...]) .=> eachrow(samples))
+        to_physical_space!(random_inputs, samples)
+        for i in intervals
+            samples[:, i.name] = cdf.(Normal(), samples[:, i.name]) .* (i.ub - i.lb) .+ i.lb
+        end
+        if !isempty(parameters)
+            DataFrames.hcat!(samples, sample(parameters, size(samples, 1)))
+        end
+    end
     return samples
 end
 
