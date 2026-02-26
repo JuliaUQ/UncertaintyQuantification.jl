@@ -44,6 +44,7 @@ makedocs(;
 			"Parallelisation" => "manual/parallelisation.md",
 			"Stochastic Dynamics" => "manual/dynamics.md",
 			"High Performance Computing" => "manual/hpc.md",
+            "Transport Maps" => "manual/transportmaps.md",
 		],
 		"Examples" => [
 			"Gaussian Mixture Model" => "examples/inputs.md",
@@ -62,6 +63,7 @@ makedocs(;
 			"PolyharmonicSpline" => "api/polyharmonicspline.md",
 			"Simulations" => "api/simulations.md",
 			"Bayesian Updating" => "api/bayesianupdating.md",
+			"Transport Maps" => "api/transportmaps.md",
 			"Power Spectral Density Functions" => "api/psd.md",
 			"Stochastic Processes (Spectral Representation)" => "api/spectralrepresentation.md",
 			"SlurmInterface" => "api/slurm.md",

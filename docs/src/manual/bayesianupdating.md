@@ -284,6 +284,13 @@ The figure shows the (bimodal) likelihood in red and the prior distribution in b
 
 ![Point estimates](point-estimates.svg)
 
+# Transport Maps
+
+As an altermative to sampling-based approaches and point estimates, variational inference with transport map can be applied to find an approximation of the posterior density by a mapping from a reference density.
+
+
+
+
 ## Bayesian calibration of computer simulations
 
 *UncertaintyQuantification.jl* allows for complex computer models to be included in the Bayesian updating procedure, if for example one wishes to infer unknown model parameters from experimental data of model outputs. Several models can be evaluated in order to compute the likelihood function, by passing a vector of [`UQModel`](@ref)s to the [`bayesianupdating`](@ref) method. These will be executed before the likelihood is evaluated and models outputs will be available in the `DataFrame` inside the likelihood function. There is no restriction on the type of [`UQModel`](@ref) used. For example, it is possible to use an `ExternalModel` and call an external solver.

@@ -29,6 +29,7 @@ using TransportMaps
 
 @reexport using TransportMaps
 @reexport using Distributions
+@reexport using DifferentiationInterface
 
 import Base: rand, names, copy, run, length
 import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
@@ -154,7 +155,7 @@ export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
 export TransportMap
 export TransportMapFromSamples
-export TransportMapBMU
+export TransportMapBayesian
 export TwoLevelFactorial
 export UQTargetDensity
 
@@ -170,8 +171,12 @@ export evaluate!
 export gradient
 export gradient_in_standard_normal_space
 export linear_binning
+export logpdf
+export mapfromdensity
+export mapfromsamples
 export mean
 export multivariate_indices
+export pdf
 export periodogram
 export polynomialchaos
 export probability_of_failure
@@ -225,8 +230,8 @@ include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
 
 include("modelupdating/bayesianMAP.jl")
+include("modelupdating/bayesianTM.jl")
 include("modelupdating/bayesianupdating.jl")
-include("modelupdating/transportmaps.jl")
 
 include("sensitivity/finitedifferences.jl")
 include("sensitivity/gradient.jl")

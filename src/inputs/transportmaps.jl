@@ -1,14 +1,8 @@
 """
-    TransportMap
+    TransportMap(map, target, quadrature, transform_density, names)
 
-A transport map used to transform between standard normal space Z and physical space X.
+A transport map used to transform between standard normal space Z and physical space X. The `map` is the optimized triangular transport map, `target` is the target density, `quadrature` specifies the quadrature weights used in optimization, `transform_density` optionally specifies random variables for density transformation, and `names` is a vector of variable names.
 
-# Fields
-
-- `map::AbstractTriangularMap`: The optimized triangular transport map.
-- `target::MapTargetDensity`: The target density.
-- `quadrature::AbstractQuadratureWeights`: The quadrature weights used in optimization.
-- `names::Vector{Symbol}`: The names of the variables.
 """
 struct TransportMap <: AbstractTransportMap
     map::AbstractTriangularMap
@@ -38,9 +32,37 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMap)
 end
 
 """
-    sample(tm::TransportMapFromSamples, n::Integer=1)
+    to_physical_space!(tm::TransportMap, Z::DataFrame)
 
-Generate samples in the physical space `X` using the transport map `tm`.
+Transforms samples in `Z` from standard normal space to physical space using transport map `tm`.
+"""
+function to_physical_space!(tm::TransportMap, Z::DataFrame)
+    X = evaluate(tm, Matrix(Z[!, tm.names]))
+    Z[!, tm.names] .= X
+    if !isnothing(tm.transform_density)
+        to_physical_space!(tm.transform_density, Z)
+    end
+    return nothing
+end
+
+"""
+    to_standard_normal_space!(tm::TransportMap, X::DataFrame)
+
+Transforms samples in `X` from physical space to standard normal space using transport map `tm`.
+"""
+function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
+    Z = inverse(tm, Matrix(X[!, tm.names]))
+    X[!, tm.names] .= Z
+    if !isnothing(tm.transform_density)
+        to_physical_space!(tm.transform_density, X)
+    end
+    return nothing
+end
+
+"""
+    sample(tm::TransportMap, n::Integer=1)
+
+Generate `n` samples in the physical space `X` using the transport map `tm`.
 """
 function sample(tm::TransportMap, n::Integer=1)
     Z = randn(n, numberdimensions(tm.map))
@@ -55,28 +77,10 @@ function sample(tm::TransportMap, n::Integer=1)
     return df
 end
 
-function to_physical_space!(tm::TransportMap, Z::DataFrame)
-    X = evaluate(tm, Matrix(Z[!, tm.names]))
-    Z[!, tm.names] .= X
-    if !isnothing(tm.transform_density)
-        to_physical_space!(tm.transform_density, Z)
-    end
-    return nothing
-end
-
-function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
-    Z = inverse(tm, Matrix(X[!, tm.names]))
-    X[!, tm.names] .= Z
-    if !isnothing(tm.transform_density)
-        to_physical_space!(tm.transform_density, X)
-    end
-    return nothing
-end
-
 """
     pdf(tm::TransportMap, x::AbstractVector{<:Real})
 
-Probability density function of the transport map in the physical space X.
+Evaluate the probability density function (pdf) of the transport map in the physical space, i.e., the pushforward density. `x` is a vector, representing a point in the M-dimensional target space. Returns a `Float64`.
 """
 function pdf(tm::TransportMap, x::AbstractVector{<:Real})
     if !isnothing(tm.transform_density)
@@ -87,7 +91,7 @@ function pdf(tm::TransportMap, x::AbstractVector{<:Real})
             # when input x is outside the bounds of the RandomVariable
             return 0
         else
-            J = jacobian(tm.transform_density, x, ξ)
+            J = _jacobian(tm.transform_density, x, ξ)
             return TransportMaps.pullback(tm.map, ξ) * J
         end
     else
@@ -95,8 +99,22 @@ function pdf(tm::TransportMap, x::AbstractVector{<:Real})
     end
 end
 
+"""
+    pdf(tm::TransportMap, x::AbstractMatrix{<:Real})
+
+Evaluate the probability density function (pdf) of the transport map in the physical space, i.e., the pushforward density. `X` is a matrix of points in the physical space for which the pdf is evaluated. Returns a `Vector{Float64}` of evaluated pdf values for each row of the matrix.
+"""
 function pdf(tm::TransportMap, X::AbstractMatrix{<:Real})
     return [pdf(tm, xᵢ) for xᵢ in eachrow(X)]
+end
+
+function mean(tm::TransportMap)
+    if !isnothing(tm.transform_density)
+        ξ = evaluate(tm, zeros(length(tm.names)))
+        return _to_physical(tm.transform_density, ξ)
+    else
+        return evaluate(tm, zeros(length(tm.names)))
+    end
 end
 
 # Helper function to transform vector to standard normal
@@ -106,8 +124,15 @@ function _to_standard_normal(
     return [quantile(Normal(), cdf(rv.dist, x[i])) for (i, rv) in enumerate(inputs)]
 end
 
+# Helper function to transform vector to physical
+function _to_physical(
+    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, ξ::AbstractVector{<:Real}
+)
+    return [quantile(rv.dist, cdf(Normal(), ξ[i])) for (i, rv) in enumerate(inputs)]
+end
+
 # Helper function to get Jacobian of densitry transformation from standard normal to physical
-function jacobian(
+function _jacobian(
     inputs::Vector{<:RandomVariable{<:UnivariateDistribution}},
     x::AbstractVector{<:Real},
     ξ::AbstractVector{<:Real},
@@ -120,17 +145,22 @@ end
 """
     variancediagnostic(tm::TransportMap, Z::DataFrame)
 
-Evaluate the variance-based diagnostic for assessing the quality of a transport map.
+Evaluate the variance-based diagnostic for assessing the quality of a transport map. The diagnostic measures the variance of the log-ratio between the pushforward density and the reference density. A smaller variance indicates a better approximation of the target density by the transport map. The argument `Z` is a DataFrame of samples in the standard normal space. Returns the evaluated variance diagnostic.
 """
 function variancediagnostic(tm::TransportMap, Z::DataFrame)
     return variance_diagnostic(tm.map, tm.target, Matrix(Z[!, tm.names]))
 end
 
 """
-    mapfromdensity(transportmap::AbstractTriangularMap, target::MapTargetDensity, quadrature::AbstractQuadratureWeights, names::Vector{Symbol})
+    mapfromdensity(transportmap, target, quadrature, names, transform_density, optimizer, options)
 
-Optimize a transport map from the given target density by minimizing the KL-divergence.
-The KL-divergence is evaluated at the given quadrature points.
+Optimize a transport map from the given target density by minimizing the KL-divergence. The `transportmap` is the transport map to be optimized, `target` is the target density in the physical space, and `quadrature` specifies quadrature points in the standard normal space. The KL-divergence is evaluated at the given quadrature points. The `names` is a vector of variable names, and `transform_density` optionally specifies random variables for transformation. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`). Returns the optimized [`TransportMap`](@ref).
+
+Alternative calls
+
+```julia
+    mapfromdensity(transportmap, target, quadrature, names, transform_density)  # optimizer = LBFGS(), options = Optim.Options()
+```
 """
 function mapfromdensity(
     transportmap::AbstractTriangularMap,
@@ -141,21 +171,19 @@ function mapfromdensity(
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     options::Optim.Options=Optim.Options(),
 )
-    optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
+    res = optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
+
+    if !Optim.converged(res)
+        @warn "Optimization has not converged."
+    end
 
     return TransportMap(transportmap, target, quadrature, transform_density, names)
 end
 
-# todo: adaptive map construction (from density)
-
 """
-    TransportMapFromSamples
+    TransportMapFromSamples(map, samples, names)
 
-A transport map constructed from samples in the physical space X which are mapped to the standard normal space Z.
-
-# Fields
-- `map::ComposedMap`: The optimized composed map.
-- `samples::DataFrame`: The DataFrame of samples in the physical space X used to fit the map.
+A transport map constructed from samples in the physical space X which are mapped to the standard normal space Z. The `map` is the optimized composed map, `samples` is a DataFrame of samples in the physical space X used to fit the map, and `names` is a vector of variable names.
 """
 struct TransportMapFromSamples <: AbstractTransportMap
     map::ComposedMap{LinearMap}
@@ -181,9 +209,15 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMapFromSamples)
 end
 
 """
-    mapfromsamples(transportmap::AbstractTriangularMap, X::DataFrame)
+    mapfromsamples(transportmap, X, optimizer, options)
 
-Fit a transportmap from samples.
+Fit a transport map from samples. The `transportmap` is the transport map to be optimized, and `X` is a DataFrame with samples in the physical space. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`). Returns the optimized [`TransportMapFromSamples`](@ref).
+
+Alternative calls
+
+```julia
+    mapfromsamples(transportmap, X)  # optimizer = LBFGS(), options = Optim.Options()
+```
 """
 function mapfromsamples(
     transportmap::AbstractTriangularMap,
@@ -205,13 +239,22 @@ function mapfromsamples(
     return TransportMapFromSamples(composed_map, X, Symbol.(names(X)))
 end
 
-# The direction are reversed
+"""
+    to_physical_space!(tm::TransportMapFromSamples, Z::DataFrame)
+
+Transforms samples in `Z` from standard normal space to physical space using transport map `tm`.
+"""
 function to_physical_space!(tm::TransportMapFromSamples, Z::DataFrame)
     X = inverse(tm, Matrix(Z[!, tm.names]))
     Z[!, tm.names] .= X
     return nothing
 end
 
+"""
+    to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
+
+Transforms samples in `X` from physical space to standard normal space using transport map `tm`.
+"""
 function to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
     Z = evaluate(tm, Matrix(X[!, tm.names]))
     X[!, tm.names] .= Z
@@ -221,7 +264,7 @@ end
 """
     sample(tm::TransportMapFromSamples, n::Integer=1)
 
-Generate samples in the physical space `X` using the transport map `tm`.
+Generate `n` samples in the physical space `X` using the transport map `tm`.
 """
 function sample(tm::TransportMapFromSamples, n::Integer=1)
     Z = randn(n, numberdimensions(tm.map))
@@ -230,32 +273,29 @@ function sample(tm::TransportMapFromSamples, n::Integer=1)
 end
 
 """
-    pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
+    pdf(tm::TransportMapFromSamples, x)
 
-Probability density function of the transport map in the physical space X.
+Evaluate the probability density function (pdf) of the transport map in the physical space, i.e., the pullback density. The argument `x` can be either a vector or matrix of values where the pdf is evaluated. Returns a `Float64` for a vector input or `Vector{Float64}` for a matrix input.
 """
 function pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
     return TransportMaps.pullback(tm.map, x)
 end
 
-# todo: adaptive map construction (from samples)
-
-#* General methods that work for both "ways"
-
+# General methods that work for both "ways"
 names(tm::AbstractTransportMap) = names(tm.names)
 
-function evaluate(tm::AbstractTransportMap, Z::Matrix{<:Real})
+function evaluate(tm::AbstractTransportMap, Z::AbstractVecOrMat{<:Real})
     return TransportMaps.evaluate(tm.map, Z)
 end
 
-function inverse(tm::AbstractTransportMap, X::Matrix{<:Real})
+function inverse(tm::AbstractTransportMap, X::AbstractVecOrMat{<:Real})
     return TransportMaps.inverse(tm.map, X)
 end
 
 """
-    logpdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
+    logpdf(tm::AbstractTransportMap, x)
 
-Log-Probability density function of the transport map in the physical space X.
+Log-probability density function of the transport map in the physical space X. The argument `x` can be either a vector or matrix of values where the log-pdf is evaluated. Returns a `Float64` for a vector input or `Vector{Float64}` for a matrix input.
 """
 function logpdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
     return log.(pdf(tm, x))
