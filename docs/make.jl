@@ -44,7 +44,6 @@ makedocs(;
 			"Parallelisation" => "manual/parallelisation.md",
 			"Stochastic Dynamics" => "manual/dynamics.md",
 			"High Performance Computing" => "manual/hpc.md",
-            "Transport Maps" => "manual/transportmaps.md",
 		],
 		"Examples" => [
 			"Gaussian Mixture Model" => "examples/inputs.md",
