@@ -1,3 +1,4 @@
+using Copulas
 using DataFrames
 using Documenter
 using DocumenterCitations
@@ -7,7 +8,7 @@ format = if !isempty(ARGS) && ARGS[1] == "vite"
 	using DocumenterVitepress
 
 	MarkdownVitepress(;
-		repo = "github.com/FriesischScott/UncertaintyQuantification.jl",
+		repo = "github.com/JuliaUQ/UncertaintyQuantification.jl",
 		devbranch = "master",
 		devurl = "dev",
 	)
@@ -18,7 +19,7 @@ end
 DocMeta.setdocmeta!(
 	UncertaintyQuantification,
 	:DocTestSetup,
-	:(using UncertaintyQuantification, DataFrames, DisplayAs, Random; Random.seed!(8128)),
+	:(using UncertaintyQuantification, Copulas, DataFrames, DisplayAs, Random; Random.seed!(8128)),
 )
 
 bib = CitationBibliography(joinpath(@__DIR__, "references.bib"))
@@ -77,10 +78,10 @@ makedocs(;
 
 if !isempty(ARGS) && ARGS[1] == "vite"
 	DocumenterVitepress.deploydocs(;
-		repo = "github.com/FriesischScott/UncertaintyQuantification.jl",
+		repo = "github.com/JuliaUQ/UncertaintyQuantification.jl",
 		target = joinpath(@__DIR__, "build"),
 		branch = "gh-pages",
-		devbranch = "main",
+		devbranch = "master",
 		push_preview = true,
 	)
 end

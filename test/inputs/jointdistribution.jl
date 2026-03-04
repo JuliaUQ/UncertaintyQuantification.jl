@@ -3,25 +3,45 @@ using Random, DataFrames
 rv1 = RandomVariable(Exponential(1), :x)
 rv2 = RandomVariable(Exponential(1 / 2), :y)
 
+pbox1 = RandomVariable(ProbabilityBox{Exponential}(Interval(1 / 2, 1)), :x)
+pbox2 = RandomVariable(ProbabilityBox{Exponential}(Interval(3 / 4, 5 / 4)), :y)
+
 marginals = [rv1, rv2]
+
+imprecise_marginals = [pbox1, pbox2]
+
 copula = GaussianCopula([1 0.8; 0.8 1])
 
 @testset "JointDistribution" begin
     @testset "Copulas" begin
         @testset "Constructor" begin
             @test isa(JointDistribution(copula, marginals), JointDistribution)
+            @test isa(JointDistribution(copula, imprecise_marginals), JointDistribution)
 
             jd = JointDistribution(copula, marginals)
             @test jd.m == marginals
             @test jd.d == copula
 
+            jd = JointDistribution(copula, imprecise_marginals)
+            @test jd.m == imprecise_marginals
+            @test jd.d == copula
+
             @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
                 GaussianCopula([1 0 0; 0 1 0; 0 0 1]), marginals
+            )
+            @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
+                GaussianCopula([1 0 0; 0 1 0; 0 0 1]), imprecise_marginals
+            )
+            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+                copula, [rv1, rv1]
             )
         end
 
         @testset "sample" begin
             jd = JointDistribution(copula, marginals)
+            @test size(sample(jd, 10)) == (10, 2)
+            @test size(sample(jd)) == (1, 2)
+            jd = JointDistribution(copula, imprecise_marginals)
             @test size(sample(jd, 10)) == (10, 2)
             @test size(sample(jd)) == (1, 2)
         end
@@ -55,6 +75,32 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test isapprox(std(samples.y), 1.0; atol=0.01)
 
             @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
+
+            jd = JointDistribution(copula, imprecise_marginals)
+
+            samples = sample(jd, 10^6)
+
+            @test eltype(samples.x) == Interval
+            @test eltype(samples.y) == Interval
+
+            to_standard_normal_space!(jd, samples)
+
+            @test eltype(samples.x) <: Real
+            @test eltype(samples.y) <: Real
+
+            @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
+            @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
+            @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
+        end
+
+        @testset "densities" begin
+            jd = JointDistribution(
+                copula,
+                [RandomVariable(Uniform(-1.0, 1.0), :x), RandomVariable(Uniform(), :y)],
+            )
+
+            @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈
+                cdf(jd, [0.5, 0.5]) atol = 1e-4
         end
 
         @testset "to_physical_space" begin
@@ -79,9 +125,12 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test jd.d == dist
             @test jd.m == m
 
-            @test_throws ArgumentError(
-                "Dimension mismatch between distribution and names."
-            ) JointDistribution(dist, [:x, :y, :z])
+            @test_throws ArgumentError("Dimension mismatch between distribution and names.") JointDistribution(
+                dist, [:x, :y, :z]
+            )
+            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+                dist, [:x, :x]
+            )
         end
 
         @testset "sample" begin
