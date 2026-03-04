@@ -152,15 +152,25 @@ end
 var(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = var(jd.d)
 
 function pdf(
-    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
-    x::Union{Vector{<:Real},<:Real},
+    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::AbstractVector{<:Real}
+)
+    return pdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)]) * prod([pdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
+end
+
+function cdf(
+    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::AbstractVector{<:Real}
+)
+    return cdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
+end
+
+function pdf(
+    jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::AbstractVector{<:Real}
 )
     return pdf(jd.d, x)
 end
 
 function logpdf(
-    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
-    x::Union{Vector{<:Real},<:Real},
+    jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::AbstractVector{<:Real}
 )
     return logpdf(jd.d, x)
 end

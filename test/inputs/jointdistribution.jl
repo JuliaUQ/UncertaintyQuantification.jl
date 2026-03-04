@@ -93,6 +93,16 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
         end
 
+        @testset "densities" begin
+            jd = JointDistribution(
+                copula,
+                [RandomVariable(Uniform(-1.0, 1.0), :x), RandomVariable(Uniform(), :y)],
+            )
+
+            @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈
+                cdf(jd, [0.5, 0.5]) atol = 1e-4
+        end
+
         @testset "to_physical_space" begin
             jd = JointDistribution(copula, marginals)
 
