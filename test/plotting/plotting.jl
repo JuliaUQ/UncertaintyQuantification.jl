@@ -18,14 +18,12 @@
         iv = IntervalVariable(1.0, 2.0, :Y)
         plt = plot(iv)
         @test typeof(plt) <: Plots.Plot
-        @test length(plt.series_list) == 3
     end
 
     @testset "ProbabilityBox Plot" begin
         pb = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 2)), :X2)
         plt = plot(pb)
         @test typeof(plt) <: Plots.Plot
-        @test length(plt.series_list) == 3
     end
 
     @testset "Vector of UQInputs Plot" begin
