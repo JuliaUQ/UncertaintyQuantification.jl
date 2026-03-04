@@ -1,3 +1,4 @@
+using Copulas
 using DataFrames
 using Documenter
 using DocumenterCitations
@@ -18,7 +19,7 @@ end
 DocMeta.setdocmeta!(
 	UncertaintyQuantification,
 	:DocTestSetup,
-	:(using UncertaintyQuantification, DataFrames, DisplayAs, Random; Random.seed!(8128)),
+	:(using UncertaintyQuantification, Copulas, DataFrames, DisplayAs, Random; Random.seed!(8128)),
 )
 
 bib = CitationBibliography(joinpath(@__DIR__, "references.bib"))
