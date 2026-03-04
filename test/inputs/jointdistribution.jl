@@ -32,6 +32,9 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
                 GaussianCopula([1 0 0; 0 1 0; 0 0 1]), imprecise_marginals
             )
+            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+                copula, [rv1, rv1]
+            )
         end
 
         @testset "sample" begin
@@ -114,6 +117,9 @@ copula = GaussianCopula([1 0.8; 0.8 1])
 
             @test_throws ArgumentError("Dimension mismatch between distribution and names.") JointDistribution(
                 dist, [:x, :y, :z]
+            )
+            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+                dist, [:x, :x]
             )
         end
 

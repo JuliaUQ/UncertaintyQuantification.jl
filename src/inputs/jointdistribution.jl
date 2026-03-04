@@ -20,7 +20,7 @@ or a multivariate distribution and a vector of variable names.
 
 ```jldoctest
 julia> JointDistribution(GaussianCopula([1.0 0.71; 0.71 1.0]), [RandomVariable(Normal(), :x), RandomVariable(Uniform(), :y)])
-JointDistribution{GaussianCopula{2, Matrix{Float64}}, RandomVariable}(GaussianCopula{2, Matrix{Float64}}(Σ = [1.0 0.71; 0.71 1.0])), RandomVariable[RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x), RandomVariable{Uniform{Float64}}(Uniform{Float64}(a=0.0, b=1.0), :y)])
+JointDistribution{GaussianCopula{2, Matrix{Float64}}, RandomVariable}(GaussianCopula{2, Matrix{Float64}}(Σ = [1.0 0.71; 0.71 1.0])), RandomVariable{<:UnivariateDistribution}[RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x), RandomVariable{Uniform{Float64}}(Uniform{Float64}(a=0.0, b=1.0), :y)])
 ```
 
 ```jldoctest
@@ -41,15 +41,23 @@ struct JointDistribution{
 
     # Copula + RandomVariable
     function JointDistribution(c::Copulas.Copula, m::Vector{<:RandomVariable})
-        length(c) == length(m) ||
+        if length(c) != length(m)
             throw(ArgumentError("Dimension mismatch between copula and marginals."))
+        end
+        if unique(names(m)) != names(m)
+            throw(ArgumentError("Marginal names must be unique."))
+        end
         return new{typeof(c),RandomVariable}(c, m)
     end
 
     # MultivariateDistribution + Symbol
     function JointDistribution(d::MultivariateDistribution, m::Vector{Symbol})
-        length(d) == length(m) ||
+        if length(d) != length(m)
             throw(ArgumentError("Dimension mismatch between distribution and names."))
+        end
+        if unique(m) != m
+            throw(ArgumentError("Marginal names must be unique."))
+        end
         return new{MultivariateDistribution,Symbol}(d, m)
     end
 end
