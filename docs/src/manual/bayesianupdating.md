@@ -286,100 +286,77 @@ The figure shows the (bimodal) likelihood in red and the prior distribution in b
 
 ## Variational Inference with Transport Maps
 
-As an alternative to sampling-based approaches and point estimates, variational inference with transport maps can be applied to find an approximation of the posterior density [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite)
+As an alternative to sampling-based approaches and point estimates, variational inference with transport maps provides a deterministic method to approximate the posterior density [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
 
-A transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is a mapping from reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ to the target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$.
-Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target to the reference space.
-In the context of Bayesian updating, the target density is given by the posterior density, i.e., 
+Transport maps establish a deterministic coupling between a simple reference distribution (typically standard normal) and the complex posterior distribution. In the context of Bayesian updating, the target density is the posterior:
 ```math
 \pi(\theta) = P(\theta | Y).
 ```
-The target is then approximated by the so-called *pull-back* density
-```math
-\pi(\theta) \approx T_{\#}\rho = \rho\left(T^{-1}(\bm{a},\theta)\right) \ |\det \nabla T^{-1}(\bm{a},\theta)|.
-```
 
-The construction and inversion of the transport map can be simplified by using a triangular structure following the Knothe-Rosenblatt rearrangement [knotheContributions1957](@cite), [rosenblattRemarks1952](@cite).
-This structure ensures that the map is invertible and the Jacobian determinant is easy to compute.
-A triangular map in $n$ dimensions has the form:
+The map coefficients are determined by minimizing the Kullback-Leibler (KL) divergence between the transport map approximation and the true posterior. For detailed information on transport map theory, construction methods, and general usage, see [Transport Maps](@ref transport_map_manual).
 
-```math
-T(\boldsymbol{z}) =
-\left(\begin{array}{c}
-T_1(z_1) \\
-T_2(z_1, z_2) \\
-T_3(z_1, z_2, z_3) \\
-\vdots \\
-T_n(z_1, z_2, \dots, z_n)
-\end{array}
-\right)
-```
+### Application to Bayesian Updating
 
-A key requirement for the transport map is that each component $T_k$ must be strictly monotonically increasing in its last argument $z_k$ (while possibly depending non-monotonically on $z_{1:k-1}$). This monotonicity ensures invertibility and is enforced through a specialized parameterization.
+For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
+- `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
+- `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
+- `quadrature`: A quadrature scheme for KL divergence evaluation (see [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods))
 
-Commonly, this is achieved using an integrated rectifier parameterization, where each component takes the form
+By default, the prior is transformed to standard normal for improved numerical conditioning.
 
-```math
-T_k(z_1, \ldots, z_k; \boldsymbol{a}) = f(z_1, \ldots, z_{k-1}, 0; \boldsymbol{a}) + \int_0^{z_k} g\left(\partial_k f(z_1, \ldots, z_{k-1}, \xi; \boldsymbol{a})\right) d\xi.
-```
+Pass the [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref) along with the log-likelihood function and any required models to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
+- Generate samples from the posterior by mapping from the reference space
+- Evaluate the posterior probability density function
+- Provide an analytical approximation of the posterior (unlike sampling methods)
 
-Here, $f(z_1, \ldots, z_k; \boldsymbol{a})$ is a multivariate polynomial
+Optional settings include custom prior functions, gradient estimation methods via `DifferentiationInterface.jl`, and optimizers from `Optim.jl`.
 
-```math
-f(z_1, \ldots, z_k; \boldsymbol{a}) = \sum_{\alpha \in \mathcal{A}_k} a_\alpha \Psi_\alpha(z_1, \ldots, z_k)
-```
-where $\mathcal{A}_k$ is a multi-index set, $a_\alpha$ are the coefficients, and $\Psi_\alpha$ are multivariate basis functions. The function $g: \mathbb{R} \to \mathbb{R}^+$ is a rectifier function that maps the derivative of $f$ to a strictly positive value, ensuring monotonicity.
-
-In order to determine the map coefficients $\boldsymbol{a}$, an optimization problem is constructed that aims to minimize the Kullback-Leibler (KL) divergence between the target density and the TM approximation.
-```math
-\min_{\bm{a}} \mathcal{D}_{\mathsf{KL}}(T_{\#}\rho||\pi)
-```
-The KL divergence is calculated as an expected value with respect to the reference measure. Quadrature schemes are used to compute said expectation.
-
-In *UncertaintyQuantification.jl*, transport maps are implemented with the help of the [TransportMaps.jl package](https://juliauq.github.io/TransportMaps.jl/stable/).
-The way a transport map is constructed, is similar to the sampling methods and point estimates for bayesian updating.
-Crucially, a [`TransportMapBayesian`](@ref) object is created to perform the variational inference. This object collects ingredients of the map construction, specifically, a `prior` distribution, a `transportmap` and `quadrature` scheme. We refer to the [TransportMaps.jl documentation](https://juliauq.github.io/TransportMaps.jl/stable/) for options regarding the map and quadrature.
-By default, the prior is transformed to be standard normal for better conditioning of the map.
-
-This object is passed to [`bayesianupdating`](@ref) along with a (log-)likelihood function and a model to optimize the coefficients. Optionally, a custom prior funcion can be defined and the method for gradient estimation is set with the help of `DifferentiationInterface.jl`. Further, one can select a custom optimizer from `Optim.jl` along with its options. The map with optimized coefficients is returned and it can be used to sample from by mapping from the reference space and the pdf can be evaluated.
+The following example demonstrates Bayesian updating with transport maps using the same banana-shaped posterior as in [Map Construction from Target Density](@ref):
 
 ```@example transportmap
 using UncertaintyQuantification # hide
 using Plots # hide
 
+# Define prior distribution
 prior = RandomVariable.(Uniform(-10, 10), [:x, :y])
 
+# Define log-likelihood function
 loglikelihood =
     df -> logpdf.(Normal(), df.x) + logpdf.(Normal(), df.y .- df.x.^2)
 
 # Create a 2D polynomial map with degree 2
-# default: reference=Normal(), rectifier=Softplus(), basis=LinearizedHermiteBasis()
+# Defaults: reference=Normal(), rectifier=Softplus(), basis=LinearizedHermiteBasis()
 pm = PolynomialMap(2, 2)
 
-# 2D quadrature with 3 points per dimension
+# Define 2D quadrature using Gauss-Hermite with 3 points per dimension
 quad = GaussHermiteWeights(3, 2) 
 
+# Create the TransportMapBayesian object
 tm = TransportMapBayesian(prior, pm, quad)
 
-# Perform bayesian updating, use gradient with AutoFiniteDiff()
-tm_opt = bayesianupdating(loglikelihood, UQModel[], tm, nothing, AutoFiniteDiff())
+# Perform Bayesian updating to optimize the map coefficients
+tm_opt = bayesianupdating(loglikelihood, UQModel[], tm)
 
-# Generate samples
+# Generate samples from the posterior
 samples = sample(tm_opt, 1000)
 
-# Evaluate the pdf
+# Evaluate the posterior pdf on a grid
 x_range = -4:0.1:4
 y_range = -3:0.1:7
 pdf_vals = [pdf(tm_opt, [x,y]) for y in y_range, x in x_range]
 
+# Visualize the results
 scatter(samples.x, samples.y; alpha=0.8, label="TM Samples")
 contour!(x_range, y_range, pdf_vals)
 savefig("tm-banana.svg"); nothing # hide
 ```
 
-The figure below shows the samples and TM approximation of the target pdf obtained as the pull-back density from the standard normal reference. In contrast to the sampling methods and the point estimates, we obtain the (approximated) pdf of the posterior distribution as well as the ability to easily generate samples once the map is constructed.
-
 ![Banana density](tm-banana.svg)
+
+The figure shows samples and the posterior pdf approximation obtained via the transport map. Unlike sampling methods (MCMC, TMCMC) and point estimates (MAP, MLE), transport maps provide both an expression of the full posterior density and efficient sampling capabilities once the map is constructed.
+
+For a more comprehensive example demonstrating the use of transport maps in Bayesian updating, see [Beam Example: Comparison of TMCMC and Transport Maps](@ref).
+
 
 ## Bayesian calibration of computer simulations
 

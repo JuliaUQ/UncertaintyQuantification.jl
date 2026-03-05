@@ -9,9 +9,11 @@
     quadrature = GaussHermiteWeights(3, 2)
 
     @testset "With density transform" begin
-        tm_log = TransportMapBayesian(prior, deepcopy(map), quadrature, true)
+        tm_log = TransportMapBayesian(
+            prior, deepcopy(map), quadrature; islog=true, transformprior=true
+        )
 
-        tm_result = bayesianupdating(df -> df.L, [logL], tm_log, nothing, AutoFiniteDiff())
+        tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
         @test !iszero(getcoefficients(tm_result.map))
 
         @test tm_result isa TransportMap
@@ -22,10 +24,50 @@
     end
 
     @testset "No density transform" begin
-        tm_log = TransportMapBayesian(prior, deepcopy(map), quadrature, true, false)
+        tm_log = TransportMapBayesian(
+            prior, deepcopy(map), quadrature; islog=true, transformprior=false
+        )
 
-        tm_result = bayesianupdating(df -> df.L, [logL], tm_log, nothing, AutoFiniteDiff())
+        tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
         @test !iszero(getcoefficients(tm_result.map))
+    end
+
+    @testset "Warning and errors" begin
+        tm_log = TransportMapBayesian(
+            prior, map, quadrature; islog=true, transformprior=true
+        )
+        @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
+            df -> df.x1, df -> df.L, [logL], tm_log
+        )
+
+        tm_forward = TransportMapBayesian(prior, map, quadrature, AutoForwardDiff())
+        @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
+    end
+
+    @testset "External Model" begin
+        sourcedir = tempdir()
+        sourcefile = ["radius.jl"]
+
+        radius = Extractor(
+            base -> begin
+                return parse(Float64, readline(joinpath(base, "out.txt")))
+            end, :r
+        )
+
+        binary = joinpath(Sys.BINDIR, "julia")
+        solver = Solver(binary, "radius.jl")
+
+        ext = ExternalModel(sourcedir, sourcefile, radius, solver;)
+        tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
+        @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
+    end
+
+    @testset "Show methods" begin
+        # Test show methods
+        tm = TransportMapBayesian(prior, map, quadrature)
+        @test_nowarn sprint(show, tm)
+        @test_nowarn sprint(print, tm)
+        @test_nowarn display(tm)
     end
 end
 
@@ -113,9 +155,7 @@ end
 
         logprior(df) = logpdf.(prior, df.x)
 
-        tm = bayesianupdating(
-            loglikelihood, UQModel[], transportmap, nothing, AutoFiniteDiff()
-        )
+        tm = bayesianupdating(loglikelihood, UQModel[], transportmap)
 
         return tm, analytic_mean, sqrt(analytic_var)
     end
@@ -137,9 +177,7 @@ end
             ]
         end
 
-        tm = bayesianupdating(
-            loglikelihood, UQModel[], transportmap, nothing, AutoFiniteDiff()
-        )
+        tm = bayesianupdating(loglikelihood, UQModel[], transportmap)
 
         return tm, analytic_mean, analytic_std
     end
@@ -171,9 +209,7 @@ end
 
         logprior(df) = [logprior1(df_i) for df_i in eachrow(df)]
 
-        tm = bayesianupdating(
-            loglikelihood, UQModel[], transportmap, logprior, AutoFiniteDiff()
-        )
+        tm = bayesianupdating(logprior, loglikelihood, UQModel[], transportmap)
 
         return tm, mean(posterior_exact), std(posterior_exact)
     end
@@ -218,7 +254,7 @@ end
         @test std(df.x) ≈ analytic_std rtol = 0.05
     end
 
-    @testset "TM " begin
+    @testset "TM normalvarbenchmark " begin
         prior = InverseGamma(30, 100)
         prior_RV = RandomVariable(prior, :x)
 

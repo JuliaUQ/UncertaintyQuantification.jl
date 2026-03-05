@@ -1,5 +1,4 @@
 @testset "Transport Maps" begin
-
     @testset "TransportMap from density" begin
         # Define Target
         μ = [1.0, 2.0]
@@ -21,7 +20,6 @@
         @test length(tm.names) == 2
         @test tm.names == var_names
         @test tm.target == target
-        @test tm.quadrature == quadrature
 
         samples = sample(tm, 100)
         @test nrow(samples) == 100
@@ -55,12 +53,9 @@
         @test isapprox(vd, 0; atol=1e-8)
 
         # Test show methods
-        io = IOBuffer()
-        show(io, tm)
-        @test !isempty(String(take!(io)))
-
-        show(io, MIME("text/plain"), tm)
-        @test !isempty(String(take!(io)))
+        @test_nowarn sprint(show, tm)
+        @test_nowarn sprint(print, tm)
+        @test_nowarn display(tm)
     end
 
     @testset "TransportMap from samples" begin
@@ -111,13 +106,10 @@
         to_standard_normal_space!(tm_samples, X)
         @test isapprox(Matrix(X), Matrix(Z_copy); atol=1e-6)
 
-       # Test show methods
-        io = IOBuffer()
-        show(io, tm_samples)
-        @test !isempty(String(take!(io)))
-
-        show(io, MIME("text/plain"), tm_samples)
-        @test !isempty(String(take!(io)))
+        # Test show methods
+        @test_nowarn sprint(show, tm_samples)
+        @test_nowarn sprint(print, tm_samples)
+        @test_nowarn display(tm_samples)
     end
 
     @testset "TransportMap with transform_density" begin

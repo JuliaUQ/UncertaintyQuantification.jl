@@ -48,7 +48,7 @@ s(a, F) = F .* (a * L) .^ 2 / (6 * E * I) .* (3 * L .- a * L)
 #md nothing #hide
 
 #===
-Next, we define the prior distributions for the unknown parameters. We assume that ``a`` follows a Beta distribution (constrained to ``[0, 1]``) and ``F`` follows a Normal distribution centered at 1000 N with standard deviation 300 N.
+Next, we define the prior distributions for the unknown parameters. We assume that ``a`` follows a Beta distribution and ``F`` follows a Normal distribution centered at 1000 N with standard deviation 300 N.
 ===#
 
 prior = [
@@ -150,7 +150,7 @@ We perform the Bayesian updating using finite differences for gradient computati
 The map we defined is optimized by calling the [`bayesianupdating`](@ref) function.
 ===#
 
-tm = bayesianupdating(Like, [M], transportmap, nothing, AutoFiniteDiff())
+tm = bayesianupdating(Like, [M], transportmap)
 
 #===
 Once the map coefficients are optimized, we can sample from the transport map posterior and compare the samples to those obtained from TMCMC.
@@ -186,10 +186,18 @@ title!("TM-posterior and TMCMC samples")
 # ![Transport Map posterior](beam-tm-posterior.svg)
 
 #===
-Finally, we can compute the [`variancediagnostic`](@ref) to assess the quality of the transport map approximation, i.e., comparing between the true target and the TM approximation.
+Finally, we can compute the [`variancediagnostic`](@ref) to assess the quality of the transport map approximation.
+The diagnostic measures the variance of the log-ratio between the pushforward density (mapping from target to reference density)
+and the reference density:
+
+```math
+\varepsilon_\sigma = \frac{1}{2} \operatorname{Var}[\log \pi(T(z)) + \log |\operatorname{det} \nabla T(z)| - \rho(z)] .
+```
+
+A smaller variance indicates a better fit of the transport map.
 ===#
 
 df = sample(prior, 1000)
-to_standard_normal_space!(prior, df)
+to_standard_normal_space!(prior, df) # generate standard normal samples
 var_diag = variancediagnostic(tm, df)
 println("Variance diagnostic: $var_diag")

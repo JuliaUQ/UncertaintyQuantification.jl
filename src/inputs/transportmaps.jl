@@ -1,13 +1,12 @@
 """
-    TransportMap(map, target, quadrature, transform_density, names)
+    TransportMap(map, target, transform_density, names)
 
-A transport map used to transform between standard normal space Z and physical space X. The `map` is the optimized triangular transport map, `target` is the target density, `quadrature` specifies the quadrature weights used in optimization, `transform_density` optionally specifies random variables for density transformation, and `names` is a vector of variable names.
+A transport map used to transform between standard normal space Z and physical space X. The `map` is the optimized triangular transport map, `target` is the target density, and `transform_density` optionally specifies random variables for density transformation, and `names` is a vector of variable names.
 
 """
 struct TransportMap <: AbstractTransportMap
     map::AbstractTriangularMap
     target::MapTargetDensity
-    quadrature::AbstractQuadratureWeights
     transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}}
     names::Vector{Symbol}
 end
@@ -16,7 +15,6 @@ function Base.show(io::IO, tm::TransportMap)
     print(io, "TransportMap(")
     print(io, "map=$(tm.map), ")
     print(io, "target=$(tm.target), ")
-    print(io, "quadrature=$(tm.quadrature), ")
     print(io, "names=$(tm.names)")
     print(io, ")")
     return nothing
@@ -26,7 +24,6 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMap)
     println(io, "Transport Map:")
     println(io, "  Map: $(tm.map)")
     println(io, "  Target: $(tm.target)")
-    println(io, "  Quadrature: $(tm.quadrature)")
     println(io, "  Names: $(tm.names)")
     return nothing
 end
@@ -167,17 +164,13 @@ function mapfromdensity(
     target::MapTargetDensity,
     quadrature::AbstractQuadratureWeights,
     names::Vector{Symbol},
-    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}},
+    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}}=nothing,
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     options::Optim.Options=Optim.Options(),
 )
-    res = optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
+    optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
 
-    if !Optim.converged(res)
-        @warn "Optimization has not converged."
-    end
-
-    return TransportMap(transportmap, target, quadrature, transform_density, names)
+    return TransportMap(transportmap, target, transform_density, names)
 end
 
 """
@@ -204,7 +197,7 @@ function Base.show(io::IO, ::MIME"text/plain", tm::TransportMapFromSamples)
     println(io, "Transport Map (from samples):")
     println(io, "  Map: $(tm.map)")
     println(io, "  Names: $(tm.names)")
-    println(io, "  Number of Samples: $(nrow(tm.samples))")
+    print(io, "  Number of Samples: $(nrow(tm.samples))")
     return nothing
 end
 
