@@ -79,7 +79,7 @@ struct StandardNormalTransform end
 # ---------------- Input transformation ----------------
 # # Developer Note
 # Gaussian process regression inputs are always transformed to Vector or RowVecs in the multivariate input case
-struct GaussianProcessInputTransform{T}
+struct GaussianProcessInputTransformer{T}
     transform::T
     input::Union{Symbol, Vector{<:Symbol}, UQInput, Vector{<:UQInput}}
 end
@@ -89,7 +89,7 @@ fit_input_transform(
     ::DataFrame, 
     input::Union{Symbol, Vector{<:Symbol}}, 
     ::IdentityTransformChoice
-) = GaussianProcessInputTransform(NoTransform(), input)
+) = GaussianProcessInputTransformer(NoTransform(), input)
 
 function fit_input_transform(
     data::DataFrame, 
@@ -101,7 +101,7 @@ function fit_input_transform(
         dataframe_to_array(data, input); 
         dims=1
     )
-    return GaussianProcessInputTransform(transform, input)
+    return GaussianProcessInputTransformer(transform, input)
 end
 
 function fit_input_transform(
@@ -114,7 +114,7 @@ function fit_input_transform(
         dataframe_to_array(data, input); 
         dims=1
     )
-    return GaussianProcessInputTransform(transform, input)
+    return GaussianProcessInputTransformer(transform, input)
 end
 
 fit_input_transform(
@@ -133,17 +133,17 @@ fit_input_transform(
     ::DataFrame, 
     input::Union{UQInput, Vector{<:UQInput}}, 
     ::StandardNormalTransformChoice
-) = GaussianProcessInputTransform(StandardNormalTransform(), input)
+) = GaussianProcessInputTransformer(StandardNormalTransform(), input)
 
 # Transforms
 transform(
     data::DataFrame, 
-    transformer::GaussianProcessInputTransform{NoTransform}
+    transformer::GaussianProcessInputTransformer{<:NoTransform}
 ) = to_gp_format(dataframe_to_array(data, transformer.input))
 
 transform(
     data::DataFrame,
-    transformer::Union{GaussianProcessInputTransform{<:ZScoreTransform}, GaussianProcessInputTransform{<:UnitRangeTransform}}
+    transformer::Union{GaussianProcessInputTransformer{<:ZScoreTransform}, GaussianProcessInputTransformer{<:UnitRangeTransform}}
 ) = to_gp_format(
     StatsBase.transform(
             transformer.transform,
@@ -153,7 +153,7 @@ transform(
 
 function transform(
     data::DataFrame, 
-    transformer::GaussianProcessInputTransform{StandardNormalTransform}
+    transformer::GaussianProcessInputTransformer{<:StandardNormalTransform}
 )
     data_copy = copy(data)
     to_standard_normal_space!(transformer.input, data_copy)
@@ -165,7 +165,7 @@ end
 # # Developer Note
 # Gaussian process regression target outputs are always extracted from DataFrame and transformed to Vector
 # Inverse transforms return Vectors that later get inserted in the provided DataFrame that is used in evaluate! method for GaussianProcess
-struct GaussianProcessOutputTransform{T}
+struct GaussianProcessOutputTransformer{T}
     transform::T
     output::Symbol
 end
@@ -175,7 +175,7 @@ fit_output_transform(
     ::DataFrame, 
     output::Symbol, 
     ::IdentityTransformChoice
-) = GaussianProcessOutputTransform(NoTransform(), output)
+) = GaussianProcessOutputTransformer(NoTransform(), output)
 
 function fit_output_transform(
     data::DataFrame, 
@@ -187,7 +187,7 @@ function fit_output_transform(
         dataframe_to_array(data, output); 
         dims=1
     )
-    return GaussianProcessOutputTransform(transform, output)
+    return GaussianProcessOutputTransformer(transform, output)
 end
 
 function fit_output_transform(
@@ -200,7 +200,7 @@ function fit_output_transform(
         dataframe_to_array(data, output); 
         dims=1
     )
-    return GaussianProcessOutputTransform(transform, output)
+    return GaussianProcessOutputTransformer(transform, output)
 end
 
 fit_output_transform(
@@ -212,12 +212,12 @@ fit_output_transform(
 # Transforms
 transform(
     data::DataFrame, 
-    transformer::GaussianProcessOutputTransform{NoTransform}
+    transformer::GaussianProcessOutputTransformer{NoTransform}
 ) = to_gp_format(dataframe_to_array(data, transformer.output))
 
 transform(
     data::DataFrame,
-    transformer::Union{GaussianProcessOutputTransform{<:ZScoreTransform}, GaussianProcessOutputTransform{<:UnitRangeTransform}}
+    transformer::Union{GaussianProcessOutputTransformer{<:ZScoreTransform}, GaussianProcessOutputTransformer{<:UnitRangeTransform}}
 ) = to_gp_format(
     StatsBase.transform(
             transformer.transform,
@@ -248,20 +248,20 @@ transform(
 #     ```
 inverse_transform(
     data::AbstractArray, 
-    ::GaussianProcessOutputTransform{NoTransform}
+    ::GaussianProcessOutputTransformer{NoTransform}
 ) = data
 
 inverse_transform(
     data::AbstractArray,
-    transformer::Union{GaussianProcessOutputTransform{<:ZScoreTransform}, GaussianProcessOutputTransform{<:UnitRangeTransform}}
+    transformer::Union{GaussianProcessOutputTransformer{<:ZScoreTransform}, GaussianProcessOutputTransformer{<:UnitRangeTransform}}
 ) = StatsBase.reconstruct(transformer.transform, data)
 
 variance_inverse_transform(
     data::AbstractArray,
-    ::GaussianProcessOutputTransform{NoTransform}
+    ::GaussianProcessOutputTransformer{NoTransform}
 ) = data
 
 variance_inverse_transform(
     data::AbstractArray,
-    transformer::Union{GaussianProcessOutputTransform{<:ZScoreTransform}, GaussianProcessOutputTransform{<:UnitRangeTransform}}
+    transformer::Union{GaussianProcessOutputTransformer{<:ZScoreTransform}, GaussianProcessOutputTransformer{<:UnitRangeTransform}}
 ) = only(transformer.transform.scale)^2 * data
