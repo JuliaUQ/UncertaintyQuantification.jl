@@ -113,7 +113,7 @@ export GaussianProcess
 export GaussQuadrature
 export HaltonSampling
 export HermiteBasis
-export IdentityTransform, ZScoreTransform, UnitRangeTransform, StandardNormalTransform
+export IdentityTransformChoice
 export ImportanceSampling
 export Interval
 export IntervalVariable
@@ -147,12 +147,15 @@ export ShinozukaDeodatis
 export SobolSampling
 export Solver
 export SpectralRepresentation
+export StandardNormalTransformChoice
 export StochasticProcessModel
 export SubSetInfinity
 export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
 export TwoLevelFactorial
+export UnitRangeTransformChoice
+export ZScoreTransformChoice
 
 # Methods
 export bayesianupdating
