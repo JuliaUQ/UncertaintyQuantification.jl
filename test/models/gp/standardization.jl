@@ -1,250 +1,122 @@
-function make_standardizer(
-    data::DataFrame, 
-    input::Union{Symbol, Vector{Symbol}}, 
-    output::Symbol,
-    transform::UncertaintyQuantification.AbstractDataTransform,
-)
-    UncertaintyQuantification.DataStandardizer(
-        data, input, output, 
-        UncertaintyQuantification.InputTransform(transform),
-        UncertaintyQuantification.OutputTransform(transform),
-    )
-end
+@testset "Transforms" begin
 
-function check_transform(
-    data::DataFrame,
-    input::Union{Symbol, Vector{Symbol}},
-    output::Symbol,
-    transformed_vars::Tuple,
-    ::UncertaintyQuantification.IdentityTransform
-)
-    tranformed_in, transformed_out, 
-    inv_transformed_out, inv_transformed_out_var = transformed_vars
-
-    if isa(input, Symbol) # 1D case
-        # Test input scaling
-        @test all(tranformed_in .== data[!, input])
-        # Transformation should not do anything here
-        @test all(transformed_out .== inv_transformed_out)
-        # Test output inverse transform
-        @test all(data[!, output] .== inv_transformed_out)
-        # Test output inverse transform for variance (should not do anything to variance)
-        @test all(data[!, output] .== inv_transformed_out_var)
-    else # 2D case
-        # Test input scaling
-        tranformed_in = mapreduce(rv -> rv', vcat, tranformed_in)
-        @test all(tranformed_in .== Matrix(data[!, input]))
-        # Test output scaling
-        @test all(transformed_out .== inv_transformed_out)
-        # Test output inverse transform
-        @test all(data[!, output] .== inv_transformed_out)
-        # Test output inverse transform for variance
-        @test all(data[!, output] .== inv_transformed_out_var)
+    @testset "to_gp_format" begin
+        v = [1.0, 2.0, 3.0]
+        @test UncertaintyQuantification.to_gp_format(v) isa Vector
+        M = [1.0 2.0; 3.0 4.0; 5.0 6.0]
+        @test UncertaintyQuantification.to_gp_format(M) isa RowVecs
     end
-end
 
-function check_transform(
-    data::DataFrame,
-    input::Union{Symbol, Vector{Symbol}},
-    output::Symbol,
-    transformed_vars::Tuple,
-    ::UncertaintyQuantification.ZScoreTransform
-)
-    tranformed_in, transformed_out, 
-    inv_transformed_out, inv_transformed_out_var = transformed_vars
-
-    if isa(input, Symbol) # 1D case
-        # Test input scaling
-        μ = mean(data[!, input])
-        σ = std(data[!, input]) 
-        manually_transformed_in = (data[!, input] .- μ) ./ σ
-        @test all(tranformed_in .≈ manually_transformed_in)
-
-        # Test output scaling
-        μ = mean(data[!, output])
-        σ = std(data[!, output]) 
-        manually_transformed_out = (data[!, output] .- μ) ./ σ                                    
-        @test all(manually_transformed_out .≈ transformed_out)
-
-        # Test output inverse transform
-        @test all(data[!, output] .≈ inv_transformed_out)
-
-        # Test output inverse transform for variance
-        @test all(σ^2 * transformed_out .≈ inv_transformed_out_var)
-    else # 2D case
-        # Test input scaling
-        tranformed_in = mapreduce(rv -> rv', vcat, tranformed_in)
-        μ = mean(Matrix(data[!, input]), dims=1)
-        σ = std(Matrix(data[!, input]), dims=1) 
-        manually_transformed_in = (Matrix(data[!, input]) .- μ) ./ σ
-        @test all(tranformed_in .≈ manually_transformed_in)
-
-        # Test output scaling
-        μ = mean(data[!, output])
-        σ = std(data[!, output]) 
-        manually_transformed_out = (data[!, output] .- μ) ./ σ                                    
-        @test all(manually_transformed_out .≈ transformed_out)
-
-        # Test output inverse transform
-        @test all(data[!, output] .≈ inv_transformed_out)
-
-        # Test output inverse transform for variance
-        @test all(σ^2 * transformed_out .≈ inv_transformed_out_var)
-    end
-end
-
-function check_transform(
-    data::DataFrame,
-    input::Union{Symbol, Vector{Symbol}},
-    output::Symbol,
-    transformed_vars::Tuple,
-    ::UncertaintyQuantification.UnitRangeTransform
-)
-    tranformed_in, transformed_out, 
-    inv_transformed_out, inv_transformed_out_var = transformed_vars
-
-    if isa(input, Symbol) # 1D case
-        # Test input scaling
-        tmin, tmax = extrema(data[!, input])
-        shift = tmin
-        scale = 1 / (tmax - tmin)
-        manually_transformed_in = (data[!, input] .- shift) * scale
-        @test all(tranformed_in .≈ manually_transformed_in)
-
-        # Test output scaling
-        tmin, tmax = extrema(data[!, output])
-        shift = tmin
-        scale = 1 / (tmax - tmin)
-        manually_transformed_out = (data[!, output] .- shift) * scale                                   
-        @test all(manually_transformed_out .≈ transformed_out)
-
-        # Test output inverse transform
-        @test all(data[!, output] .≈ inv_transformed_out)
-
-        # Test output inverse transform for variance
-        @test all(scale^2 * transformed_out .≈ inv_transformed_out_var)
-    else # 2D case
-        # Test input scaling
-        tranformed_in = mapreduce(rv -> rv', vcat, tranformed_in)
-        extrs = extrema(Matrix(data[!, input]), dims=1)
-        shift = map(t -> t[1], extrs[1, :])
-        scale = map(t -> 1 / (t[2] - t[1]), extrs[1, :])
-        manually_transformed_in = (Matrix(data[!, input]) .- shift') .* scale'
-        @test all(tranformed_in .≈ manually_transformed_in)
-
-        # Test output scaling
-        tmin, tmax = extrema(data[!, output])
-        shift = tmin
-        scale = 1 / (tmax - tmin)
-        manually_transformed_out = (data[!, output] .- shift) * scale                                   
-        @test all(manually_transformed_out .≈ transformed_out)
-
-        # Test output inverse transform
-        @test all(data[!, output] .≈ inv_transformed_out)
-
-        # Test output inverse transform for variance
-        @test all(scale^2 * transformed_out .≈ inv_transformed_out_var)
-    end
-end
-
-@testset "GaussianProcessDataStandardizer" begin
-    transforms = [
-        UncertaintyQuantification.IdentityTransform(),
-        UncertaintyQuantification.ZScoreTransform(),
-        UncertaintyQuantification.UnitRangeTransform(),
-        UncertaintyQuantification.StandardNormalTransform()
-    ]
-
-    N = 10
-    output = :y
-
-    @testset "OneDimensionalInput" begin
-        input = RandomVariable(Normal(-1, 0.5), :x1)
-        df = sample(input, N)
-        df[!, output] = rand(N)
-        names = propertynames(df[:, Not(output)])
-
-        for transform in transforms
-            @testset "$(nameof(typeof(transform)))" begin
-                # StandardNormalTransform should not work for Outputs!
-                if isa(transform, UncertaintyQuantification.StandardNormalTransform)
-                    @test_throws ArgumentError datastandardizer = UncertaintyQuantification.DataStandardizer(
-                            df, input, output, 
-                            UncertaintyQuantification.InputTransform(transform),
-                            UncertaintyQuantification.OutputTransform(transform),
-                        )
-
-                    datastandardizer = UncertaintyQuantification.DataStandardizer(
-                        df, input, output, 
-                        UncertaintyQuantification.InputTransform(transform),
-                        UncertaintyQuantification.OutputTransform(UncertaintyQuantification.IdentityTransform()),
-                    )
-
-                    tranformed_in = datastandardizer.fᵢ(df)
-                    # input gets transformed to a Vector
-                    @test isa(tranformed_in, Vector)
-                    # TODO: Should test if input does get transformed to standard normal space, even though this relies on already tested internal implementation.
-                    continue
-                end
-
-                # Test all other transforms
-                datastandardizer = make_standardizer(df, names, output, transform)
-                tranformed_in = datastandardizer.fᵢ(df)
-                transformed_out = datastandardizer.fₒ(df)
-                inv_transformed_out = datastandardizer.fₒ⁻¹(transformed_out)
-                inv_transformed_out_var = datastandardizer.var_fₒ⁻¹(transformed_out)
-
-                check_transform(
-                    df, only(names), output, 
-                    (tranformed_in, transformed_out, inv_transformed_out, inv_transformed_out_var),
-                    transform
-                )
-            end
+    @testset "Input transformer" begin
+        @testset "IdentityTransformChoice" begin
+            data = DataFrame(x = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_input_transform(data, :x, IdentityTransformChoice())
+            x = UncertaintyQuantification.transform(data, transformer)
+            @test x ≈ data.x
+        end
+        @testset "ZScoreTransformChoice" begin
+            data = DataFrame(x = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_input_transform(data, :x, ZScoreTransformChoice())
+            x = UncertaintyQuantification.transform(data, transformer)
+            @test mean(x) ≈ 0.0 atol=1e-10
+            @test std(x) ≈ 1.0 atol=1e-10
+        end
+        @testset "UnitRangeTransformChoice" begin
+            data = DataFrame(x = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_input_transform(data, :x, UnitRangeTransformChoice())
+            x = UncertaintyQuantification.transform(data, transformer)
+            @test minimum(x) ≈ 0.0 atol=1e-10
+            @test maximum(x) ≈ 1.0 atol=1e-10
+        end
+        @testset "StandardNormalTransformChoice with Symbol throws" begin
+            data = DataFrame(x = [1.0, 2.0, 3.0])
+            @test_throws ArgumentError UncertaintyQuantification.fit_input_transform(data, :x, StandardNormalTransformChoice())
+        end
+        @testset "Multivariate input gives RowVecs" begin
+            data = DataFrame(x1 = [1.0, 2.0, 3.0], x2 = [4.0, 5.0, 6.0])
+            transformer = UncertaintyQuantification.fit_input_transform(data, [:x1, :x2], IdentityTransformChoice())
+            x = UncertaintyQuantification.transform(data, transformer)
+            @test x isa RowVecs
+        end
+        @testset "Single input column gives Vector" begin
+            data = DataFrame(x = [1.0, 2.0, 3.0])
+            transformer = UncertaintyQuantification.fit_input_transform(data, :x, IdentityTransformChoice())
+            x = UncertaintyQuantification.transform(data, transformer)
+            @test x isa Vector
         end
     end
 
-    @testset "MultiDimensionalInput" begin
-        input = RandomVariable.([Uniform(-2, 0), Normal(-1, 0.5), Uniform(0, 1)], [:x1, :x2, :x3])
-        df = sample(input, N)
-        df[!, output] = rand(N)
-        names = propertynames(df[:, Not(output)])
-
-        for transform in transforms
-            @testset "$(nameof(typeof(transform)))" begin
-                # StandardNormalTransform should not work for Outputs!
-                if isa(transform, UncertaintyQuantification.StandardNormalTransform)
-                    @test_throws ArgumentError datastandardizer = UncertaintyQuantification.DataStandardizer(
-                            df, input, output, 
-                            UncertaintyQuantification.InputTransform(transform),
-                            UncertaintyQuantification.OutputTransform(transform),
-                        )
-
-                    datastandardizer = UncertaintyQuantification.DataStandardizer(
-                        df, input, output, 
-                        UncertaintyQuantification.InputTransform(transform),
-                        UncertaintyQuantification.OutputTransform(UncertaintyQuantification.IdentityTransform()),
-                    )
-
-                    tranformed_in = datastandardizer.fᵢ(df)
-                    # input gets transformed to RowVecs
-                    @test isa(tranformed_in, RowVecs)
-                    # TODO: Should test if input does get transformed to standard normal space, even though this relies on already tested internal implementation.
-                    continue
-                end
-
-                # Test all other transforms
-                datastandardizer = make_standardizer(df, names, output, transform)
-                tranformed_in = datastandardizer.fᵢ(df)
-                transformed_out = datastandardizer.fₒ(df)
-                inv_transformed_out = datastandardizer.fₒ⁻¹(transformed_out)
-                inv_transformed_out_var = datastandardizer.var_fₒ⁻¹(transformed_out)
-
-                check_transform(
-                    df, names, output, 
-                    (tranformed_in, transformed_out, inv_transformed_out, inv_transformed_out_var),
-                    transform
-                )
-            end
+    @testset "Output transformer" begin
+        @testset "IdentityTransformChoice" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, IdentityTransformChoice())
+            y = UncertaintyQuantification.transform(data, transformer)
+            @test y ≈ data.y
+        end
+        @testset "ZScoreTransformChoice" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, ZScoreTransformChoice())
+            y = UncertaintyQuantification.transform(data, transformer)
+            @test mean(y) ≈ 0.0 atol=1e-10
+            @test std(y) ≈ 1.0 atol=1e-10
+        end
+        @testset "UnitRangeTransformChoice" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, UnitRangeTransformChoice())
+            y = UncertaintyQuantification.transform(data, transformer)
+            @test minimum(y) ≈ 0.0 atol=1e-10
+            @test maximum(y) ≈ 1.0 atol=1e-10
+        end
+        @testset "StandardNormalTransformChoice throws" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0])
+            @test_throws ArgumentError UncertaintyQuantification.fit_output_transform(data, :y, StandardNormalTransformChoice())
         end
     end
+
+    @testset "Inverse transforms" begin
+        @testset "NoTransform is identity" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, IdentityTransformChoice())
+            y = UncertaintyQuantification.transform(data, transformer)
+            @test UncertaintyQuantification.inverse_transform(y, transformer) ≈ data.y
+            @test UncertaintyQuantification.variance_inverse_transform(y, transformer) ≈ y
+        end
+        @testset "ZScoreTransform round-trip" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, ZScoreTransformChoice())
+            y_transformed = UncertaintyQuantification.transform(data, transformer)
+            @test UncertaintyQuantification.inverse_transform(y_transformed, transformer) ≈ data.y atol=1e-10
+        end
+        @testset "UnitRangeTransform round-trip" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, UnitRangeTransformChoice())
+            y_transformed = UncertaintyQuantification.transform(data, transformer)
+            @test UncertaintyQuantification.inverse_transform(y_transformed, transformer) ≈ data.y atol=1e-10
+        end
+        @testset "Variance inverse transform - ZScore" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, ZScoreTransformChoice())
+            σ² = only(transformer.transform.scale)^2
+            var_transformed = ones(5)
+            # Var[y] = σ² * Var[ỹ]
+            @test UncertaintyQuantification.variance_inverse_transform(var_transformed, transformer) ≈ σ² * var_transformed atol=1e-10
+        end
+        @testset "Variance inverse transform - UnitRange" begin
+            data = DataFrame(y = [1.0, 2.0, 3.0, 4.0, 5.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, UnitRangeTransformChoice())
+            σ² = only(transformer.transform.scale)^2
+            var_transformed = ones(5)
+            @test UncertaintyQuantification.variance_inverse_transform(var_transformed, transformer) ≈ σ² * var_transformed atol=1e-10
+        end
+        @testset "Variance inverse is not the same as mean inverse" begin
+            # Regression guard: make sure variance and mean inverse transforms are not accidentally swapped
+            data = DataFrame(y = [10.0, 20.0, 30.0, 40.0, 50.0])
+            transformer = UncertaintyQuantification.fit_output_transform(data, :y, ZScoreTransformChoice())
+            var_transformed = ones(5)
+            mean_inv = UncertaintyQuantification.inverse_transform(var_transformed, transformer)
+            var_inv = UncertaintyQuantification.variance_inverse_transform(var_transformed, transformer)
+            @test !(mean_inv ≈ var_inv)
+        end
+    end
+    
 end
