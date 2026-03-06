@@ -57,24 +57,6 @@ function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
 end
 
 """
-    sample(tm::TransportMap, n::Integer=1)
-
-Generate `n` samples in the physical space `X` using the transport map `tm`.
-"""
-function sample(tm::TransportMap, n::Integer=1)
-    Z = randn(n, numberdimensions(tm.map))
-    X = evaluate(tm, Z)
-
-    df = _to_dataframe(X, tm.names)
-
-    if !isnothing(tm.transform_density)
-        to_physical_space!(tm.transform_density, df)
-    end
-
-    return df
-end
-
-"""
     pdf(tm::TransportMap, x::AbstractVector{<:Real})
 
 Evaluate the probability density function (pdf) of the transport map in the physical space, i.e., the pushforward density. `x` is a vector, representing a point in the M-dimensional target space. Returns a `Float64`.
@@ -105,12 +87,17 @@ function pdf(tm::TransportMap, X::AbstractMatrix{<:Real})
     return [pdf(tm, xᵢ) for xᵢ in eachrow(X)]
 end
 
+"""
+    mean(tm::TransportMap)
+
+Get the mean value of the density approximated by the transport map.
+"""
 function mean(tm::TransportMap)
     if !isnothing(tm.transform_density)
-        ξ = evaluate(tm, zeros(length(tm.names)))
+        ξ = evaluate(tm, zeros(length(tm)))
         return _to_physical(tm.transform_density, ξ)
     else
-        return evaluate(tm, zeros(length(tm.names)))
+        return evaluate(tm, zeros(length(tm)))
     end
 end
 
@@ -255,13 +242,12 @@ function to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
 end
 
 """
-    sample(tm::TransportMapFromSamples, n::Integer=1)
+    sample(tm::AbstractTransportMap, n::Integer=1)
 
 Generate `n` samples in the physical space `X` using the transport map `tm`.
 """
-function sample(tm::TransportMapFromSamples, n::Integer=1)
-    Z = randn(n, numberdimensions(tm.map))
-    X = inverse(tm, Z)
+function sample(tm::AbstractTransportMap, n::Integer=1)
+    X = permutedims(rand(tm, n))
     return _to_dataframe(X, tm.names)
 end
 
@@ -272,6 +258,15 @@ Evaluate the probability density function (pdf) of the transport map in the phys
 """
 function pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
     return TransportMaps.pullback(tm.map, x)
+end
+
+"""
+    mean(tm::TransportMapFromSamples)
+
+Get the mean value of the density approximated by the transport map.
+"""
+function mean(tm::TransportMapFromSamples)
+    return inverse(tm, zeros(length(tm)))
 end
 
 # General methods that work for both "ways"
@@ -285,13 +280,60 @@ function inverse(tm::AbstractTransportMap, X::AbstractVecOrMat{<:Real})
     return TransportMaps.inverse(tm.map, X)
 end
 
+# Methods for compatibility with `MultivariateDistribution`
+length(tm::AbstractTransportMap) = length(tm.names)
+eltype(tm::AbstractTransportMap) = Float64
+sampler(tm::AbstractTransportMap) = tm
+
+function Distributions._rand!(rng::AbstractRNG, tm::TransportMap, x::AbstractVector{<:Real})
+    if !isnothing(tm.transform_density)
+        randn!(rng, x)
+        return _to_physical(tm.transform_density, evaluate(tm, x))
+    else
+        randn!(rng, x)
+        return evaluate(tm, x)
+    end
+end
+
+function Distributions._rand!(rng::AbstractRNG, tm::TransportMap, x::AbstractMatrix{<:Real})
+    if !isnothing(tm.transform_density)
+        randn!(rng, x)
+        ξ = permutedims(evaluate(tm, permutedims(x)))
+        for (i, ξi) in enumerate(eachcol(ξ))
+            x[:, i] .= _to_physical(tm.transform_density, ξi)
+        end
+        return x
+    else
+        randn!(rng, x)
+        return permutedims(evaluate(tm, permutedims(x)))
+    end
+end
+
+function Distributions._rand!(
+    rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractVector{<:Real}
+)
+    randn!(rng, x)
+    return inverse(tm, x)
+end
+
+function Distributions._rand!(
+    rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractMatrix{<:Real}
+)
+    randn!(rng, x)
+    return permutedims(inverse(tm, permutedims(x)))
+end
+
+function Distributions._logpdf(tm::AbstractTransportMap, x::AbstractArray)
+    return log.(pdf(tm, x))
+end
+
 """
     logpdf(tm::AbstractTransportMap, x)
 
 Log-probability density function of the transport map in the physical space X. The argument `x` can be either a vector or matrix of values where the log-pdf is evaluated. Returns a `Float64` for a vector input or `Vector{Float64}` for a matrix input.
 """
 function logpdf(tm::AbstractTransportMap, x::AbstractVecOrMat{<:Real})
-    return log.(pdf(tm, x))
+    return Distributions._logpdf(tm, x)
 end
 
 # Helper functions

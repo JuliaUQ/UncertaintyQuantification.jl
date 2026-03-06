@@ -31,8 +31,9 @@ using TransportMaps
 @reexport using Distributions
 @reexport using DifferentiationInterface
 
-import Base: rand, names, copy, run, length
-import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
+import Base: rand, names, copy, run, length, eltype
+import Distributions:
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler
 import Statistics: mean, var
 import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 
@@ -76,7 +77,7 @@ abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
 
-abstract type AbstractTransportMap end
+abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
 
 # Types
 export AbstractBayesianMethod

@@ -295,8 +295,6 @@ Transport maps establish a deterministic coupling between a simple reference dis
 
 The map coefficients are determined by minimizing the Kullback-Leibler (KL) divergence between the transport map approximation and the true posterior. For detailed information on transport map theory, construction methods, and general usage, see [Transport Maps](@ref transport_map_manual).
 
-### Application to Bayesian Updating
-
 For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
 - `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
 - `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))

@@ -1,15 +1,19 @@
 # [Transport Maps](@id transport_map_manual)
 
-A transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$ [marzoukSamplingMeasureTransport2016](@cite).
-The transport map provides a way to transform samples from a simple reference distribution (typically standard normal) into samples from a complex target distribution.
-The inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target space back to the reference space.
+**Transport maps** (TMs) construct a deterministic transformation between a simple reference distribution (typically standard normal) and a complex target distribution [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
+Once such a map is constructed, generating samples from the target becomes trivial: simply draw samples from the reference and apply the transformation. Moreover, transport maps enable efficient computation of conditional distributions, marginals, and other probabilistic quantities through the geometric structure they impose 
+
+## Mathematical Formulation
+
+Mathematically, a transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is defined as a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$ .
+Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target space back to the reference space.
 
 The target distribution is approximated by the so-called *pull-back* density:
 ```math
 \pi(\theta) \approx T_{\#}\rho = \rho\left(T^{-1}(\bm{a},\theta)\right) \ |\det \nabla T^{-1}(\bm{a},\theta)|.
 ```
 
-## Triangular Structure
+### Triangular Structure
 
 The construction and inversion of the transport map can be greatly simplified by using a triangular structure following the Knothe-Rosenblatt rearrangement [knotheContributions1957](@cite), [rosenblattRemarks1952](@cite).
 This triangular structure guarantees invertibility and makes the Jacobian determinant straightforward to compute.
@@ -126,9 +130,13 @@ savefig("tm-banana-1.svg"); nothing # hide
 
 ![Banana density](tm-banana-1.svg)
 
+!!! note "Bayesian Updating with Transport Maps"
+    The abaility to have an analytical expression for the density and the ability to generate samples make transport maps appealing for Bayesian inference applications. For the usage with [`bayesianupdating`](@ref) see [Variational Inference with Transport Maps](@ref).
+
 ### Map Construction from Target Samples
 
-When only samples from the target distribution are available (without an analytical density), the KL-divergence is formulated in reverse—as an expected value with respect to the target measure rather than the reference measure.
+When only samples from the target distribution are available (without an analytical density), the KL-divergence is formulated in reverse, i.e., as an expected value with respect to the target measure rather than the reference measure.
+In this case, the construction of the transport map allows for density estimation from samples and can provide an alternative to [Gaussian Mixture Models](@ref).
 
 #### Usage
 
@@ -184,4 +192,3 @@ savefig("tm-banana-2.svg"); nothing # hide
 ```
 
 ![Banana density](tm-banana-2.svg)
-

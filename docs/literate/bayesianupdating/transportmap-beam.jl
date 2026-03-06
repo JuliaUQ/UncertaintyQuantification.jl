@@ -11,11 +11,11 @@ This example is based on an [grashornEfficientDiagnostics2024](@cite).
 
 ![Beam](../assets/beam.svg)
 
-The displacement at the end of the beam, denoted as ``s``, is obatined as a function of ``a``and ``F``
+The displacement at the end of the beam, denoted as ``s``, is obatined as a function of ``a`` and ``F``
 through the following analyical expression:
 
 ```math
-s = \mathcal{M}(\theta) = \frac{F \cdot (a L)^2}{6 E I} (3 L - a L)
+    \mathcal{M}(\theta) := s = \frac{F \cdot (a L)^2}{6 E I} (3 L - a L)
 ```
 
 where ``I = \frac{b h^3}{12}`` is moment of inertia of the cross section and ``\theta = [a, F]``.
@@ -77,11 +77,13 @@ data = [
 #md nothing #hide
 
 #===
-We define the forward model and the log-likelihood function. The likelihood assumes that the measurement errors are independent and normally distributed:
+We define the forward model ``\mathcal{M}(\theta)`` as a [`Model`](@ref).
+The likelihood assumes that the measurement errors are independent and normally distributed:
 
 ```math
-    P(D | \theta) = \prod_{i=1}^{10} \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[ - \frac{1}{2} \left(\frac{\mathcal{M}(\theta) - D_i}{\sigma}\right)^2 \right]
+    P(D | \theta) = \prod_{i=1}^{10} \frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left[ - \frac{1}{2} \left(\frac{\mathcal{M}(\theta) - D_i}{\sigma}\right)^2 \right].
 ```
+For better stability, we use the log-likelihood for the updating.
 ===#
 
 M = Model(df -> s(df.a, df.F), :disp)
@@ -92,45 +94,12 @@ Like = df -> sum([logpdf.(Normal(y, σ), df.disp) for y in data])
 ### Bayesian Updating with TMCMC
 
 First, we apply the TMCMC algorithm to sample from the posterior distribution.
+We use these samples to compare with the results obtained with the transport map.
 ===#
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
 samples, evidence = bayesianupdating(Like, [M], tmcmc)
 #md nothing #hide
-
-#===
-To visualize the results, we compute the unnormalized posterior on a grid and plot it alongside the TMCMC samples:
-===#
-
-loglike(x) = sum([logpdf.(Normal(y, σ), s(x[1], x[2])) for y in data])
-posterior(x) = exp(logpdf(prior[1], x[1]) + logpdf(prior[2], x[2]) + loglike(x))
-
-x1_grid = 0.3:0.01:1
-x2_grid = 0:10:2500
-
-post = [posterior([x1, x2]) for x2 in x2_grid, x1 in x1_grid]
-
-scatter(samples.a, samples.F, alpha=0.8, label="TMCMC Samples")
-contour!(x1_grid, x2_grid, post)
-xlabel!("a [-]")
-ylabel!("F [N]")
-title!("Unnormalized posterior and TMCMC samples")
-#md savefig("beam-tmcmc-posterior.svg"); nothing # hide
-
-# ![TMCMC posterior](beam-tmcmc-posterior.svg)
-
-#===
-We can also visualize the likelihood function alone:
-===#
-
-likelihood_vals = [exp.(loglike([x1, x2])) for x2 in x2_grid, x1 in x1_grid]
-contour(x1_grid, x2_grid, likelihood_vals)
-xlabel!("a [-]")
-ylabel!("F [N]")
-title!("Likelihood")
-#md savefig("beam-likelihood.svg"); nothing # hide
-
-# ![Likelihood function](beam-likelihood.svg)
 
 #===
 ### Bayesian Updating with Transport Maps
@@ -170,6 +139,9 @@ title!("Comparison of TM and TMCMC samples")
 
 #===
 Further, transport maps provide a formulation of the poserior density in terms of the reference density and the map, as also outlined in [Variational Inference with Transport Maps](@ref).
+We can evaluate the density by calling [`pdf(tm::TransportMap, x::AbstractVector{<:Real})`](@ref).
+In the figure below, the TM-approximated pdf is plotted over the samples generated with TMCMC.
+A good agreement of the samples and the pdf is observed.
 ===#
 
 x1_grid = range(0.3, 1, 100)

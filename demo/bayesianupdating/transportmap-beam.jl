@@ -37,26 +37,6 @@ Like = df -> sum([logpdf.(Normal(y, σ), df.disp) for y in data])
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
 samples, evidence = bayesianupdating(Like, [M], tmcmc)
 
-loglike(x) = sum([logpdf.(Normal(y, σ), s(x[1], x[2])) for y in data])
-posterior(x) = exp(logpdf(prior[1], x[1]) + logpdf(prior[2], x[2]) + loglike(x))
-
-x1_grid = 0.3:0.01:1
-x2_grid = 0:10:2500
-
-post = [posterior([x1, x2]) for x2 in x2_grid, x1 in x1_grid]
-
-scatter(samples.a, samples.F, alpha=0.8, label="TMCMC Samples")
-contour!(x1_grid, x2_grid, post)
-xlabel!("a [-]")
-ylabel!("F [N]")
-title!("Unnormalized posterior and TMCMC samples")
-
-likelihood_vals = [exp.(loglike([x1, x2])) for x2 in x2_grid, x1 in x1_grid]
-contour(x1_grid, x2_grid, likelihood_vals)
-xlabel!("a [-]")
-ylabel!("F [N]")
-title!("Likelihood")
-
 T = PolynomialMap(2, 2)
 quadrature = GaussHermiteWeights(3, 2)
 transportmap = TransportMapBayesian(prior, T, quadrature)
