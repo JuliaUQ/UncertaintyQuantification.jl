@@ -1,4 +1,4 @@
-@testset "Transforms" begin
+@testset "Standardization" begin
 
     @testset "to_gp_format" begin
         v = [1.0, 2.0, 3.0]
