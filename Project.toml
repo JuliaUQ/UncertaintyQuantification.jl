@@ -1,9 +1,6 @@
 name = "UncertaintyQuantification"
 uuid = "7183a548-a887-11e9-15ce-a56ab60bad7a"
-authors = [
-    "Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>",
-    "Ander Gray <ander.gray@ukaea.uk>",
-]
+authors = ["Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>", "Ander Gray <ander.gray@ukaea.uk>"]
 version = "0.13.0"
 
 [deps]
@@ -43,7 +40,7 @@ CovarianceEstimation = "0.2"
 DataFrames = "0.22, 1.0"
 DelimitedFiles = "1"
 Dierckx = "0.5"
-DifferentiationInterface = "0.7.7"
+DifferentiationInterface = "0.7.16"
 Distributions = "0.24, 0.25"
 FastGaussQuadrature = "0.4, 0.5, 1"
 FiniteDifferences = "0.12"
