@@ -344,3 +344,62 @@ end
 function _to_dataframe(x::AbstractVector{<:Real}, names::Vector{Symbol})
     return DataFrame(permutedims(x), names)
 end
+
+function minimum(tm::TransportMap)
+    if !isnothing(tm.transform_density)
+        return [minimum(dens) for dens in tm.transform_density]
+    else
+        # Without transformation: support domain is ℝ
+        return fill(-Inf, length(tm))
+    end
+end
+
+function maximum(tm::TransportMap)
+    # support domain is ℝ
+    return fill(Inf, length(tm))
+end
+
+function minimum(tm::TransportMapFromSamples)
+    if !isnothing(tm.transform_density)
+        return [minimum(dens) for dens in tm.transform_density]
+    else
+        # Without transformation: support domain is ℝ
+        return fill(-Inf, length(tm))
+    end
+end
+
+function maximum(tm::TransportMapFromSamples)
+    # support domain is ℝ
+    return fill(Inf, length(tm))
+end
+
+function insupport(tm::AbstractTransportMap, x::Vector{<:Real})
+    if all(x .>= minimum(tm)) && all(x .<= maximum(tm))
+        return true
+    else
+        return false
+    end
+end
+
+function var(tm::AbstractTransportMap)
+    # maybe can be calculated using numerical integration ?
+    return error("Variance not defined for $(typeof(tm)).")
+end
+
+
+# JointDistribution overlay for transport maps
+
+#! make this work for transport map!
+JointDistribution(tm::AbstractTransportMap) = JointDistribution(tm, tm.names)
+
+function to_standard_normal_space!(
+    jd::JointDistribution{<:AbstractTransportMap, Symbol}, df::DataFrame
+)
+    return to_standard_normal_space!(jd.d, df)
+end
+
+function to_physical_space!(
+    jd::JointDistribution{<:AbstractTransportMap, Symbol}, df::DataFrame
+)
+    return to_physical_space!(jd.d, df)
+end
