@@ -131,7 +131,6 @@ export MaximumLikelihoodBayesian
 export MaximumLikelihoodEstimation
 export Model
 export MonteCarlo
-export NoHyperparameterOptimization
 export ParallelModel
 export Parameter
 export PlackettBurman
@@ -171,6 +170,7 @@ export gradient_in_standard_normal_space
 export linear_binning
 export mean
 export multivariate_indices
+export optimize_hyperparameters
 export periodogram
 export polynomialchaos
 export probability_of_failure
