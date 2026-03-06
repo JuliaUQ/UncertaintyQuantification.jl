@@ -42,8 +42,8 @@ Internally, the `DataStandardizer` constructs the functions required for evaluat
 
 # Examples
 ```jldoctest
-julia> unitrange = UnitRangeTransformChoice()()
-UnitRangeTransformChoice()()
+julia> unitrange = UnitRangeTransformChoice()
+UnitRangeTransformChoice()
 ```
 """
 struct UnitRangeTransformChoice <: AbstractTransformChoice end
