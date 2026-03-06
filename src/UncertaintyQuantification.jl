@@ -1,9 +1,11 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
 using Distributed
 using FastGaussQuadrature

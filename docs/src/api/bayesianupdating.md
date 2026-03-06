@@ -17,6 +17,7 @@ TransitionalMarkovChainMonteCarlo
 AbstractBayesianPointEstimate
 MaximumAPosterioriBayesian
 MaximumLikelihoodBayesian
+LaplaceEstimateBayesian
 ```
 
 ## Methods

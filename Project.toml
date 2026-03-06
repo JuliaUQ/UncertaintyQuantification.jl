@@ -1,18 +1,17 @@
 name = "UncertaintyQuantification"
 uuid = "7183a548-a887-11e9-15ce-a56ab60bad7a"
-authors = [
-    "Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>",
-    "Ander Gray <ander.gray@hds.utc.fr>",
-]
 version = "0.14.0"
+authors = ["Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>", "Ander Gray <ander.gray@hds.utc.fr>"]
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Bootstrap = "e28b5b4c-05e8-5b66-bc03-6f0c0a0a06e0"
 CovarianceEstimation = "587fd27a-f159-11e8-2dae-1979310e6154"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
@@ -33,11 +32,13 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
+ADTypes = "1.21.0"
 Bootstrap = "2.2"
 CovarianceEstimation = "0.2"
 DataFrames = "0.22, 1.0"
 DelimitedFiles = "1"
 Dierckx = "0.5"
+DifferentiationInterface = "0.7.16"
 Distributions = "0.24, 0.25"
 FastGaussQuadrature = "0.4, 0.5, 1"
 FiniteDifferences = "0.12"

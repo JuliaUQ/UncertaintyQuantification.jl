@@ -242,7 +242,7 @@ end
 function optimize_pointestimate(
     optimTarget::Function, pointestimate::AbstractBayesianPointEstimate
 )
-    method = getOptimMethod(pointestimate.optimmethod)
+    method = getoptimmethod(pointestimate.optimmethod)
 
     if all(isinf, pointestimate.upperbounds) && all(isinf, pointestimate.lowerbounds)
         optvalues = map(x -> optimize(optimTarget, x, method), pointestimate.x0)
@@ -272,13 +272,13 @@ Alternative constructors
     LaplaceEstimateBayesian(prior, optimmethod, x0)  # `islog` = true
 ```
 ### Notes
-The method makes use of the [`MaximumAPosterioriBayesian`](@ref) method to estimate the maximum a posteriori (MAP) estimate, and then calculates the Hessian of the posterior at the MAP estimate to construct a Gaussian approximation of the posterior distribution. The Hessian currently is estimated by finite differences.
+The method makes use of the [`MaximumAPosterioriBayesian`](@ref) method to estimate the maximum a posteriori (MAP) estimate, and then calculates the Hessian of the posterior at the MAP estimate to construct a Gaussian approximation of the posterior distribution.
 
 See also [`MaximumAPosterioriBayesian`](@ref), [`bayesianupdating `](@ref),  [`TransitionalMarkovChainMonteCarlo`](@ref).
 """
 struct LaplaceEstimateBayesian <: AbstractBayesianPointEstimate
 
-    prior::Vector{RandomVariable}
+    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
     optimmethod::String
     x0::Vector{Vector{Float64}}
     islog::Bool
@@ -286,7 +286,7 @@ struct LaplaceEstimateBayesian <: AbstractBayesianPointEstimate
     upperbounds::Vector{Float64}
 
     function LaplaceEstimateBayesian(
-        prior::Vector{RandomVariable},
+        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
         optimmethod::String,
         x0::Vector{Float64};
         islog::Bool=true,
@@ -304,7 +304,7 @@ struct LaplaceEstimateBayesian <: AbstractBayesianPointEstimate
     end
 
     function LaplaceEstimateBayesian(
-        prior::Vector{RandomVariable},
+        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
         optimmethod::String,
         x0::Vector{Vector{Float64}};
         islog::Bool=true,
@@ -316,9 +316,10 @@ struct LaplaceEstimateBayesian <: AbstractBayesianPointEstimate
 end
 
 """
-    bayesianupdating(likelihood, models, lpestimate; prior, filtertolerance, fddist)
+    bayesianupdating(likelihood, models, lpestimate; prior, filtertolerance, adBackend)
 
-Perform bayesian updating with Laplace estimation using the given `likelihood`, `models`  and the MAP estimation [`MaximumAPosterioriBayesian`](@ref). Laplace estimation is basically an extension of the MAP estimation, where the Hessian of the posterior is calculated at the MAP estimate and used to construct a Gaussian approximation of the posterior distribution. Returns a `DataFrame` with the MAP estimates and estimated covariance matrices, as well as a function handle for the posterior pdf as a function of the input `DataFrame`.
+Perform bayesian updating with Laplace estimation using the given `likelihood`, `models`  and the MAP estimation [`MaximumAPosterioriBayesian`](@ref). Laplace estimation is basically an extension of the MAP estimation, where the Hessian of the posterior is calculated at the MAP estimate and used to construct a Gaussian approximation of the posterior distribution. Returns a `Distributions.MixtureModel` built from the estimated mean values and covariances.
+The Hessian is estimated using a backend defined from `DiffereniationInteface.jl` and can be changed using `ADTypes`.
 
 ### Notes
 
@@ -338,7 +339,9 @@ likelihood(df) = [sum(logpdf.(Normal.(df_i.x, 1), Data)) for df_i in eachrow(df)
 
 If a model evaluation is required to evaluate the likelihood, a vector of `UQModel`s must be passed to `bayesianupdating`. For example if the variable `x` above is the output of a numerical model.
 
-For a general overview of the function, see [`bayesianupdating `](@ref).
+`filtertolerance` is a tolerance value to filter out multiple estimates of the same point. If the distance between two points is smaller than `filtertolerance`, one of them will be discarded. This is useful if the optimization method finds multiple local maxima that are very close to each other.
+
+For a general overview of the function, see [`bayesianupdating`](@ref).
 """
 function bayesianupdating(
     likelihood::Function,
@@ -346,7 +349,7 @@ function bayesianupdating(
     lpestimate::LaplaceEstimateBayesian;
     prior::Union{Function,Nothing}=nothing,
     filtertolerance::Real=1e-6,
-    fddist::Float64=1e-3,
+    adBackend::ADTypes.AbstractADType = AutoFiniteDiff()
 )
     mapestimate = MaximumAPosterioriBayesian(
         lpestimate.prior,
@@ -368,79 +371,23 @@ function bayesianupdating(
     )
 
     vars = Matrix(results[:,names(lpestimate.prior)])
-
-    # !TODO use some package for this, i.e. ForwardDiff.jl, Zygote.jl, etc.
-    # Could then also be flexible between AD and FD, and also could track variable names
-    hess = [inv(fd_hessian(optimTarget, var, fddist)) for var in eachrow(vars)]
+    
+    # `hessian` from DifferentiationInterface.jl
+    hess = [inv(hessian(optimTarget, adBackend, var)) for var in eachrow(vars)]
     # the call to Hermitian is needed to tell Julia that the matrix is Hermitian. Otherwise MvNormal will complain if the (co-)variances are small.
-    results.invhessian = Hermitian.(hess)
+    Σ = Hermitian.(hess)
 
     postvalues = lpestimate.islog ? exp.(results[:,Symbol(mapestimate.valname)]) : results[:,Symbol(mapestimate.valname)]
     weights =  postvalues ./ sum(postvalues)
 
-    postpdf = df -> map(row -> begin
-        # calculate the posterior pdf for each row in df
-        means = Matrix(results[:, names(lpestimate.prior)])
-        vars = collect(row[names(lpestimate.prior)])
-        pdfs = [weights[i] * pdf(MvNormal(means[i, :], results.invhessian[i]), vec(vars))
-                for i in 1:size(means, 1)]
-        return lpestimate.islog ? log.(sum(pdfs)) : sum(pdfs)
-    end, eachrow(df))
+    μ = Matrix(results[:, names(lpestimate.prior)])
 
-    # !TODO: use Gaussian mixture model as return value
-    return results, postpdf
+    return MixtureModel([MvNormal(μ[k, :], Σ[k]) for k in 1:size(μ, 1)], weights)
 
 end
 
-function fd_hessian(fun, x::AbstractVector, dx::Real)
-    N = length(x)
-    hess = zeros(N, N)
-
-    f0 = fun(x)
-
-    for i in 1:N
-        for j in 1:i
-            if i == j
-                dxF = copy(x)
-                dxB = copy(x)
-                dxF[i] += dx
-                dxB[i] -= dx
-
-                fF = fun(dxF)
-                fB = fun(dxB)
-
-                hess[i, i] = (fF - 2*f0 + fB) / dx^2
-            else
-                dxFdyF = copy(x)
-                dxBdyB = copy(x)
-                dxFdyB = copy(x)
-                dxBdyF = copy(x)
-
-                dxFdyF[i] += dx; dxFdyF[j] += dx
-                dxBdyB[i] -= dx; dxBdyB[j] -= dx
-                dxFdyB[i] += dx; dxFdyB[j] -= dx
-                dxBdyF[i] -= dx; dxBdyF[j] += dx
-
-                f1F = fun(dxFdyF)
-                f1B = fun(dxBdyB)
-                f2F = fun(dxFdyB)
-                f2B = fun(dxBdyF)
-
-                hij = (f1F + f1B - f2F - f2B) / (4 * dx^2)
-                hess[i, j] = hij
-                hess[j, i] = hij
-            end
-        end
-    end
-
-    return hess
-end
-"""
-    getOptimMethod(method::String)
-
-Function to return the optimization method based on a string input. Used to reduce the amount of packages that the user needs to import. Currently supported methods are (L-)BFGS and NelderMead.
-"""
-function getOptimMethod(method::String)
+# Function to return the optimization method based on a string input. Used to reduce the amount of packages that the user needs to import. Currently supported methods are (L-)BFGS and NelderMead.
+function getoptimmethod(method::String)
 
     if method == "LBFGS"
         method = LBFGS()
@@ -457,8 +404,9 @@ function getOptimMethod(method::String)
     return method
 end
 
+# filter the DataFrame to only include the variables specified in `variables`
 function filterresults!(df::DataFrame, variables::Vector{Symbol}, tolerance::Real=1e-6)
-    # filter the DataFrame to only include the variables specified in `variables`
+    
     filtered_df = Matrix(select(df, variables))
     n_points = size(filtered_df, 1)
 
