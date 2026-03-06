@@ -133,13 +133,16 @@ where $\mu_{\theta_m}(\hat{X})$ and $K_{\theta_k}(\hat{X}, \hat{X})$ denote the 
 
 For numerical reasons, the logarithm of the marginal likelihood is typically used. Maximizing the log marginal likelihood with respect to the hyperparameters then yields the parameters that best explain the observed data. After obtaining the optimal hyperparamters, the posterior GP can be constructed as described above.
 
-To optimize the hyperparameters of our GP model before computing the posterior GP, we can pass a gradient-based optimizer provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/) to the `GaussianProcess` constructor:
+To optimize the hyperparameters of a GP model, we can pass a gradient-based optimizer provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/) to the [`MaximumLikelihoodEstimation`](@ref) constructor, essentially defining the MLE optimization routine. The [`optimize_hyperparameters`](@ref) function then optimizes the hyperparameters of the GP model according to the optimization routine:
 
 ```@example gaussianprocess
-gp_model = GaussianProcess(gp, df, :y; optimization=MaximumLikelihoodEstimation())
+optimization = MaximumLikelihoodEstimation()
+
+gp_model = GaussianProcess(gp, df, :y)
+optimized_gp_model = optimize_hyperparameters(gp_model, optimization)
 
 prediction = DataFrame(:x => x_test)
-evaluate!(gp_model, prediction; mode=:mean_and_var)
+evaluate!(optimized_gp_model, prediction; mode=:mean_and_var)
 
 prediction_mean = prediction[!, :y_mean] # hide
 prediction_std = sqrt.(prediction[!, :y_var]) # hide

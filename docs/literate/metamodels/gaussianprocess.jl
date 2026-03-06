@@ -54,11 +54,11 @@ Note that we can also define an output transform to scale the output for trainin
 The output will be transformed back to the original scale automatically as well.
 ===#
 
-input_transform = ZScoreTransform()
+input_transform = ZScoreTransformChoice()
 
 #===
-The GP regression model is now constructed by calling the `GaussianProcess` constructor with the prior GP, the input random variables, the model, the output symbol, the experimental design, and the optional input and output transforms as well as the hyperparameter optimization method.
-The construction then samples the experimental design, evaluates the model at the sampled points, standardizes the input and output data, optimizes the hyperparameters of the GP, and constructs the posterior GP.
+The GP regression model is now constructed by calling the `GaussianProcess` constructor with the prior GP, the input random variables, the model, the output symbol, the experimental design, and the optional input and output transform choices.
+The construction then samples the experimental design, evaluates the model at the sampled points, standardizes the input and output data, and constructs the posterior GP.
 ===#
 #md using Random #hide
 #md Random.seed!(42) #hide
@@ -69,9 +69,15 @@ gp_model = GaussianProcess(
     himmelblau, 
     :y, 
     design; 
-    input_transform=input_transform, 
-    optimization=optimizer
+    input_transform=input_transform
 )
+
+#===
+The GP regression model uses finite projections of the fitted posterior GP to make predictions. As of now, the hyperparameters of the GP might not be optimal. 
+We can find optimal hyperparameters through maximizing the log marginal likelihood of observing the training data under the posterior GP.
+===#
+
+optimized_gp_model = optimize_hyperparameters(gp_model, optimizer)
 
 #===
 To evaluate the `GaussianProcess`, use `evaluate!(gp::GaussianProcess, data::DataFrame)` with the `DataFrame` containing the points you want to evaluate. 
@@ -85,7 +91,7 @@ We can specify the evaluation mode via the `mode` keyword argument. Supported op
 ===#
 
 test_data = sample(x, 1000)
-evaluate!(gp_model, test_data; mode=:mean_and_var)
+evaluate!(optimized_gp_model, test_data; mode=:mean_and_var)
 
 #===
 The mean prediction of our model in this case has an mse of about 65 and looks like this in comparison to the original:
