@@ -1,6 +1,7 @@
 struct GaussianProcess <: UQModel
     posterior_gp::AbstractGPs.PosteriorGP
     prior_gp::Union{GP, NoisyGP}
+    output::Symbol
     input_transformer::GaussianProcessInputTransformer
     output_transformer::GaussianProcessOutputTransformer
 end
@@ -58,6 +59,7 @@ function GaussianProcess(
     return GaussianProcess(
         posterior_gp,
         gp,
+        output,
         input_transformer,
         output_transformer
     )
@@ -131,6 +133,7 @@ function GaussianProcess(
     return GaussianProcess(
         posterior_gp,
         gp,
+        output,
         input_transformer,
         output_transformer
     )
@@ -178,14 +181,15 @@ function optimize_hyperparameters(
     # retrieve data used for fitting the posterior gp
     # note: PosteriorGP stores targets y implicitly as δ = y - m,
     # where m is the mean of the prior at fitting inputs x
-    x = gp_model.gp.data.x
-    y = gp_model.gp.data.δ + mean(gp_model.prior_gp(x))
+    x = gp_model.posterior_gp.data.x
+    y = gp_model.posterior_gp.data.δ + mean(gp_model.prior_gp(x))
     optimized_gp = optimize_hyperparameters(gp_model.prior_gp, x, y, optimization)
     posterior_gp = posterior(optimized_gp(x), y)
 
     return GaussianProcess(
         posterior_gp,
         optimized_gp,
+        gp_model.output,
         gp_model.input_transformer,
         gp_model.output_transformer
     ) 
@@ -245,29 +249,29 @@ function evaluate!(
     mode::Symbol = :mean,
     n_samples::Int = 1
 )
-    x = gp.standardizer.fᵢ(data)
-    finite_projection = gp.gp(x)
+    x = transform(data, gp.input_transformer)
+    finite_projection = gp.posterior_gp(x)
 
     if mode === :mean
         μ = mean(finite_projection)
         col = Symbol(string(gp.output, "_mean"))
-        data[!, col] = gp.standardizer.fₒ⁻¹(μ)
+        data[!, col] = inverse_transform(μ, gp.output_transformer)
     elseif mode === :var
         σ² = var(finite_projection)
         col = Symbol(string(gp.output, "_var"))
-        data[!, col] = gp.standardizer.var_fₒ⁻¹(σ²)
+        data[!, col] = variance_inverse_transform(σ², gp.output_transformer)
     elseif mode === :mean_and_var
         μ = mean(finite_projection)
         σ² = var(finite_projection)
         col_mean = Symbol(string(gp.output, "_mean"))
         col_var = Symbol(string(gp.output, "_var"))
-        data[!, col_mean] = gp.standardizer.fₒ⁻¹(μ)
-        data[!, col_var] = gp.standardizer.var_fₒ⁻¹(σ²)
+        data[!, col_mean] = inverse_transform(μ, gp.output_transformer)
+        data[!, col_var] = variance_inverse_transform(σ², gp.output_transformer)
     elseif mode === :sample
         samples = rand(finite_projection, n_samples)
         cols = [Symbol(string(gp.output, "_sample_", i)) for i in 1:n_samples]
         foreach(
-            (colᵢ, sampleᵢ) -> data[!, colᵢ] = gp.standardizer.fₒ⁻¹(sampleᵢ), 
+            (col, sample) -> data[!, col] = inverse_transform(sample, gp.output_transformer), 
             cols, eachcol(samples)
         )
     else
