@@ -1,3 +1,4 @@
+using Copulas
 using DataFrames
 using Distributed
 using HCubature
@@ -20,7 +21,6 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/jointdistribution.jl");
 include("inputs/inputs.jl")
-include("inputs/copulas/gaussian.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 

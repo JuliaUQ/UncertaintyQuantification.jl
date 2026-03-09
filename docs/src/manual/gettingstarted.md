@@ -97,6 +97,7 @@ In line with Sklar's theorem we build the joint distribution of two dependent ra
 
 ```@example copula
 using UncertaintyQuantification # hide
+using Copulas # hide
 x = RandomVariable(Normal(), :x)
 y = RandomVariable(Uniform(), :y)
 marginals = [x, y]
@@ -105,7 +106,7 @@ return nothing # hide
 
 Note, that the marginals are not restricted to `UnivariateDistribution`. Dependent p-boxes can be constructed by passing a [`ProbabilityBox`](@ref) instead.
 
-Next, we define the copula to model the dependence. *UncertaintyQuantification* supports Gaussian copulas for multivariate ``d \geq 2`` dependence. Here, we define a Gaussian copula by passing the correlation matrix and then build the `JointDistribution` from the copula and the marginals.
+Next, we define the copula to model the dependence. *UncertaintyQuantification* accepts all copulas provided by *Copulas.jl*[lavernyCopulasjlFullyDistributionsjlcompliant2024](@cite). Here, we define a Gaussian copula by passing the correlation matrix and then build the`JointDistribution` from the copula and the marginals.
 
 ```@example copula
 cop = GaussianCopula([1 0.8; 0.8 1])
