@@ -3,7 +3,7 @@
 
 Passed to [`bayesianupdating`](@ref) to perform variational inference with a transport map
 that maps between the posterior and standard normal space, fitted with [`mapfromdensity`](@ref).
-The `prior` is a vector of prior distributions, `transportmap` is the transport map to-be optimized,
+The `prior` is a vector of prior distributions, `transportmap` is the transport map to be optimized,
 and `quadrature` specifies the quadrature points in the standard normal space.
 The `gradient` can be specified as either an `AbstractADType` or a `Function` (default: `AutoFiniteDiff()`).
 The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and
@@ -191,7 +191,7 @@ end
     bayesianupdating(prior, likelihood, models, tm)
 
 Perform bayesian updating using the given `prior`, `likelihood`, `models` and `tm` [`TransportMapBayesian`](@ref).
-Returns the optimized [`TransportMap](@ref) which can be used to evaluate the posterior pdf and to generate samples.
+Returns a [`JointDistribution`](@ref) with the optimized [`TransportMap`](@ref).
 
 Alternatively, the `prior` function can be omitted and the prior is constructed from the given vector of random variables in `tm`.
 

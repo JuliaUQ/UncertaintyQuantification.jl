@@ -14,10 +14,11 @@
         )
 
         tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
-        @test !iszero(getcoefficients(tm_result.map))
+        @test !iszero(getcoefficients(tm_result.d.map))
 
-        @test tm_result isa TransportMap
-        @test length(tm_result.names) == 2
+        @test tm_result isa JointDistribution
+        @test tm_result.d isa TransportMap
+        @test length(tm_result.m) == 2
 
         posterior_samples = sample(tm_result, 10)
         @test nrow(posterior_samples) == 10
@@ -29,7 +30,7 @@
         )
 
         tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
-        @test !iszero(getcoefficients(tm_result.map))
+        @test !iszero(getcoefficients(tm_result.d.map))
     end
 
     @testset "Warning and errors" begin

@@ -11,8 +11,8 @@ This example is based on an [grashornEfficientDiagnostics2024](@cite).
 
 ![Beam](../assets/beam.svg)
 
-The displacement at the end of the beam, denoted as ``s``, is obatined as a function of ``a`` and ``F``
-through the following analyical expression:
+The displacement at the end of the beam, denoted as ``s``, is obtained as a function of ``a`` and ``F``
+through the following analytical expression:
 
 ```math
     \mathcal{M}(\theta) := s = \frac{F \cdot (a L)^2}{6 E I} (3 L - a L)
@@ -115,8 +115,8 @@ quadrature = GaussHermiteWeights(3, 2)
 transportmap = TransportMapBayesian(prior, T, quadrature)
 
 #===
-We perform the Bayesian updating using finite differences for gradient computation in the optimization.
 The map we defined is optimized by calling the [`bayesianupdating`](@ref) function.
+A [`JointDistribution`](@ref) containing the map is returned.
 ===#
 
 tm = bayesianupdating(Like, [M], transportmap)
@@ -128,17 +128,19 @@ In the figure we see a good agreement of the samples obtained with TMCMC and fro
 ===#
 
 df = sample(tm, 1000)
-scatter(df.a, df.F, alpha=0.8, label="TM Samples")
-scatter!(samples.a, samples.F, alpha=0.8, label="TMCMC Samples")
+scatter(df.a, df.F, alpha=0.5, label="TM Samples")
+scatter!(samples.a, samples.F, alpha=0.5, label="TMCMC Samples")
 xlabel!("a [-]")
 ylabel!("F [N]")
 title!("Comparison of TM and TMCMC samples")
+#md xlims!(0.3, 1) #hide
+#md ylims!(0, 2500) #hide
 #md savefig("beam-tm-tmcmc-comparison.svg"); nothing # hide
 
 # ![Transport Map vs TMCMC](beam-tm-tmcmc-comparison.svg)
 
 #===
-Further, transport maps provide a formulation of the poserior density in terms of the reference density and the map, as also outlined in [Variational Inference with Transport Maps](@ref).
+Further, transport maps provide a formulation of the posterior density in terms of the reference density and the map, as also outlined in [Variational Inference with Transport Maps](@ref).
 We can evaluate the density by calling [`pdf(tm::TransportMap, x::AbstractVector{<:Real})`](@ref).
 In the figure below, the TM-approximated pdf is plotted over the samples generated with TMCMC.
 A good agreement of the samples and the pdf is observed.
@@ -148,11 +150,13 @@ x1_grid = range(0.3, 1, 100)
 x2_grid = range(0, 2500, 100)
 
 post = [pdf(tm, [x1, x2]) for x2 in x2_grid, x1 in x1_grid]
-scatter(samples.a, samples.F, alpha=0.8, label="TMCMC Samples")
+scatter(samples.a, samples.F, alpha=0.5, label="TMCMC Samples")
 contour!(x1_grid, x2_grid, post)
 xlabel!("a [-]")
 ylabel!("F [N]")
 title!("TM-posterior and TMCMC samples")
+#md xlims!(0.3, 1) #hide
+#md ylims!(0, 2500) #hide
 #md savefig("beam-tm-posterior.svg"); nothing # hide
 
 # ![Transport Map posterior](beam-tm-posterior.svg)
@@ -167,9 +171,15 @@ and the reference density:
 ```
 
 A smaller variance indicates a better fit of the transport map.
+
+First, we generate standard normal samples and than pass these to the function along with the
+[`TransportMap`](@ref) stored in the [`JointDistribution`](@ref), i.e., `tm.d`.
 ===#
 
 df = sample(prior, 1000)
 to_standard_normal_space!(prior, df) # generate standard normal samples
-var_diag = variancediagnostic(tm, df)
+var_diag = variancediagnostic(tm.d, df)
 println("Variance diagnostic: $var_diag")
+
+#md # !!! note
+#md #     Evaluating [`variancediagnostic`](@ref) repeatedly evaluates the target density. In Bayesian updating, this corresponds to repeated evaluations of the likelihood and hence [`Model`](@ref) evaluations.

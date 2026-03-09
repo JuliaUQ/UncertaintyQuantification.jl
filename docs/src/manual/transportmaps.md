@@ -5,7 +5,7 @@ Once such a map is constructed, generating samples from the target becomes trivi
 
 ## Mathematical Formulation
 
-Mathematically, a transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is defined as a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$ .
+Mathematically, a transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is defined as a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$.
 Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target space back to the reference space.
 
 The target distribution is approximated by the so-called *pull-back* density:
@@ -82,12 +82,15 @@ Currently available schemes are:
 
 #### Usage
 
-The [`TransportMap`](@ref) is constructed using the [`mapfromdensity`](@ref) function, which requires the following inputs:
+Transport Maps are implemented with the [`TransportMap`](@ref) struct which is a custom [`MultivariateDistribution`](https://juliastats.org/Distributions.jl/stable/multivariate/). Hence, a [`TransportMap`](@ref) is fully compatible with the [`JointDistribution`](@ref).
+To construct a TM from density call [`mapfromdensity`](@ref) which requires the following inputs:
 
 - `map`: The map structure to be optimized (e.g., a [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
 - `target`: The target density as a [`TransportMaps.MapTargetDensity`](https://juliauq.github.io/TransportMaps.jl/stable/api/densities#TransportMaps.MapTargetDensity) object
 - `quadrature`: The quadrature scheme used to evaluate the KL divergence (see [list of quadrature schemes](https://juliauq.github.io/TransportMaps.jl/stable/api/quadrature))
 - `names`: A `Vector{Symbol}` containing the names of the random variables
+
+A [`JointDistribution`](@ref) with the optimized [`TransportMap`](@ref) and `names` of the variables is returned.
 
 
 The following example demonstrates how to construct a transport map from a given log-density function:
@@ -131,7 +134,7 @@ savefig("tm-banana-1.svg"); nothing # hide
 ![Banana density](tm-banana-1.svg)
 
 !!! note "Bayesian Updating with Transport Maps"
-    The abaility to have an analytical expression for the density and the ability to generate samples make transport maps appealing for Bayesian inference applications. For the usage with [`bayesianupdating`](@ref) see [Variational Inference with Transport Maps](@ref).
+    The ability to have an analytical expression for the density and the ability to generate samples make transport maps appealing for Bayesian inference applications. For the usage with [`bayesianupdating`](@ref) see [Variational Inference with Transport Maps](@ref).
 
 ### Map Construction from Target Samples
 
@@ -144,6 +147,8 @@ This approach is implemented as a [`TransportMapFromSamples`](@ref) constructed 
 
 - `transportmap`: The map structure to be optimized (e.g., a [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
 - `samples`: A `DataFrame` containing the samples from the target distribution
+
+Similarly, the function returns a [`JointDistribution`](@ref) with the optimized [`TransportMapFromSamples`](@ref) and `names` of the variables.
 
 We consider the same banana-shaped distribution as before. However, we now start with samples generated using a simple acceptance-rejection method:
 ```@example transportmap_banana

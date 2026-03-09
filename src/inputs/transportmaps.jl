@@ -48,11 +48,11 @@ end
 Transforms samples in `X` from physical space to standard normal space using transport map `tm`.
 """
 function to_standard_normal_space!(tm::TransportMap, X::DataFrame)
+    if !isnothing(tm.transform_density)
+        to_standard_normal_space!(tm.transform_density, X)
+    end
     Z = inverse(tm, Matrix(X[!, tm.names]))
     X[!, tm.names] .= Z
-    if !isnothing(tm.transform_density)
-        to_physical_space!(tm.transform_density, X)
-    end
     return nothing
 end
 
@@ -115,7 +115,7 @@ function _to_physical(
     return [quantile(rv.dist, cdf(Normal(), ξ[i])) for (i, rv) in enumerate(inputs)]
 end
 
-# Helper function to get Jacobian of densitry transformation from standard normal to physical
+# Helper function to get Jacobian of density transformation from standard normal to physical
 function _jacobian(
     inputs::Vector{<:RandomVariable{<:UnivariateDistribution}},
     x::AbstractVector{<:Real},
@@ -138,12 +138,13 @@ end
 """
     mapfromdensity(transportmap, target, quadrature, names, transform_density, optimizer, options)
 
-Optimize a transport map from the given target density by minimizing the KL-divergence. The `transportmap` is the transport map to be optimized, `target` is the target density in the physical space, and `quadrature` specifies quadrature points in the standard normal space. The KL-divergence is evaluated at the given quadrature points. The `names` is a vector of variable names, and `transform_density` optionally specifies random variables for transformation. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`). Returns the optimized [`TransportMap`](@ref).
+Optimize a transport map from the given target density by minimizing the KL-divergence. The `transportmap` is the transport map to be optimized, `target` is the target density in the physical space, and `quadrature` specifies quadrature points in the standard normal space. The KL-divergence is evaluated at the given quadrature points. The `names` is a vector of variable names, and `transform_density` optionally specifies random variables for transformation. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`).
+Returns a [`JointDistribution`](@ref) with the optimized [`TransportMap`](@ref).
 
 Alternative calls
 
 ```julia
-    mapfromdensity(transportmap, target, quadrature, names, transform_density)  # optimizer = LBFGS(), options = Optim.Options()
+mapfromdensity(transportmap, target, quadrature, names, transform_density)  # optimizer = LBFGS(), options = Optim.Options()
 ```
 """
 function mapfromdensity(
@@ -157,7 +158,9 @@ function mapfromdensity(
 )
     optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
 
-    return TransportMap(transportmap, target, transform_density, names)
+    tm = TransportMap(transportmap, target, transform_density, names)
+
+    return JointDistribution(tm, names)
 end
 
 """
@@ -191,12 +194,13 @@ end
 """
     mapfromsamples(transportmap, X, optimizer, options)
 
-Fit a transport map from samples. The `transportmap` is the transport map to be optimized, and `X` is a DataFrame with samples in the physical space. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`). Returns the optimized [`TransportMapFromSamples`](@ref).
+Fit a transport map from samples. The `transportmap` is the transport map to be optimized, and `X` is a DataFrame with samples in the physical space. The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and `options` allows passing options to the optimizer (default: `Optim.Options()`).
+Returns a [`JointDistribution`](@ref) with the optimized [`TransportMapFromSamples`](@ref).
 
 Alternative calls
 
 ```julia
-    mapfromsamples(transportmap, X)  # optimizer = LBFGS(), options = Optim.Options()
+mapfromsamples(transportmap, X)  # optimizer = LBFGS(), options = Optim.Options()
 ```
 """
 function mapfromsamples(
@@ -216,7 +220,9 @@ function mapfromsamples(
     # define ComposedMap
     composed_map = ComposedMap(linear_map, transportmap)
 
-    return TransportMapFromSamples(composed_map, X, Symbol.(names(X)))
+    tm = TransportMapFromSamples(composed_map, X, Symbol.(names(X)))
+
+    return JointDistribution(tm, Symbol.(names(X)))
 end
 
 """
@@ -345,6 +351,7 @@ function _to_dataframe(x::AbstractVector{<:Real}, names::Vector{Symbol})
     return DataFrame(permutedims(x), names)
 end
 
+# Methods for `ContinuousMultivariateDistribution` and `JointDistribution`
 function minimum(tm::TransportMap)
     if !isnothing(tm.transform_density)
         return [minimum(dens) for dens in tm.transform_density]
@@ -384,22 +391,4 @@ end
 function var(tm::AbstractTransportMap)
     # maybe can be calculated using numerical integration ?
     return error("Variance not defined for $(typeof(tm)).")
-end
-
-
-# JointDistribution overlay for transport maps
-
-#! make this work for transport map!
-JointDistribution(tm::AbstractTransportMap) = JointDistribution(tm, tm.names)
-
-function to_standard_normal_space!(
-    jd::JointDistribution{<:AbstractTransportMap, Symbol}, df::DataFrame
-)
-    return to_standard_normal_space!(jd.d, df)
-end
-
-function to_physical_space!(
-    jd::JointDistribution{<:AbstractTransportMap, Symbol}, df::DataFrame
-)
-    return to_physical_space!(jd.d, df)
 end
