@@ -2,6 +2,7 @@ module UncertaintyQuantification
 
 using ADTypes
 using Bootstrap
+using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
@@ -39,14 +40,12 @@ Abstract supertype for all model types
 """
 abstract type UQModel end
 
-abstract type Copula end
-
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
 abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 
 """
-    AbstractBayesianMethod
+	AbstractBayesianMethod
 
 Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
 
@@ -58,7 +57,7 @@ Subtypes are:
 abstract type AbstractBayesianMethod end
 
 """
-    AbstractBayesianPointEstimate
+	AbstractBayesianPointEstimate
 
 Subtypes are used to dispatch to the different point estimation methods in [`bayesianupdating`](@ref).
 
@@ -106,7 +105,6 @@ export FORM
 export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
-export GaussianCopula
 export GaussianMixtureModel
 export GaussQuadrature
 export HaltonSampling
@@ -174,7 +172,6 @@ export quadrature_weights
 export rand
 export sample
 export sobolindices
-export to_copula_space
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
@@ -194,7 +191,6 @@ include("inputs/imprecise/p-box.jl")
 
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
-include("inputs/copulas/gaussian.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
 
