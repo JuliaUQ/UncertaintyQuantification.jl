@@ -96,7 +96,7 @@ scatter!((MLEstimate.θ1, MLEstimate.θ2), label="MLE")
 # ![Resulting point estimates](stiffness-point-estimate-normal.svg)
 # Some things to note: Results from MLE are the same as before, since the prior distribution is not taken into account. MCMC does not find the second mode, since it is much less likely than the first one, so the Markov chains do not converge there. MAP does find the mode since it uses optimization and therefore is able to find the local maximum. A look at the relative values between both modes show the differences in probability:
 
-println(exp.(MLEstimate[!,:maxval]))
-println(exp.(MapEstimate[!,:maxval]))
+println(exp.(MLEstimate[!,:logMLE]))
+println(exp.(MapEstimate[!,:logMAP]))
 
 # The second mode is 4 orders of magnitude less probable than the first mode, which explains why the Markov chains do not converge there.
