@@ -71,7 +71,7 @@ scatter(samples.θ1, samples.θ2; lim=[0, 4], label="TMCMC", xlabel="θ1", ylabe
 scatter!((MapEstimate.θ1, MapEstimate.θ2), label="MAP")
 scatter!((MLEstimate.θ1, MLEstimate.θ2), label="MLE")
 
-println(exp.(MLEstimate[!,:maxval]))
-println(exp.(MapEstimate[!,:maxval]))
+println(exp.(MLEstimate[!,:logMLE]))
+println(exp.(MapEstimate[!,:logMAP]))
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
