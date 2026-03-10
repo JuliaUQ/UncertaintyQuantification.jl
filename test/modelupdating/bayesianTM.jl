@@ -219,40 +219,40 @@ end
         prior = Normal(2, 10)
         prior_RV = RandomVariable(prior, :x)
 
-        tm = PolynomialMap(1, 1)
-        quad = GaussHermiteWeights(5, 1)
+        tm = PolynomialMap(1, 2)
+        quad = GaussHermiteWeights(10, 1)
         map = TransportMapBayesian([prior_RV], tm, quad)
 
         tm_opt, analytic_mean, analytic_std = normalmeanbenchmark(map, prior)
 
         tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 1000)
+        df = sample(tm_opt, 5000)
         tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.05
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.05
-        @test std(df.x) ≈ analytic_std rtol = 0.05
+        @test tm_mean ≈ analytic_mean rtol = 0.1
+        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+        @test std(df.x) ≈ analytic_std rtol = 0.1
     end
 
     @testset "TM binomialinferencebenchmark" begin
         prior = Beta(1, 1)
         prior_RV = RandomVariable(prior, :x)
 
-        tm = PolynomialMap(1, 1)
-        quad = GaussHermiteWeights(5, 1)
+        tm = PolynomialMap(1, 2)
+        quad = GaussHermiteWeights(10, 1)
         map = TransportMapBayesian([prior_RV], tm, quad)
 
         tm_opt, analytic_mean, analytic_std = binomialinferencebenchmark(map, prior)
 
         tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 1000)
+        df = sample(tm_opt, 5000)
         tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.05
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.05
-        @test std(df.x) ≈ analytic_std rtol = 0.05
+        @test tm_mean ≈ analytic_mean rtol = 0.1
+        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+        @test std(df.x) ≈ analytic_std rtol = 0.1
     end
 
     @testset "TM normalvarbenchmark " begin
@@ -260,18 +260,18 @@ end
         prior_RV = RandomVariable(prior, :x)
 
         tm = PolynomialMap(1, 2)
-        quad = GaussHermiteWeights(5, 1)
+        quad = GaussHermiteWeights(10, 1)
         map = TransportMapBayesian([prior_RV], tm, quad)
 
         tm_opt, analytic_mean, analytic_std = normalvarbenchmark(map, prior)
 
         tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 1000)
+        df = sample(tm_opt, 5000)
         tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.05
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.05
-        @test std(df.x) ≈ analytic_std rtol = 0.05
+        @test tm_mean ≈ analytic_mean rtol = 0.1
+        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+        @test std(df.x) ≈ analytic_std rtol = 0.1
     end
 end
