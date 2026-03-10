@@ -1,3 +1,4 @@
+using Copulas
 using DataFrames
 using Distributed
 using HCubature
@@ -13,6 +14,7 @@ using UncertaintyQuantification
 include("inputs/empiricaldistribution.jl")
 include("dynamics/psd.jl")
 include("inputs/parameter.jl")
+include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/interval.jl")
 include("inputs/imprecise/p-box.jl")
@@ -20,7 +22,6 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/jointdistribution.jl");
 include("inputs/inputs.jl")
-include("inputs/copulas/gaussian.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
