@@ -21,7 +21,7 @@
         @test tm.d isa MultivariateDistribution
         @test tm.d isa ContinuousMultivariateDistribution
         @test length(tm.m) == 2
-        @test tm.m == tm.d.names
+        @test tm.m == names(tm.d)
         @test tm.m == var_names
         @test tm.d.target == target
 
@@ -60,6 +60,38 @@
         vd = variancediagnostic(tm.d, Z_diag)
         @test isapprox(vd, 0; atol=1e-8)
 
+        # Test mean, var, std
+        tm_mean = mean(tm.d)
+        @test length(tm_mean) == 2
+        @test isapprox(tm_mean, μ; atol=1e-2)
+
+        tm_var = var(tm.d)
+        @test length(tm_var) == 2
+        @test all(tm_var .> 0)
+        @test isapprox(tm_var, [1.0, 2.0]; atol=1e-1)
+
+        tm_std = std(tm.d)
+        @test length(tm_std) == 2
+        @test all(tm_std .> 0)
+        @test isapprox(tm_std, sqrt.([1.0, 2.0]); atol=1e-1)
+        @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+
+        # Test with custom quadrature
+        quad_custom = GaussHermiteWeights(5, 2)
+        tm_mean_custom = mean(tm.d, quad_custom)
+        @test length(tm_mean_custom) == 2
+        @test isapprox(tm_mean_custom, μ; atol=1e-2)
+
+        # Test mode
+        tm_mode = mode(tm.d)
+        @test length(tm_mode) == 2
+        @test isapprox(tm_mode, μ; atol=1e-2)  # For Gaussian, mode = mean
+
+        # Sampling
+        samp = rand(tm.d)
+        @test length(samp) == 2
+        @test insupport(tm, samp)
+
         # Test show methods
         @test_nowarn sprint(show, tm.d)
         @test_nowarn sprint(print, tm.d)
@@ -77,6 +109,8 @@
         # Create transport map from samples
         map = PolynomialMap(2, 1)
         tm_samples = mapfromsamples(map, X_df)
+
+        @test all(names(tm_samples) .== [:x1, :x2])
 
         @test tm_samples isa JointDistribution
         @test tm_samples.d isa TransportMapFromSamples
@@ -121,6 +155,36 @@
         to_standard_normal_space!(tm_samples, X)
         @test isapprox(Matrix(X), Matrix(Z_copy); atol=1e-6)
 
+        # Test mean, var, std
+        tm_mean = mean(tm_samples.d)
+        @test length(tm_mean) == 2
+        @test isapprox(tm_mean, μ; atol=2e-1)  # Approximation from samples
+
+        tm_var = var(tm_samples.d)
+        @test length(tm_var) == 2
+        @test all(tm_var .> 0)
+        @test isapprox(tm_var, [1.5, 1.]; atol=3e-1)  # Approximation from samples
+
+        tm_std = std(tm_samples.d)
+        @test length(tm_std) == 2
+        @test all(tm_std .> 0)
+        @test isapprox(tm_std, sqrt.([1.5, 1.]); atol=2e-1)  # Approximation from samples
+        @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+
+        # Test with custom quadrature
+        quad_custom = GaussHermiteWeights(5, 2)
+        tm_mean_custom = mean(tm_samples.d, quad_custom)
+        @test length(tm_mean_custom) == 2
+
+        # Test mode
+        tm_mode = mode(tm_samples.d)
+        @test length(tm_mode) == 2
+        @test isapprox(tm_mode, μ; atol=2e-1)  # For Gaussian, mode ≈ mean (approximation from samples)
+
+        samp = rand(tm_samples.d)
+        @test length(samp) == 2
+        @test insupport(tm_samples, samp)
+
         # Test show methods
         @test_nowarn sprint(show, tm_samples.d)
         @test_nowarn sprint(print, tm_samples.d)
@@ -149,5 +213,45 @@
         samples = sample(tm, 100)
         @test all(0 .<= samples.x1 .<= 5)
         @test all(-2 .<= samples.x2 .<= 3)
+
+        # Test mean, var, std with transform_density
+        tm_mean = mean(tm.d)
+        @test length(tm_mean) == 2
+        @test all(0 .<= tm_mean[1] .<= 5)  # Within bounds
+        @test all(-2 .<= tm_mean[2] .<= 3)  # Within bounds
+
+        tm_var = var(tm.d)
+        @test length(tm_var) == 2
+        @test all(tm_var .> 0)
+
+        tm_std = std(tm.d)
+        @test length(tm_std) == 2
+        @test all(tm_std .> 0)
+        @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+
+        # Test mode
+        tm_mode = mode(tm.d)
+        @test length(tm_mode) == 2
+        @test all(0 .<= tm_mode[1] .<= 5)  # Within bounds for x1
+        @test all(-2 .<= tm_mode[2] .<= 3)  # Within bounds for x2
+
+        # Test transformations
+        df = sample(tm, 1000)
+        to_standard_normal_space!(tm, df)
+        @test isapprox(mean(df.x1), 0; atol=3e-1)
+        @test isapprox(mean(df.x2), 0; atol=3e-1)
+        to_physical_space!(tm, df)
+        @test isapprox(mean(df.x1), tm_mean[1]; atol=3e-1)
+        @test isapprox(mean(df.x2), tm_mean[2]; atol=3e-1)
+
+        # Test pdf
+        x_test = [-10., 0]
+        @test pdf(tm, x_test) ≈ 0
+        @test pdf(tm, [2, 0]) > 0
+
+        # Sampling
+        samp = rand(tm.d)
+        @test length(samp) == 2
+        @test insupport(tm, samp)
     end
 end

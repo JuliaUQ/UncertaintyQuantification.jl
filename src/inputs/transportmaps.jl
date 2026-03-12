@@ -88,16 +88,66 @@ function pdf(tm::TransportMap, X::AbstractMatrix{<:Real})
 end
 
 """
-    mean(tm::TransportMap)
+    mode(tm::TransportMap)
 
-Get the mean value of the density approximated by the transport map.
+Get the mode of the density approximated by the transport map.
 """
-function mean(tm::TransportMap)
+function mode(tm::TransportMap)
     if !isnothing(tm.transform_density)
         ξ = evaluate(tm, zeros(length(tm)))
         return _to_physical(tm.transform_density, ξ)
     else
         return evaluate(tm, zeros(length(tm)))
+    end
+end
+
+"""
+    mean(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the mean value of the density approximated by the transport map.
+The mean value is computed using numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function mean(
+    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
+)
+    # μ = E[X] = ∫x f(x) dx
+    return _nth_moment(tm, 1, quad)
+end
+
+"""
+    var(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the variance of the density approximated by the transport map.
+The variance is computed numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function var(
+    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
+)
+    # Var[X] = E[X²] - E[X]²
+    return _nth_moment(tm, 2, quad) - _nth_moment(tm, 1, quad) .^ 2
+end
+
+"""
+    std(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the standard deviation of the density approximated by the transport map.
+The standard deviation is computed numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function std(
+    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
+)
+    return sqrt.(var(tm, quad))
+end
+
+function _nth_moment(tm::TransportMap, n::Int64, quad::AbstractQuadratureWeights)
+    if !isnothing(tm.transform_density)
+        return (_to_physical(tm.transform_density, evaluate(tm, quad.points)) .^ n)' *
+               quad.weights
+    else
+        return (evaluate(tm, quad.points) .^ n)' * quad.weights
     end
 end
 
@@ -113,6 +163,18 @@ function _to_physical(
     inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, ξ::AbstractVector{<:Real}
 )
     return [quantile(rv.dist, cdf(Normal(), ξ[i])) for (i, rv) in enumerate(inputs)]
+end
+
+function _to_physical(
+    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, Ξ::AbstractMatrix{<:Real}
+)
+    X = similar(Ξ)
+
+    for (i, ξ) in enumerate(eachrow(Ξ))
+        X[i, :] = _to_physical(inputs, ξ)
+    end
+
+    return X
 end
 
 # Helper function to get Jacobian of density transformation from standard normal to physical
@@ -267,16 +329,63 @@ function pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
 end
 
 """
-    mean(tm::TransportMapFromSamples)
+    mode(tm::TransportMapFromSamples)
 
-Get the mean value of the density approximated by the transport map.
+Get the mode of the density approximated by the transport map.
 """
-function mean(tm::TransportMapFromSamples)
+function mode(tm::TransportMapFromSamples)
     return inverse(tm, zeros(length(tm)))
 end
 
+"""
+    mean(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the mean value of the density approximated by the transport map.
+The mean value is computed using numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function mean(
+    tm::TransportMapFromSamples,
+    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
+)
+    return _nth_moment(tm, 1, quad)
+end
+
+"""
+    var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the variance of the density approximated by the transport map.
+The variance is computed numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function var(
+    tm::TransportMapFromSamples,
+    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
+)
+    # Var[X] = E[X²] - E[X]²
+    return _nth_moment(tm, 2, quad) - _nth_moment(tm, 1, quad) .^ 2
+end
+
+"""
+    std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+
+Get the standard deviation of the density approximated by the transport map.
+The standard deviation is computed numerically in the reference space. The scheme can be set
+using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
+"""
+function std(
+    tm::TransportMapFromSamples,
+    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
+)
+    return sqrt.(var(tm, quad))
+end
+
+function _nth_moment(tm::TransportMapFromSamples, n::Int64, quad::AbstractQuadratureWeights)
+    return (inverse(tm, quad.points) .^ n)' * quad.weights
+end
+
 # General methods that work for both "ways"
-names(tm::AbstractTransportMap) = names(tm.names)
+names(tm::AbstractTransportMap) = tm.names
 
 function evaluate(tm::AbstractTransportMap, Z::AbstractVecOrMat{<:Real})
     return TransportMaps.evaluate(tm.map, Z)
@@ -362,17 +471,17 @@ function minimum(tm::TransportMap)
 end
 
 function maximum(tm::TransportMap)
-    # support domain is ℝ
-    return fill(Inf, length(tm))
+    if !isnothing(tm.transform_density)
+        return [maximum(dens) for dens in tm.transform_density]
+    else
+        # Without transformation: support domain is ℝ
+        return fill(Inf, length(tm))
+    end
 end
 
 function minimum(tm::TransportMapFromSamples)
-    if !isnothing(tm.transform_density)
-        return [minimum(dens) for dens in tm.transform_density]
-    else
-        # Without transformation: support domain is ℝ
-        return fill(-Inf, length(tm))
-    end
+    # support domain is ℝ
+    return fill(-Inf, length(tm))
 end
 
 function maximum(tm::TransportMapFromSamples)
@@ -386,9 +495,4 @@ function insupport(tm::AbstractTransportMap, x::Vector{<:Real})
     else
         return false
     end
-end
-
-function var(tm::AbstractTransportMap)
-    # maybe can be calculated using numerical integration ?
-    return error("Variance not defined for $(typeof(tm)).")
 end
