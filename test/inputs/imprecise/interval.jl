@@ -1,3 +1,5 @@
+using UncertaintyQuantification: hi, lo
+
 @testset "Interval" begin
     name = :l
     lb = 0.14
@@ -16,6 +18,12 @@
     @test !(0.17 ∈ interval)
 
     @test sprint(show, interval) == "[0.14, 0.16]"
+
+    @test hi(interval) == interval.ub
+    @test lo(interval) == interval.lb
+
+    @test hi(2.0) == 2.0
+    @test lo(2.0) == 2.0
 end
 
 @testset "IntervalVariable" begin

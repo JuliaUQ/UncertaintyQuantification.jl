@@ -8,6 +8,7 @@ using QuasiMonteCarlo
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
+using Plots
 using UncertaintyQuantification
 
 include("inputs/empiricaldistribution.jl")
@@ -48,6 +49,8 @@ include("simulations/montecarlo.jl")
 include("simulations/subset.jl")
 
 include("util/fourier-transform.jl")
+
+include("plotting/plotting.jl")
 
 if Sys.islinux()
     HPC = false

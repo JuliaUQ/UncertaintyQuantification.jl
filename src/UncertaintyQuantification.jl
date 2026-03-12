@@ -22,6 +22,7 @@ using Random
 using Reexport
 using Roots
 using StatsBase
+using RecipesBase
 
 @reexport using Distributions
 
@@ -226,5 +227,12 @@ include("simulations/importancesampling.jl")
 include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
+
+include("plotting/plot_recipes.jl")
+
+include("util/fourier-transform.jl")
+include("util/wrap.jl")
+include("util/imprecise.jl")
+include("util/kde.jl")
 
 end
