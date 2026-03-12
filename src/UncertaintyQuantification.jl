@@ -1,10 +1,12 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
 using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
 using Distributed
 using FastGaussQuadrature
@@ -112,6 +114,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares

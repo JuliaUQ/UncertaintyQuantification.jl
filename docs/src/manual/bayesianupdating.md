@@ -264,15 +264,19 @@ mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
 mlestimate = bayesianupdating(loglikelihood, UQModel[], MLE)
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
+ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
 df_points = DataFrame(sample_points, :auto) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 prior_eval = priorFunction(df_points) # hide
-contour(xs, ys, likelihood_eval, lim = [-2,2], c = :red) # hide
-contour!(xs, ys, prior_eval, lim = [-2,2], c = :blue) # hide
-contour!(xs, ys, likelihood_eval.*prior_eval/.05, lim = [-2,2], c = :black)
-scatter!(mapestimate.x, mapestimate.y; lim=[-2, 2], label = "MAP estimate", c = :black)
-scatter!(mlestimate.x, mlestimate.y; lim=[-2,2], label = "ML estimate", c = :red)
+posterior_unnormalized = likelihood_eval.*prior_eval # hide
+posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
+
+contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red) # hide
+contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue) # hide
+contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black)
+scatter!(mapestimate.x, mapestimate.y; lim=[-1,1], label = "MAP estimate", c = :black)
+scatter!(mlestimate.x, mlestimate.y; lim=[-1,1], label = "ML estimate", c = :red)
 plot!([0,0],[0,0],c = :red, label = "Likelihood")
 plot!([0,0],[0,0],c = :blue, label = "Prior")
 plot!([0,0],[0,0],c = :black, label = "Posterior")
@@ -283,6 +287,58 @@ savefig("point-estimates.svg"); nothing # hide
 The figure shows the (bimodal) likelihood in red and the prior distribution in blue. The difference in MAP and MLE is clearly visible, as the MLE conincides directly with the maxima of the likelihood, while MAP is shifted in the direction of the prior mean.
 
 ![Point estimates](point-estimates.svg)
+
+## Laplace estimates
+
+Laplace estimates extend the MAP to also include approximations of the covariance, leading to a Gaussian approximation of the posterior. `UQ.jl` implements the covariance estimation by calculating the inverse Hessian at the MAP estimates using `DifferentiationInterface.jl`. Similar to MLE and MAP, it is possible to use multi-point optimization to obtain a `MixtureModel` including multiple Gaussian components that are weighted according to their function values at the MAP estimates.
+
+```@example pointestimates
+using UncertaintyQuantification # hide
+using Plots # hide
+using DataFrames # hide
+
+μ = 0
+σ = .2
+
+prior = RandomVariable.(Normal(μ,σ), [:x, :y])
+
+N1 = MvNormal([-0.5, -0.5], 0.1)
+N2 = MvNormal([0.5, 0.5], 0.1)
+
+loglikelihood =
+    df -> log.([0.5 * pdf(N1, collect(x)) + 0.5 * pdf(N2, collect(x)) for x in eachrow(df)])
+
+priorFunction =
+    df -> prod.([pdf(Normal(μ, σ), collect(x)) for x in eachrow(df)])
+
+x0 = [[.1, .1],[-.1,-.1]]
+
+MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
+LaplaceEstimator = LaplaceEstimateBayesian(prior, "LBFGS", x0)
+
+mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
+laplaceestimate = bayesianupdating(loglikelihood, UQModel[], LaplaceEstimator)
+
+xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
+ds = xs[2] - xs[1] # hide
+sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
+lapl_pdf = pdf(laplaceestimate, sample_points') # hide
+df_points = DataFrame(sample_points, :auto) # hide
+prior_eval = priorFunction(df_points) # hide
+likelihood_eval = exp.(loglikelihood(df_points)) # hide
+posterior_unnormalized = likelihood_eval.*prior_eval # hide
+posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
+
+contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1)
+contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2)
+scatter!(mapestimate.x, mapestimate.y; lim=[-1, 1], label = "MAP estimate", c = :black)
+plot!([0,0],[0,0],c = :black, label = "Posterior")
+plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate")
+
+savefig("laplace-estimates.svg"); nothing # hide
+```
+
+![Laplace estimate](laplace-estimates.svg)
 
 ## Bayesian calibration of computer simulations
 
