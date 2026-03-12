@@ -21,6 +21,7 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/jointdistribution.jl");
 include("inputs/inputs.jl")
+include("inputs/transportmaps.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
@@ -35,6 +36,7 @@ include("models/imprecise/propagation.jl")
 
 include("modelupdating/bayesianupdating.jl")
 include("modelupdating/bayesianMAP.jl")
+include("modelupdating/bayesianTM.jl")
 
 include("reliability/form.jl")
 include("reliability/probabilityoffailure.jl")

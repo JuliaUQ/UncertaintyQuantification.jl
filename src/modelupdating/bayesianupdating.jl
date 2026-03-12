@@ -264,6 +264,10 @@ function bayesianupdating(
         βⱼ = βⱼ⁺
         θⱼ = θⱼ⁺
     end
+
+    model_calls = tmcmc.n * (1 + j * (1 + tmcmc.burnin))
+    @debug "Model Calls" model_calls
+
     return θⱼ, S
 end
 
