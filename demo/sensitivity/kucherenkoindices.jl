@@ -35,6 +35,8 @@ inputs = [
 model = Model(df -> df.x1 .* df.x3 .+ df.x2 .* df.x4, :y)
 sim = MonteCarlo(200000)
 
+model_samples = sample(inputs, sim)
+evaluate!(model, model_samples)
 
 # Analytical values
 μ3, μ4 = μ[3], μ[4]
@@ -60,7 +62,7 @@ ST4_analytical = σ2_2 * σ2_4 * (1 - ρ34^2) / D
 
 
 try
-    indices, bin_samples = kucherenkoindices_bin([model], inputs, [:y], sim; min_bin_sample_multi_dims=5)
+    indices = kucherenkoindices(model_samples, :y; min_bin_sample_multi_dims=5)
     println("Sample-based Kucherenko Indices calculation using bins:")
     println(indices)
 
