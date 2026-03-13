@@ -29,46 +29,19 @@ function kucherenkoindices(
         
         i_cond_samples = _generate_conditional_samples(samples, inputs[1], [i])
         evaluate!(models, i_cond_samples)
-        S_i = _compute_first_order_kucherenko(samples, i_cond_samples, output, total_var)
+        Y_cond = Vector(i_cond_samples[:, output])
+        S_i = (mean(Y_orig .* Y_cond) - mean(Y_orig)^2) / total_var  # Kucherenko et. al. 2012  Eq. 5.3
 
         other_vars = setdiff(random_names, [i])
         other_cond_samples = _generate_conditional_samples(samples, inputs[1], other_vars)
         evaluate!(models, other_cond_samples)
-        ST_i = length(random_names) == 1 ? S_i : _compute_total_effect_kucherenko(samples, other_cond_samples, output, total_var)
-        
+        Y_cond = Vector(other_cond_samples[:, output])
+        ST_i = mean((Y_orig .- Y_cond).^2) / (2 * total_var) # Kucherenko et. al. 2012 Eq. 5.4
+
         push!(indices, [i, S_i, ST_i])
     end
     
     return indices
-end
-
-
-function _compute_first_order_kucherenko(
-    samples::DataFrame,
-    cond_samples::DataFrame,
-    output::Symbol,
-    total_var::Float64
-)
-    Y_orig = Vector(samples[:, output])
-    Y_cond = Vector(cond_samples[:, output])
-    
-    S_i = (mean(Y_orig .* Y_cond) - mean(Y_orig)^2) / total_var  # Kucherenko et. al. 2012  Eq. 5.3
-    
-    return S_i
-end
-
-function _compute_total_effect_kucherenko(
-    samples::DataFrame,
-    cond_samples::DataFrame,
-    output::Symbol,
-    total_var::Float64
-)
-    Y_orig = Vector(samples[:, output])
-    Y_cond = Vector(cond_samples[:, output])
-    
-    ST_i = mean((Y_orig .- Y_cond).^2) / (2 * total_var) # Kucherenko et. al. 2012 Eq. 5.4
-    
-    return ST_i
 end
 
 function _generate_conditional_samples(

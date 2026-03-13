@@ -30,37 +30,6 @@
         @test indices.TotalEffect ≈ totaleffect_analytical rtol = 0.1
     end
 
-
-    @testset "Standard Kucherenko Indices - First Order" begin
-        random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
-        Y_orig = Vector(model_samples[:, :y])
-        total_var = var(Y_orig)
-        
-        S_i = zeros(length(random_names))
-
-        for (j, i) in enumerate(random_names)
-            i_cond_samples = UncertaintyQuantification._generate_conditional_samples(model_samples, inputs[1], [i])
-            evaluate!(model, i_cond_samples)
-            S_i[j] = UncertaintyQuantification._compute_first_order_kucherenko(model_samples, i_cond_samples, :y, total_var)
-        end
-        @test S_i ≈ firstorder_analytical rtol = 0.1
-    end
-
-    @testset "Stnadard Kucherenko Indices - Total Effect" begin
-        random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
-        Y_orig = Vector(model_samples[:, :y])
-        total_var = var(Y_orig)
-        
-        ST_i = zeros(length(random_names))
-
-        for (j, i) in enumerate(random_names)
-            not_i_cond_samples = UncertaintyQuantification._generate_conditional_samples(model_samples, inputs[1], setdiff(random_names, [i]))
-            evaluate!(model, not_i_cond_samples)
-            ST_i[j] = UncertaintyQuantification._compute_total_effect_kucherenko(model_samples, not_i_cond_samples, :y, total_var)
-        end
-        @test ST_i ≈ totaleffect_analytical rtol = 0.1
-    end
-
     @testset "_generate_conditional_samples" begin
         marginals = [RandomVariable(Normal(0,1), :x1), RandomVariable(Normal(0,1), :x2)]
         R = [1.0 0.5; 0.5 1.0]
