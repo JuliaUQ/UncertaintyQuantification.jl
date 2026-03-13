@@ -84,7 +84,7 @@ catch e
 end
 
 try 
-    indices = indices = kucherenkoindices([model], inputs, [:y], sim)
+    indices = kucherenkoindices([model], inputs, [:y], sim) 
     println("Standard Kucherenko Indices calculation:")
     println(indices)
 
