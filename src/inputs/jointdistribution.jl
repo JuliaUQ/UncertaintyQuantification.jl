@@ -82,6 +82,38 @@ function sample(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, n::I
     return DataFrame(permutedims(rand(jd.d, n)), jd.m)
 end
 
+function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, conditions::AbstractDict{<:Symbol,<:Real}, n::Integer=1)
+    dist, names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
+    D = Copulas.SklarDist(jd.d, Tuple(dist))
+
+    pairs = [(findfirst(==(name), names), value) for (name, value) in conditions if findfirst(==(name), names) !== nothing]
+    indices = first.(pairs)
+    values = last.(pairs)
+
+    # map unconditioned indices (in original order) to rows of cond_samples
+    uncond_indices = sort(setdiff(1:length(jd.m), indices))
+
+    Dc = Copulas.condition(D, Tuple(indices), Tuple(values))
+    cond_samples = rand(Dc, n)
+
+    if length(uncond_indices) == 1 # ensure Matrix shape for vector output
+        cond_samples = reshape(cond_samples, 1, size(cond_samples, 1))
+    end
+
+    samples = DataFrame()
+    for (i, rv) in enumerate(jd.m)
+        if haskey(conditions, rv.name)
+            samples[!, rv.name] = fill(conditions[rv.name], n)
+        else
+            # find position of unconditioned index in reduced conditioned sample rows
+            pos = findfirst(==(i), uncond_indices)
+            samples[!, rv.name] = cond_samples[pos, :]
+        end
+    end
+
+    return samples
+end
+
 function to_physical_space!(
     jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::DataFrame
 )

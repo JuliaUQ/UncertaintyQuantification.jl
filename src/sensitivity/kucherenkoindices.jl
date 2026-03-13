@@ -79,8 +79,8 @@ function _generate_conditional_samples(
     input_var_names = [marginal.name for marginal in joint_dist.m]
     conditional_samples = map(1:nrow(samples)) do i
         x_values = [samples[i, var_name] for var_name in var_names]
-        var_value_tuples = [(var_names[j], x_values[j]) for j in 1:length(var_names)]
-        sample_conditional_copula(joint_dist, var_value_tuples, 1)
+        cond = Dict(zip(var_names, x_values))
+        sample(joint_dist, cond, 1)
     end
     
     result = vcat(conditional_samples...)
