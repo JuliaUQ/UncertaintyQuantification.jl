@@ -41,19 +41,8 @@
         @test cond_samples[!, :x1] ≈ samples_df[!, :x1]
     end
 
-    @testset "Kucherenko Indices with bins" begin
-        indices, bin_samples = kucherenkoindices_bin([model], inputs, [:y], sim; min_bin_sample_multi_dims=10)
-
-        @test indices.FirstOrder ≈ firstorder_analytical rtol = 0.1
-        @test indices.TotalEffect ≈ totaleffect_analytical rtol = 0.1
-    end
-
     @testset "Kucherenko Indices with bins - Existing Samples" begin
-        random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
-        X = Matrix(model_samples[:, random_names])
-        Y = Vector(model_samples[:, :y])
-
-        indices = kucherenkoindices_bin(X, Y; min_bin_sample_multi_dims=10)
+        indices = kucherenkoindices(model_samples, :y ; min_bin_sample_multi_dims=10)
         
         @test indices.FirstOrder ≈ firstorder_analytical rtol = 0.1
         @test indices.TotalEffect ≈ totaleffect_analytical rtol = 0.1

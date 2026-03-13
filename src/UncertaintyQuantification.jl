@@ -168,11 +168,8 @@ export quadrature_nodes
 export quadrature_weights
 export rand
 export sample
-export sample_conditional_copula
 export sobolindices
 export kucherenkoindices
-export kucherenkoindices_bin
-export to_copula_space
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
