@@ -134,8 +134,6 @@
     end
 
     @testset "MAP normal mean analytical" begin
-
-        optMethod = "LBFGS"
         x0 = [0.]
 
         prior_mean = 2
@@ -145,7 +143,7 @@
 
         prior_sample_ = RandomVariable(prior, :x)
 
-        estimater = MaximumAPosterioriBayesian([prior_sample_], optMethod, x0)
+        estimater = MaximumAPosterioriBayesian([prior_sample_], x0)
 
         MAPEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
@@ -155,7 +153,6 @@
 
     @testset "MLE normal mean analytical" begin
 
-        optMethod = "LBFGS"
         x0 = [0.]
 
         prior_mean = 2
@@ -165,7 +162,7 @@
 
         prior_sample_ = RandomVariable(prior, :x)
 
-        estimater = MaximumLikelihoodBayesian([prior_sample_], optMethod, x0)
+        estimater = MaximumLikelihoodBayesian([prior_sample_], x0)
 
         MLEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
@@ -175,7 +172,6 @@
 
     @testset "Laplace normal mean analytical" begin
 
-        optMethod = "LBFGS"
         x0 = [0.]
 
         prior_mean = 2
@@ -185,7 +181,7 @@
 
         prior_sample_ = RandomVariable(prior, :x)
 
-        estimater = LaplaceEstimateBayesian([prior_sample_], optMethod, x0)
+        estimater = LaplaceEstimateBayesian([prior_sample_], x0)
 
         LaplaceEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
@@ -196,13 +192,12 @@
 
     @testset "MAP binomial test" begin
 
-        optMethod = "LBFGS"
         x0 = [0.5]
         
         prior_Function = Beta(1,1)
         prior = RandomVariable(prior_Function, :x)
 
-        estimater = MaximumAPosterioriBayesian([prior], optMethod, x0; lowerbounds = [0.], upperbounds = [1.])
+        estimater = MaximumAPosterioriBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
@@ -211,13 +206,12 @@
 
     @testset "MLE binomial test" begin
 
-        optMethod = "LBFGS"
         x0 = [0.5]
         
         prior_Function = Beta(1,1)
         prior = RandomVariable(prior_Function, :x)
 
-        estimater = MaximumLikelihoodBayesian([prior], optMethod, x0; lowerbounds = [0.], upperbounds = [1.])
+        estimater = MaximumLikelihoodBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
@@ -226,13 +220,12 @@
 
     @testset "Laplace estimate binomial test" begin
 
-        optMethod = "LBFGS"
         x0 = [0.5]
         
         prior_Function = Beta(1,1)
         prior = RandomVariable(prior_Function, :x)
 
-        estimater = LaplaceEstimateBayesian([prior], optMethod, x0; lowerbounds = [0.], upperbounds = [1.])
+        estimater = LaplaceEstimateBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
@@ -242,12 +235,11 @@
 
     @testset "MAP multivariate normal test" begin
 
-        optMethod = "LBFGS"
         x0 = [[1.0, 1.0], [-1.0, -1.0]]
 
         prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
 
-        estimater = MaximumAPosterioriBayesian(prior, optMethod, x0)
+        estimater = MaximumAPosterioriBayesian(prior, x0)
 
         MAPEst, mmodel = mvnormalbenchmark(estimater)
 
@@ -263,12 +255,11 @@
 
     @testset "MLE multivariate normal test" begin
 
-        optMethod = "LBFGS"
         x0 = [[1.0, 1.0], [-1.0, -1.0]]
 
         prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
 
-        estimater = MaximumLikelihoodBayesian(prior, optMethod, x0)
+        estimater = MaximumLikelihoodBayesian(prior, x0)
 
         MLEst, mmodel = mvnormalbenchmark(estimater)
 
@@ -284,12 +275,11 @@
 
     @testset "Laplace estimate multivariate normal test" begin
 
-        optMethod = "LBFGS"
         x0 = [[1.0, 1.0], [-1.0, -1.0]]
 
         prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
 
-        estimater = LaplaceEstimateBayesian(prior, optMethod, x0)
+        estimater = LaplaceEstimateBayesian(prior, x0)
 
         LaplaceEst, mmodel = mvnormalbenchmark(estimater)
 
