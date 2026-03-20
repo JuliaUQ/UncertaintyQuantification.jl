@@ -232,9 +232,9 @@ Instead of using sample-based methods it is also possible to calculate the local
 \theta_{\text{MAP}} = \underset{\theta}{\arg \max} P(Y|\theta) P(\theta)
 ```
 
-Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
+Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes (using Optim.jl) and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
 
-The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A `MaximumAPosterioriBayesian` or a `MaximumLikelihoodBayesian` object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method is given as a string such that the `Optim.jl` package does not need to be included in the script. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` as the variable `:maxval`. Below is an example for the implementation.
+The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A `MaximumAPosterioriBayesian` or a `MaximumLikelihoodBayesian` object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method can be chosen by setting the `optimizer` in the input, where `optimizer` is an optimizer specified by Optim.jl. The default is LBFGS. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` with the column name corresponding to the chosen approximation. Below is an example for the implementation.
 
 ```@example pointestimates
 using UncertaintyQuantification # hide
@@ -257,8 +257,8 @@ priorFunction =
 
 x0 = [[.1, .1],[-.1,-.1]]
 
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
 mlestimate = bayesianupdating(loglikelihood, UQModel[], MLE)
@@ -313,8 +313,8 @@ priorFunction =
 
 x0 = [[.1, .1],[-.1,-.1]]
 
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-LaplaceEstimator = LaplaceEstimateBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+LaplaceEstimator = LaplaceEstimateBayesian(prior, x0)
 
 mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
 laplaceestimate = bayesianupdating(loglikelihood, UQModel[], LaplaceEstimator)
