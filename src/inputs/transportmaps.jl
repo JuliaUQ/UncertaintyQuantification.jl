@@ -88,11 +88,11 @@ function pdf(tm::TransportMap, X::AbstractMatrix{<:Real})
 end
 
 """
-    mode(tm::TransportMap)
+    median(tm::TransportMap)
 
-Get the mode of the density approximated by the transport map.
+Get the median of the density approximated by the transport map.
 """
-function mode(tm::TransportMap)
+function median(tm::TransportMap)
     if !isnothing(tm.transform_density)
         ξ = evaluate(tm, zeros(length(tm)))
         return _to_physical(tm.transform_density, ξ)
@@ -329,11 +329,11 @@ function pdf(tm::TransportMapFromSamples, x::AbstractVecOrMat{<:Real})
 end
 
 """
-    mode(tm::TransportMapFromSamples)
+    median(tm::TransportMapFromSamples)
 
-Get the mode of the density approximated by the transport map.
+Get the median of the density approximated by the transport map.
 """
-function mode(tm::TransportMapFromSamples)
+function median(tm::TransportMapFromSamples)
     return inverse(tm, zeros(length(tm)))
 end
 

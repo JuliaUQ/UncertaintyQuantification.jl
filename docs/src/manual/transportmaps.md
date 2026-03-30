@@ -10,7 +10,7 @@ Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps
 
 The target distribution is approximated by the so-called *pull-back* density:
 ```math
-\pi(\theta) \approx T_{\#}\rho = \rho\left(T^{-1}(\bm{a},\theta)\right) \ |\det \nabla T^{-1}(\bm{a},\theta)|.
+\pi(\boldsymbol{\theta}) \approx T_{\#}\rho = \rho\left(T^{-1}(\boldsymbol{a},\boldsymbol{\theta})\right) \ |\det \nabla T^{-1}(\boldsymbol{a},\boldsymbol{\theta})|.
 ```
 
 ### Triangular Structure
@@ -47,11 +47,12 @@ Here, $f(z_1, \ldots, z_k; \boldsymbol{a})$ is a multivariate polynomial
 ```math
 f(z_1, \ldots, z_k; \boldsymbol{a}) = \sum_{\alpha \in \mathcal{A}_k} a_\alpha \Psi_\alpha(z_1, \ldots, z_k)
 ```
+
 where:
-- $\mathcal{A}_k$ is a multi-index set defining which basis functions are included
-- $a_\alpha$ are the optimization coefficients
-- $\Psi_\alpha$ are multivariate basis functions
-- $g: \mathbb{R} \to \mathbb{R}^+$ is a rectifier function that maps the derivative of $f$ to a strictly positive value, ensuring monotonicity
+- ``\mathcal{A}_k`` is a multi-index set defining which basis functions are included
+- ``a_\alpha`` are the optimization coefficients
+- ``\Psi_\alpha`` are multivariate basis functions
+- ``g: \mathbb{R} \to \mathbb{R}^+`` is a rectifier function that maps the derivative of ``f`` to a strictly positive value, ensuring monotonicity
 
 ## Implementation
 
@@ -66,7 +67,7 @@ There are two main approaches to constructing transport maps, depending on the a
 
 When an analytical expression for the target log-density is available, we determine the map coefficients $\boldsymbol{a}$ by solving an optimization problem that minimizes the Kullback-Leibler (KL) divergence between the target density and the transport map approximation:
 ```math
-\min_{\bm{a}} \mathcal{D}_{\mathsf{KL}}(T_{\#}\rho||\pi)
+\min_{\boldsymbol{a}} \mathcal{D}_{\mathsf{KL}}(T_{\#}\rho||\pi)
 ```
 The KL divergence is computed as an expected value with respect to the reference measure and approximated using numerical quadrature:
 ```math

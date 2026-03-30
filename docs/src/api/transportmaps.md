@@ -35,7 +35,7 @@ var(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
 var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
 std(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
 std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
-mode(tm::TransportMap)
-mode(tm::TransportMapFromSamples)
+median(tm::TransportMap)
+median(tm::TransportMapFromSamples)
 variancediagnostic
 ```

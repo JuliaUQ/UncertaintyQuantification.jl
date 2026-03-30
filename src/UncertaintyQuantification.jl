@@ -33,7 +33,7 @@ using TransportMaps
 
 import Base: rand, names, copy, run, length, eltype
 import Distributions:
-    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
 import Statistics: mean, var, std
 import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 

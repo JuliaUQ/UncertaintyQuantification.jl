@@ -82,10 +82,10 @@
         @test length(tm_mean_custom) == 2
         @test isapprox(tm_mean_custom, μ; atol=1e-2)
 
-        # Test mode
-        tm_mode = mode(tm.d)
-        @test length(tm_mode) == 2
-        @test isapprox(tm_mode, μ; atol=1e-2)  # For Gaussian, mode = mean
+        # Test median
+        tm_median = median(tm.d)
+        @test length(tm_median) == 2
+        @test isapprox(tm_median, μ; atol=1e-2)  # For Gaussian, median = mean
 
         # Sampling
         samp = rand(tm.d)
@@ -176,10 +176,10 @@
         tm_mean_custom = mean(tm_samples.d, quad_custom)
         @test length(tm_mean_custom) == 2
 
-        # Test mode
-        tm_mode = mode(tm_samples.d)
-        @test length(tm_mode) == 2
-        @test isapprox(tm_mode, μ; atol=2e-1)  # For Gaussian, mode ≈ mean (approximation from samples)
+        # Test median
+        tm_median = median(tm_samples.d)
+        @test length(tm_median) == 2
+        @test isapprox(tm_median, μ; atol=2e-1)  # For Gaussian, median ≈ mean (approximation from samples)
 
         samp = rand(tm_samples.d)
         @test length(samp) == 2
@@ -229,11 +229,11 @@
         @test all(tm_std .> 0)
         @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
 
-        # Test mode
-        tm_mode = mode(tm.d)
-        @test length(tm_mode) == 2
-        @test all(0 .<= tm_mode[1] .<= 5)  # Within bounds for x1
-        @test all(-2 .<= tm_mode[2] .<= 3)  # Within bounds for x2
+        # Test median
+        tm_median = median(tm.d)
+        @test length(tm_median) == 2
+        @test all(0 .<= tm_median[1] .<= 5)  # Within bounds for x1
+        @test all(-2 .<= tm_median[2] .<= 3)  # Within bounds for x2
 
         # Test transformations
         df = sample(tm, 1000)
