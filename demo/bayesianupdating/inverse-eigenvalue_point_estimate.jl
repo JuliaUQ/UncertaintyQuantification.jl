@@ -38,8 +38,8 @@ n = 1000
 x0 = [[1., 1.],[3.,.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
@@ -60,8 +60,8 @@ n = 1000
 x0 = [[1., 1.],[3.,.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
