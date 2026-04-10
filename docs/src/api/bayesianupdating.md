@@ -18,6 +18,7 @@ AbstractBayesianPointEstimate
 MaximumAPosterioriBayesian
 MaximumLikelihoodBayesian
 LaplaceEstimateBayesian
+TransportMapBayesian
 ```
 
 ## Methods

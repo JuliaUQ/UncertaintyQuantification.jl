@@ -339,6 +339,77 @@ savefig("laplace-estimates.svg"); nothing # hide
 ```
 
 ![Laplace estimate](laplace-estimates.svg)
+## Variational Inference with Transport Maps
+
+As an alternative to sampling-based approaches and point estimates, variational inference with transport maps provides a deterministic method to approximate the posterior density [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
+
+Transport maps establish a deterministic coupling between a simple reference distribution (typically standard normal) and the complex posterior distribution. In the context of Bayesian updating, the target density is the posterior:
+```math
+\pi(\theta) = P(\theta | Y).
+```
+
+The map coefficients are determined by minimizing the Kullback-Leibler (KL) divergence between the transport map approximation and the true posterior. For detailed information on transport map theory, construction methods, and general usage, see [Transport Maps](@ref transport_map_manual).
+
+For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
+- `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
+- `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
+- `quadrature`: A quadrature scheme for KL divergence evaluation (see [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods))
+
+By default, the prior is transformed to standard normal for improved numerical conditioning.
+
+Pass the [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref) along with the log-likelihood function and any required models to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
+- Generate samples from the posterior by mapping from the reference space
+- Evaluate the posterior probability density function
+- Provide an analytical approximation of the posterior (unlike sampling methods)
+
+Optional settings include custom prior functions, gradient estimation methods via `DifferentiationInterface.jl`, and optimizers from `Optim.jl`.
+
+The following example demonstrates Bayesian updating with transport maps using the same banana-shaped posterior as in [Map Construction from Target Density](@ref):
+
+```@example transportmap
+using UncertaintyQuantification # hide
+using Plots # hide
+
+# Define prior distribution
+prior = RandomVariable.(Uniform(-10, 10), [:x, :y])
+
+# Define log-likelihood function
+loglikelihood =
+    df -> logpdf.(Normal(), df.x) + logpdf.(Normal(), df.y .- df.x.^2)
+
+# Create a 2D polynomial map with degree 2
+# Defaults: reference=Normal(), rectifier=Softplus(), basis=LinearizedHermiteBasis()
+pm = PolynomialMap(2, 2)
+
+# Define 2D quadrature using Gauss-Hermite with 3 points per dimension
+quad = GaussHermiteWeights(3, 2) 
+
+# Create the TransportMapBayesian object
+tm = TransportMapBayesian(prior, pm, quad)
+
+# Perform Bayesian updating to optimize the map coefficients
+tm_opt = bayesianupdating(loglikelihood, UQModel[], tm)
+
+# Generate samples from the posterior
+samples = sample(tm_opt, 1000)
+
+# Evaluate the posterior pdf on a grid
+x_range = -4:0.1:4
+y_range = -3:0.1:7
+pdf_vals = [pdf(tm_opt, [x,y]) for y in y_range, x in x_range]
+
+# Visualize the results
+scatter(samples.x, samples.y; alpha=0.8, label="TM Samples")
+contour!(x_range, y_range, pdf_vals)
+savefig("tm-banana.svg"); nothing # hide
+```
+
+![Banana density](tm-banana.svg)
+
+The figure shows samples and the posterior pdf approximation obtained via the transport map. Unlike sampling methods (MCMC, TMCMC) and point estimates (MAP, MLE), transport maps provide both an expression of the full posterior density and efficient sampling capabilities once the map is constructed.
+
+For a more comprehensive example demonstrating the use of transport maps in Bayesian updating, see [Beam Example: Comparison of TMCMC and Transport Maps](@ref).
+
 
 ## Bayesian calibration of computer simulations
 
