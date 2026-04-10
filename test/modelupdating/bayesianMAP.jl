@@ -113,9 +113,27 @@
         return estimation, analytic_mean, analytic_std
     end
 
-    @testset "MAP normal mean analytical" begin
+    function mvnormalbenchmark(estimater::AbstractBayesianPointEstimate)
 
-        optMethod = "LBFGS"
+        μ_1 = [1., 1.]
+        μ_2 = [-1., -1.]
+
+        Σ_1 = [0.5 0.1; 0.1 0.5]
+        Σ_2 = [0.5 -0.1; -0.1 0.5]
+
+        mmodel = MixtureModel([MvNormal(μ_1, Σ_1), MvNormal(μ_2, Σ_2)], [0.2, 0.8])
+
+        function likelihood(df)
+            xy = Matrix(select(df, [:x, :y]))
+            return [log.(pdf(mmodel, xy[i, :])) for i in 1:size(xy, 1)]
+        end
+
+        estimation = bayesianupdating(likelihood, UQModel[], estimater)
+
+        return estimation, mmodel
+    end
+
+    @testset "MAP normal mean analytical" begin
         x0 = [0.]
 
         prior_mean = 2
@@ -125,17 +143,16 @@
 
         prior_sample_ = RandomVariable(prior, :x)
 
-        estimater = MaximumAPosterioriBayesian([prior_sample_], optMethod, x0)
+        estimater = MaximumAPosterioriBayesian([prior_sample_], x0)
 
         MAPEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
-        @test mean(MAPEst.x) ≈ analytic_mean rtol = 0.05
+        @test MAPEst.x[1] ≈ analytic_mean rtol = 0.05
 
     end
 
     @testset "MLE normal mean analytical" begin
 
-        optMethod = "LBFGS"
         x0 = [0.]
 
         prior_mean = 2
@@ -145,42 +162,137 @@
 
         prior_sample_ = RandomVariable(prior, :x)
 
-        estimater = MaximumLikelihoodBayesian([prior_sample_], optMethod, x0)
+        estimater = MaximumLikelihoodBayesian([prior_sample_], x0)
 
         MLEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
-        @test mean(MLEst.x) ≈ analytic_mean rtol = 0.05
+        @test MLEst.x[1] ≈ analytic_mean rtol = 0.05
+
+    end
+
+    @testset "Laplace normal mean analytical" begin
+
+        x0 = [0.]
+
+        prior_mean = 2
+        prior_std = 10
+
+        prior = Normal(prior_mean, prior_std)
+
+        prior_sample_ = RandomVariable(prior, :x)
+
+        estimater = LaplaceEstimateBayesian([prior_sample_], x0)
+
+        LaplaceEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
+
+        @test LaplaceEst.components[1].μ[1] ≈ analytic_mean rtol = 0.05
+        @test LaplaceEst.components[1].Σ[1, 1] ≈ analytic_std^2 rtol = 0.05
 
     end
 
     @testset "MAP binomial test" begin
 
-        optMethod = "LBFGS"
         x0 = [0.5]
         
         prior_Function = Beta(1,1)
         prior = RandomVariable(prior_Function, :x)
 
-        estimater = MaximumAPosterioriBayesian([prior], optMethod, x0; lowerbounds = [0.], upperbounds = [1.])
+        estimater = MaximumAPosterioriBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
-        @test mean(estimate.x) ≈ analytic_mode rtol = 0.1
+        @test estimate.x[1] ≈ analytic_mode rtol = 0.1
     end
 
     @testset "MLE binomial test" begin
 
-        optMethod = "LBFGS"
         x0 = [0.5]
         
         prior_Function = Beta(1,1)
         prior = RandomVariable(prior_Function, :x)
 
-        estimater = MaximumLikelihoodBayesian([prior], optMethod, x0; lowerbounds = [0.], upperbounds = [1.])
+        estimater = MaximumLikelihoodBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
-        @test mean(estimate.x) ≈ analytic_mode rtol = 0.1
+        @test estimate.x[1] ≈ analytic_mode rtol = 0.1
+    end
+
+    @testset "Laplace estimate binomial test" begin
+
+        x0 = [0.5]
+        
+        prior_Function = Beta(1,1)
+        prior = RandomVariable(prior_Function, :x)
+
+        estimater = LaplaceEstimateBayesian([prior], x0; lowerbounds = [0.], upperbounds = [1.])
+
+        estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
+
+        @test estimate.components[1].μ[1] ≈ analytic_mode rtol = 0.1
+
+    end
+
+    @testset "MAP multivariate normal test" begin
+
+        x0 = [[1.0, 1.0], [-1.0, -1.0]]
+
+        prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
+
+        estimater = MaximumAPosterioriBayesian(prior, x0)
+
+        MAPEst, mmodel = mvnormalbenchmark(estimater)
+
+        mmodel_μ = [c.μ for c in mmodel.components]
+        mapest_μ = [[row.x, row.y] for row in eachrow(MAPEst)]
+
+        est_π = exp.(MAPEst.logMAP) ./ sum(exp.(MAPEst.logMAP))
+        est_sorted = sortperm(est_π, rev = true)
+
+        @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
+        @test mapest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
+    end
+
+    @testset "MLE multivariate normal test" begin
+
+        x0 = [[1.0, 1.0], [-1.0, -1.0]]
+
+        prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
+
+        estimater = MaximumLikelihoodBayesian(prior, x0)
+
+        MLEst, mmodel = mvnormalbenchmark(estimater)
+
+        mmodel_μ = [c.μ for c in mmodel.components]
+        mleest_μ = [[row.x, row.y] for row in eachrow(MLEst)]
+
+        est_π = exp.(MLEst.logMLE) ./ sum(exp.(MLEst.logMLE))
+        est_sorted = sortperm(est_π, rev = true)
+
+        @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
+        @test mleest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
+    end
+
+    @testset "Laplace estimate multivariate normal test" begin
+
+        x0 = [[1.0, 1.0], [-1.0, -1.0]]
+
+        prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
+
+        estimater = LaplaceEstimateBayesian(prior, x0)
+
+        LaplaceEst, mmodel = mvnormalbenchmark(estimater)
+
+        mmodel_μ = [c.μ for c in mmodel.components]
+        mmodel_Σ = [c.Σ for c in mmodel.components]
+        est_μ = [c.μ for c in LaplaceEst.components]
+        est_Σ = [c.Σ for c in LaplaceEst.components]
+
+        est_sorted = sortperm(LaplaceEst.prior.p, rev = true)
+
+        @test LaplaceEst.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
+        @test est_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
+        @test est_Σ[est_sorted] ≈ mmodel_Σ[est_sorted] rtol = 0.1
     end
 
 end

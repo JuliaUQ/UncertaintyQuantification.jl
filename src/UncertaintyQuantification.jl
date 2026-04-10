@@ -6,6 +6,7 @@ using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
 using DifferentiationInterface
 using Distributed
@@ -123,6 +124,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares
