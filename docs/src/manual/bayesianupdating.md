@@ -272,9 +272,9 @@ prior_eval = priorFunction(df_points) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
-contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red) # hide
-contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue) # hide
-contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black)
+contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red, colorbar = false) # hide
+contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue, colorbar = false) # hide
+contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black, colorbar = false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1,1], label = "MAP estimate", c = :black)
 scatter!(mlestimate.x, mlestimate.y; lim=[-1,1], label = "ML estimate", c = :red)
 plot!([0,0],[0,0],c = :red, label = "Likelihood")
@@ -329,11 +329,11 @@ likelihood_eval = exp.(loglikelihood(df_points)) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
-contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1)
-contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2)
+contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1, colorbar=false)
+contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1, 1], label = "MAP estimate", c = :black)
-plot!([0,0],[0,0],c = :black, label = "Posterior")
-plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate")
+plot!([0,0],[0,0],c = :black, label = "Posterior", colorbar=false)
+plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate", colorbar=false)
 
 savefig("laplace-estimates.svg"); nothing # hide
 ```
