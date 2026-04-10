@@ -11,9 +11,3 @@
 ```@docs
 ResponseSurface
 ```
-
-## Functions
-
-```@docs
-evaluate!(rs::ResponseSurface, data::DataFrame)
-```

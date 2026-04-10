@@ -7,8 +7,8 @@ Creates a polyharmonic spline that is trained by given data.
 ```jldoctest
 julia> data = DataFrame(x = 1:10, y = [1, -5, -10, -12, -8, -1, 5, 12, 23, 50]);
 
-julia> PolyharmonicSpline(data, 2, :y) |> DisplayAs.withcontext(:compact => true)
-PolyharmonicSpline([1.14733, -0.449609, 0.0140379, -1.02859, -0.219204, 0.900367, 0.00895592, 1.07145, -5.33101, 3.88628], [-112.005, 6.84443], [1.0; 2.0; … ; 9.0; 10.0;;], 2, [:x], :y)
+julia> PolyharmonicSpline(data, 2, :y)
+PolyharmonicSpline([1.1473268119780484, -0.4496094703147227, 0.014037919753846809, -1.0285894238254238, -0.21920393437701655, 0.900367489486589, 0.008955916582757163, 1.071449150274845, -5.331010776968249, 3.886276317409325], [-112.00528786482374, 6.844431546357884], PolyharmonicRadialBasis([1.0 2.0 … 9.0 10.0], 2), 2, [:x], :y)
 ```
 """
 struct PolyharmonicSpline <: UQModel
