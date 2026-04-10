@@ -18,6 +18,17 @@ struct RandomVariable{T<:Union{UnivariateDistribution,ProbabilityBox}} <: Random
     name::Symbol
 end
 
+# promote precise rvs to common supertype
+function Base.promote_rule(
+    ::Type{RandomVariable{T1}}, ::Type{RandomVariable{T2}}
+) where {T1<:UnivariateDistribution,T2<:UnivariateDistribution}
+    if T1 == T2
+        return RandomVariable{T1}
+    else
+        return RandomVariable{<:UnivariateDistribution}
+    end
+end
+
 """
 	sample(rv::RandomVariable, n::Integer=1)
 

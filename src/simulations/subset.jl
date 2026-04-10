@@ -303,7 +303,7 @@ function nextlevelsamples(
 
             if length(reject) == 1
                 # only a single chain moved forward in the MH step
-                if reject
+                if only(reject)
                     new_samples[1, :] = nextlevelsamples[end][α_accept_indices[1], :]
                     new_samplesperformance = nextlevelperformance[end][α_accept_indices]
                 end
