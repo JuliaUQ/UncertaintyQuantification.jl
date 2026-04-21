@@ -1,5 +1,3 @@
-using DifferentiationInterface
-
 abstract type AbstractHyperparameterOptimization end
 
 """
