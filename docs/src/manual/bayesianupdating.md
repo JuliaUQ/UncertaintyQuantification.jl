@@ -232,9 +232,9 @@ Instead of using sample-based methods it is also possible to calculate the local
 \theta_{\text{MAP}} = \underset{\theta}{\arg \max} P(Y|\theta) P(\theta)
 ```
 
-Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
+Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes (using Optim.jl) and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
 
-The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A `MaximumAPosterioriBayesian` or a `MaximumLikelihoodBayesian` object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method is given as a string such that the `Optim.jl` package does not need to be included in the script. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` as the variable `:maxval`. Below is an example for the implementation.
+The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A `MaximumAPosterioriBayesian` or a `MaximumLikelihoodBayesian` object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method can be chosen by setting the `optimizer` in the input, where `optimizer` is an optimizer specified by Optim.jl. The default is LBFGS. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` with the column name corresponding to the chosen approximation. Below is an example for the implementation.
 
 ```@example pointestimates
 using UncertaintyQuantification # hide
@@ -257,22 +257,26 @@ priorFunction =
 
 x0 = [[.1, .1],[-.1,-.1]]
 
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
 mlestimate = bayesianupdating(loglikelihood, UQModel[], MLE)
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
+ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
 df_points = DataFrame(sample_points, :auto) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 prior_eval = priorFunction(df_points) # hide
-contour(xs, ys, likelihood_eval, lim = [-2,2], c = :red) # hide
-contour!(xs, ys, prior_eval, lim = [-2,2], c = :blue) # hide
-contour!(xs, ys, likelihood_eval.*prior_eval/.05, lim = [-2,2], c = :black)
-scatter!(mapestimate.x, mapestimate.y; lim=[-2, 2], label = "MAP estimate", c = :black)
-scatter!(mlestimate.x, mlestimate.y; lim=[-2,2], label = "ML estimate", c = :red)
+posterior_unnormalized = likelihood_eval.*prior_eval # hide
+posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
+
+contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red, colorbar = false) # hide
+contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue, colorbar = false) # hide
+contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black, colorbar = false)
+scatter!(mapestimate.x, mapestimate.y; lim=[-1,1], label = "MAP estimate", c = :black)
+scatter!(mlestimate.x, mlestimate.y; lim=[-1,1], label = "ML estimate", c = :red)
 plot!([0,0],[0,0],c = :red, label = "Likelihood")
 plot!([0,0],[0,0],c = :blue, label = "Prior")
 plot!([0,0],[0,0],c = :black, label = "Posterior")
@@ -283,6 +287,129 @@ savefig("point-estimates.svg"); nothing # hide
 The figure shows the (bimodal) likelihood in red and the prior distribution in blue. The difference in MAP and MLE is clearly visible, as the MLE conincides directly with the maxima of the likelihood, while MAP is shifted in the direction of the prior mean.
 
 ![Point estimates](point-estimates.svg)
+
+## Laplace estimates
+
+Laplace estimates extend the MAP to also include approximations of the covariance, leading to a Gaussian approximation of the posterior. `UQ.jl` implements the covariance estimation by calculating the inverse Hessian at the MAP estimates using `DifferentiationInterface.jl`. Similar to MLE and MAP, it is possible to use multi-point optimization to obtain a `MixtureModel` including multiple Gaussian components that are weighted according to their function values at the MAP estimates.
+
+```@example pointestimates
+using UncertaintyQuantification # hide
+using Plots # hide
+using DataFrames # hide
+
+μ = 0
+σ = .2
+
+prior = RandomVariable.(Normal(μ,σ), [:x, :y])
+
+N1 = MvNormal([-0.5, -0.5], 0.1)
+N2 = MvNormal([0.5, 0.5], 0.1)
+
+loglikelihood =
+    df -> log.([0.5 * pdf(N1, collect(x)) + 0.5 * pdf(N2, collect(x)) for x in eachrow(df)])
+
+priorFunction =
+    df -> prod.([pdf(Normal(μ, σ), collect(x)) for x in eachrow(df)])
+
+x0 = [[.1, .1],[-.1,-.1]]
+
+MAP = MaximumAPosterioriBayesian(prior, x0)
+LaplaceEstimator = LaplaceEstimateBayesian(prior, x0)
+
+mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
+laplaceestimate = bayesianupdating(loglikelihood, UQModel[], LaplaceEstimator)
+
+xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
+ds = xs[2] - xs[1] # hide
+sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
+lapl_pdf = pdf(laplaceestimate, sample_points') # hide
+df_points = DataFrame(sample_points, :auto) # hide
+prior_eval = priorFunction(df_points) # hide
+likelihood_eval = exp.(loglikelihood(df_points)) # hide
+posterior_unnormalized = likelihood_eval.*prior_eval # hide
+posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
+
+contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1, colorbar=false)
+contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
+scatter!(mapestimate.x, mapestimate.y; lim=[-1, 1], label = "MAP estimate", c = :black)
+plot!([0,0],[0,0],c = :black, label = "Posterior", colorbar=false)
+plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate", colorbar=false)
+
+savefig("laplace-estimates.svg"); nothing # hide
+```
+
+![Laplace estimate](laplace-estimates.svg)
+## Variational Inference with Transport Maps
+
+As an alternative to sampling-based approaches and point estimates, variational inference with transport maps provides a deterministic method to approximate the posterior density [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
+
+Transport maps establish a deterministic coupling between a simple reference distribution (typically standard normal) and the complex posterior distribution. In the context of Bayesian updating, the target density is the posterior:
+```math
+\pi(\theta) = P(\theta | Y).
+```
+
+The map coefficients are determined by minimizing the Kullback-Leibler (KL) divergence between the transport map approximation and the true posterior. For detailed information on transport map theory, construction methods, and general usage, see [Transport Maps](@ref transport_map_manual).
+
+For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
+- `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
+- `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
+- `quadrature`: A quadrature scheme for KL divergence evaluation (see [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods))
+
+By default, the prior is transformed to standard normal for improved numerical conditioning.
+
+Pass the [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref) along with the log-likelihood function and any required models to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
+- Generate samples from the posterior by mapping from the reference space
+- Evaluate the posterior probability density function
+- Provide an analytical approximation of the posterior (unlike sampling methods)
+
+Optional settings include custom prior functions, gradient estimation methods via `DifferentiationInterface.jl`, and optimizers from `Optim.jl`.
+
+The following example demonstrates Bayesian updating with transport maps using the same banana-shaped posterior as in [Map Construction from Target Density](@ref):
+
+```@example transportmap
+using UncertaintyQuantification # hide
+using Plots # hide
+
+# Define prior distribution
+prior = RandomVariable.(Uniform(-10, 10), [:x, :y])
+
+# Define log-likelihood function
+loglikelihood =
+    df -> logpdf.(Normal(), df.x) + logpdf.(Normal(), df.y .- df.x.^2)
+
+# Create a 2D polynomial map with degree 2
+# Defaults: reference=Normal(), rectifier=Softplus(), basis=LinearizedHermiteBasis()
+pm = PolynomialMap(2, 2)
+
+# Define 2D quadrature using Gauss-Hermite with 3 points per dimension
+quad = GaussHermiteWeights(3, 2) 
+
+# Create the TransportMapBayesian object
+tm = TransportMapBayesian(prior, pm, quad)
+
+# Perform Bayesian updating to optimize the map coefficients
+tm_opt = bayesianupdating(loglikelihood, UQModel[], tm)
+
+# Generate samples from the posterior
+samples = sample(tm_opt, 1000)
+
+# Evaluate the posterior pdf on a grid
+x_range = -4:0.1:4
+y_range = -3:0.1:7
+pdf_vals = [pdf(tm_opt, [x,y]) for y in y_range, x in x_range]
+
+# Visualize the results
+scatter(samples.x, samples.y; alpha=0.8, label="TM Samples")
+contour!(x_range, y_range, pdf_vals)
+savefig("tm-banana.svg"); nothing # hide
+```
+
+![Banana density](tm-banana.svg)
+
+The figure shows samples and the posterior pdf approximation obtained via the transport map. Unlike sampling methods (MCMC, TMCMC) and point estimates (MAP, MLE), transport maps provide both an expression of the full posterior density and efficient sampling capabilities once the map is constructed.
+
+For a more comprehensive example demonstrating the use of transport maps in Bayesian updating, see [Beam Example: Comparison of TMCMC and Transport Maps](@ref).
+
 
 ## Bayesian calibration of computer simulations
 

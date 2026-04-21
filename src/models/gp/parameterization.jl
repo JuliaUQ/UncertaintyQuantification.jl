@@ -54,7 +54,7 @@ BaseKernelsWithoutParameters = Union{
     ZeroKernel, WhiteKernel, CosineKernel,
     SqExponentialKernel, ExponentialKernel,
     ExponentiatedKernel, Matern32Kernel,
-    Matern52Kernel, NeuralNetworkKernel,
+    Matern52Kernel, Matern72Kernel,NeuralNetworkKernel,
     PiecewisePolynomialKernel, WienerKernel
 }
 

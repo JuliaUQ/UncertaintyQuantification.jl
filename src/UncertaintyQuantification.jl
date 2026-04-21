@@ -1,11 +1,14 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
 using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
+using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -13,6 +16,7 @@ using Format
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
+using Mooncake: Mooncake
 using Mustache
 using Optim
 using ParameterHandling
@@ -23,14 +27,18 @@ using Random
 using Reexport
 using Roots
 using StatsBase
-using Zygote
+using TransportMaps
 
 @reexport using AbstractGPs
+@reexport using TransportMaps
 @reexport using Distributions
+@reexport using DifferentiationInterface
 
-import Base: rand, names, copy, run, length
-import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
-import Statistics: mean, var
+import Base: rand, names, copy, run, length, eltype
+import Distributions:
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
+import Statistics: mean, var, std
+import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -72,6 +80,8 @@ abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
 
+abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
+
 # Types
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
@@ -81,6 +91,7 @@ export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractQuasiMonteCarlo
 export AbstractSimulation
+export AbstractTransportMap
 export Copula
 export DeterministicUQInput
 export RandomUQInput
@@ -117,6 +128,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares
@@ -150,9 +162,13 @@ export SubSetInfinity
 export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
+export TransportMap
+export TransportMapFromSamples
+export TransportMapBayesian
 export TwoLevelFactorial
 export UnitRangeTransformChoice
 export ZScoreTransformChoice
+export UQTargetDensity
 
 # Methods
 export bayesianupdating
@@ -166,9 +182,13 @@ export evaluate!
 export gradient
 export gradient_in_standard_normal_space
 export linear_binning
+export logpdf
+export mapfromdensity
+export mapfromsamples
 export mean
 export multivariate_indices
 export optimize_hyperparameters
+export pdf
 export periodogram
 export polynomialchaos
 export probability_of_failure
@@ -183,6 +203,7 @@ export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
 export with_gaussian_noise
+export variancediagnostic
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
@@ -201,6 +222,7 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
+include("inputs/transportmaps.jl")
 
 include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
@@ -225,6 +247,7 @@ include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
 
 include("modelupdating/bayesianMAP.jl")
+include("modelupdating/bayesianTM.jl")
 include("modelupdating/bayesianupdating.jl")
 
 include("sensitivity/finitedifferences.jl")
