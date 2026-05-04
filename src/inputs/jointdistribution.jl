@@ -82,6 +82,77 @@ function sample(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, n::I
     return DataFrame(permutedims(rand(jd.d, n)), jd.m)
 end
 
+function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, conditions::AbstractDict{<:Symbol,<:Real}, n::Integer=1)
+    dist, rv_names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
+    D = Copulas.SklarDist(jd.d, Tuple(dist))
+
+    pairs = [(findfirst(==(name), rv_names), value) for (name, value) in conditions if findfirst(==(name), rv_names) !== nothing]
+    indices = first.(pairs)
+    values = last.(pairs)
+
+    # map unconditioned indices (in original order) to rows of cond_samples
+    uncond_indices = sort(setdiff(1:length(jd.m), indices))
+
+    Dc = Copulas.condition(D, Tuple(indices), Tuple(values))
+    cond_samples = rand(Dc, n)
+
+    if length(uncond_indices) == 1 # ensure Matrix shape for vector output
+        cond_samples = reshape(cond_samples, 1, size(cond_samples, 1))
+    end
+
+    samples = DataFrame()
+    for (i, rv) in enumerate(jd.m)
+        if haskey(conditions, rv.name)
+            samples[!, rv.name] = fill(conditions[rv.name], n)
+        else
+            # find position of unconditioned index in reduced conditioned sample rows
+            pos = findfirst(==(i), uncond_indices)
+            samples[!, rv.name] = cond_samples[pos, :]
+        end
+    end
+
+    return samples
+end
+
+function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, existing_samples::DataFrame)
+    dist, rv_names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
+    D = Copulas.SklarDist(jd.d, Tuple(dist))
+
+    if size(existing_samples, 2) >= length(rv_names) || size(existing_samples, 2) == 0
+        throw(ArgumentError("DataFrame has more columns than the number of variables in the joint distribution or is empty"))
+    end
+    existing_cols = Symbol.(DataFrames.names(existing_samples))
+    if !issubset(Set(existing_cols), Set(rv_names))
+        throw(ArgumentError("DataFrame columns must be a subset of the variable names in the joint distribution"))
+    end
+
+    indices = map(name -> findfirst(==(name), rv_names), existing_cols)
+    cond_indices = [findfirst(==(name), rv_names) for name in existing_cols]
+    uncond_indices = sort(setdiff(1:length(jd.m), cond_indices))
+
+    rows = map(1:nrow(existing_samples)) do i
+        cond_values = Tuple(convert(Float64, existing_samples[i, c]) for c in existing_cols)
+
+        Dc = Copulas.condition(D, Tuple(cond_indices), cond_values)
+        cs = rand(Dc, 1)
+        cs_mat = isa(cs, AbstractMatrix) ? cs : reshape(cs, length(cs), 1)
+
+        # assemble row as Dict{Symbol,Any} preserving jd.m order via keys
+        Dict(
+            (rv.name => (
+                rv.name in existing_cols ? existing_samples[i, rv.name] :
+                begin
+                    pos = findfirst(==(j), uncond_indices)
+                    cs_mat[pos, 1]
+                end
+            )) for (j, rv) in enumerate(jd.m)
+        )
+    end
+
+    samples = DataFrame(rows)
+    return samples[:, Symbol.(rv_names)]
+end
+
 function to_physical_space!(
     jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::DataFrame
 )
