@@ -322,7 +322,7 @@ laplaceestimate = bayesianupdating(loglikelihood, UQModel[], LaplaceEstimator)
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-lapl_pdf = pdf(laplaceestimate, sample_points') # hide
+lapl_pdf = pdf.(laplaceestimate, eachrow(sample_points)) # hide
 df_points = DataFrame(sample_points, :auto) # hide
 prior_eval = priorFunction(df_points) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
