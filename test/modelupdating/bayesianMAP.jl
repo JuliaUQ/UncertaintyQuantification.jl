@@ -269,6 +269,7 @@
         est_π = exp.(MLEst.logMLE) ./ sum(exp.(MLEst.logMLE))
         est_sorted = sortperm(est_π, rev = true)
 
+        # mmodel.prior.p is the weight of the components
         @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
         @test mleest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
     end
@@ -288,6 +289,8 @@
         est_μ = [c.μ for c in LaplaceEst.d.components]
         est_Σ = [c.Σ for c in LaplaceEst.d.components]
 
+        # LaplaceEst.d: Underlying MixtureModel
+        # LaplaceEst.d.prior.p: weight of the components
         est_sorted = sortperm(LaplaceEst.d.prior.p, rev = true)
 
         @test LaplaceEst.d.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
