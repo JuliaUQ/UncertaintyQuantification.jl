@@ -303,7 +303,7 @@ end
 """
     bayesianupdating(likelihood, models, lpestimate; prior, filtertolerance, optimizer, optimoptions, adbackend)
 
-Perform bayesian updating with Laplace estimation using the given `likelihood`, `models`  and the MAP estimation [`MaximumAPosterioriBayesian`](@ref). Laplace estimation is basically an extension of the MAP estimation, where the Hessian of the posterior is calculated at the MAP estimate and used to construct a Gaussian approximation of the posterior distribution. Returns a `Distributions.MixtureModel` built from the estimated mean values and covariances.
+Perform bayesian updating with Laplace estimation using the given `likelihood`, `models`  and the MAP estimation [`MaximumAPosterioriBayesian`](@ref). Laplace estimation is basically an extension of the MAP estimation, where the Hessian of the posterior is calculated at the MAP estimate and used to construct a Gaussian approximation of the posterior distribution. Returns a `JointDistribution` built from the estimated mean values and covariances.
 The Hessian is estimated using a backend defined from `DiffereniationInteface.jl` and can be changed using `ADTypes`.
 
 ### Notes
@@ -370,7 +370,8 @@ function bayesianupdating(
 
     μ = Matrix(results[:, names(lpestimate.prior)])
 
-    return MixtureModel([MvNormal(μ[k, :], Σ[k]) for k in 1:size(μ, 1)], weights)
+    mixture = MixtureModel([MvNormal(μ[k, :], Σ[k]) for k in 1:size(μ, 1)], weights)
+    return JointDistribution(mixture, names(lpestimate.prior))
 
 end
 

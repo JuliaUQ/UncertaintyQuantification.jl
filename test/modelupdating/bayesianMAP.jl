@@ -173,7 +173,7 @@
     @testset "Laplace normal mean analytical" begin
 
         x0 = [0.]
-
+        
         prior_mean = 2
         prior_std = 10
 
@@ -185,8 +185,8 @@
 
         LaplaceEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
 
-        @test LaplaceEst.components[1].μ[1] ≈ analytic_mean rtol = 0.05
-        @test LaplaceEst.components[1].Σ[1, 1] ≈ analytic_std^2 rtol = 0.05
+        @test mean(LaplaceEst)[1] ≈ analytic_mean rtol = 0.05
+        @test var(LaplaceEst)[1] ≈ analytic_std^2 rtol = 0.05
 
     end
 
@@ -229,7 +229,7 @@
 
         estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(estimater, prior_Function)
 
-        @test estimate.components[1].μ[1] ≈ analytic_mode rtol = 0.1
+        @test mean(estimate)[1] ≈ analytic_mode rtol = 0.1
 
     end
 
@@ -285,12 +285,12 @@
 
         mmodel_μ = [c.μ for c in mmodel.components]
         mmodel_Σ = [c.Σ for c in mmodel.components]
-        est_μ = [c.μ for c in LaplaceEst.components]
-        est_Σ = [c.Σ for c in LaplaceEst.components]
+        est_μ = [c.μ for c in LaplaceEst.d.components]
+        est_Σ = [c.Σ for c in LaplaceEst.d.components]
 
-        est_sorted = sortperm(LaplaceEst.prior.p, rev = true)
+        est_sorted = sortperm(LaplaceEst.d.prior.p, rev = true)
 
-        @test LaplaceEst.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
+        @test LaplaceEst.d.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
         @test est_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
         @test est_Σ[est_sorted] ≈ mmodel_Σ[est_sorted] rtol = 0.1
     end
