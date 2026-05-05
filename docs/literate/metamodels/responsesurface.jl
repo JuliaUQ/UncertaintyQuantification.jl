@@ -70,7 +70,8 @@ That functions degree is set as an Integer in the constructor.
 
 training_data = sample(x, design)
 evaluate!(himmelblau, training_data)
-rs = ResponseSurface(training_data, :y, 4)
+basis = MonomialBasis(2, 4)
+rs = LinearBasisFunctionModel(training_data, :y, basis)
 
 test_data = sample(x, 1000)
 evaluate!(rs, test_data)
@@ -81,7 +82,7 @@ To evaluate the `ResponseSurface`use `evaluate!(rs::ResponseSurface, data::DataF
 The model in this case has an mse of about 1e-26 and looks like this in comparison to the original:
 ===#
 
-#md f(x1, x2) = sum(rs.monomials([x1, x2]) .* rs.β) #hide
+#md f(x1, x2) = sum(rs.b.m([x1, x2]) .* rs.β) #hide
 #md s2 = surface(a, b, f; plot_title="Response Surface", plot_titlefontsize=16) #hide
 #md surface(s1, s2; layout=(1, 2), legend=false, size=(800, 400))  #hide
 #md savefig("himmelblau-comparison.svg"); nothing # hide
