@@ -61,6 +61,7 @@ makedocs(;
 			"Reliability" => "api/reliability.md",
 			"ResponseSurface" => "api/responsesurface.md",
 			"PolyharmonicSpline" => "api/polyharmonicspline.md",
+			"Gaussian Processes" => "api/gaussianprocesses.md",
 			"Simulations" => "api/simulations.md",
 			"Bayesian Updating" => "api/bayesianupdating.md",
 			"Transport Maps" => "api/transportmaps.md",
