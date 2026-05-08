@@ -213,7 +213,7 @@
         @test mh_vec.proposal[2] == proposal_vec[2]
 
         @test_throws AssertionError SingleComponentMetropolisHastings(
-            proposal_vec, (x = 3.0), 1000, 100
+            proposal_vec, (;x = 3.0), 1000, 100
         )
     end
 
