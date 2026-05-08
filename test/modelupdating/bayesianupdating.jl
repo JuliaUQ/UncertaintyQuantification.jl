@@ -198,6 +198,25 @@
         @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
     end
 
+    @testset "Single Component MH proposal" begin
+        proposal = Normal()
+        x0 = (x=3.0, y=1.0)
+        mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
+
+        @test isa(mh.proposal, Vector{<:UnivariateDistribution})
+        @test mh.proposal[1] == proposal
+        @test mh.proposal[2] == proposal
+
+        proposal_vec = [Uniform(-1, 1), Normal(0, 0.1)]
+        mh_vec = SingleComponentMetropolisHastings(proposal_vec, x0, 1000, 100)
+        @test mh_vec.proposal[1] == proposal_vec[1]
+        @test mh_vec.proposal[2] == proposal_vec[2]
+
+        @test_throws AssertionError SingleComponentMetropolisHastings(
+            proposal_vec, (x = 3.0), 1000, 100
+        )
+    end
+
     @testset "TMCMC binomal inference analytical" begin
         n = 4000
         burnin = 100
@@ -251,5 +270,4 @@
         @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
         @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
     end
-    
 end
