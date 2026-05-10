@@ -238,12 +238,12 @@
     end
 
     @testset "Single Component MH bivariategaussian" begin
-        n = 50_000
-        burnin = 10_000
+        n = 100_000
+        burnin = 20_000
 
         x0 = (x=0.0, y=0.0)
 
-        proposal = Normal(0, 0.6)
+        proposal = Normal(0, 1)
 
         mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
         mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, Uniform(-10, 10))
