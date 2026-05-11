@@ -127,3 +127,5 @@ end
 Base.in(x::AbstractVector, ji::JointInterval) = x ∈ ji.hull
 bounds(ji::JointInterval) = bounds.(ji.intervals)
 sample(ji::JointInterval, n::Integer=1) = sample(ji.intervals, n)
+to_standard_normal_space!(_::JointInterval, _::DataFrame) = nothing
+to_physical_space!(_::JointInterval, _::DataFrame) = nothing
