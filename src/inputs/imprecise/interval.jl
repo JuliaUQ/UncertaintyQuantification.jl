@@ -107,3 +107,23 @@ Base.in(u, i::IntervalVariable) = i.lb <= u <= i.ub
 
 mean(i::IntervalVariable) = Interval(i)
 var(i::IntervalVariable) = Interval(0.0, (i.ub - i.lb)^2 / 4)
+
+
+struct JointInterval <: UQInput
+    intervals::Vector{IntervalVariable}
+    hull::VPolytope
+    function JointInterval(x::AbstractMatrix, names::AbstractVector{Symbol})
+        if size(x,1) != length(names)
+            error("Number of names must match dimensionality of points")
+        end
+        lb = vec(minimum(x,dims=2))
+        ub = vec(maximum(x, dims=2))
+
+        intervals = IntervalVariable.(lb,ub, names)
+        hull = VPolytope(convex_hull(collect(eachcol(x))))
+        return new(intervals, hull)
+    end
+end
+
+Base.in(x::AbstractVector, ji::JointInterval) = x ∈ ji.hull
+bounds(ji::JointInterval) = bounds.(ji.intervals)

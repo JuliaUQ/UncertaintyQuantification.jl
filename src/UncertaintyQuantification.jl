@@ -13,12 +13,14 @@ using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
 using Format
+using LazySets
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
 using Mooncake: Mooncake
 using Mustache
 using Optim
+using Polyhedra
 using Primes
 using QuadGK
 using QuasiMonteCarlo
@@ -126,6 +128,7 @@ export ImportanceSampling
 export Interval
 export IntervalVariable
 export JointDistribution
+export JointInterval
 export KanaiTajimi
 export LaplaceEstimateBayesian
 export LatinHypercubeSampling
