@@ -126,3 +126,4 @@ end
 
 Base.in(x::AbstractVector, ji::JointInterval) = x ∈ ji.hull
 bounds(ji::JointInterval) = bounds.(ji.intervals)
+sample(ji::JointInterval, n::Integer=1) = sample(ji.intervals, n)
