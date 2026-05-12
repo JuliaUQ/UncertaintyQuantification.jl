@@ -107,6 +107,7 @@ Base.in(u, i::IntervalVariable) = i.lb <= u <= i.ub
 
 mean(i::IntervalVariable) = Interval(i)
 var(i::IntervalVariable) = Interval(0.0, (i.ub - i.lb)^2 / 4)
+dimensions(i::IntervalVariable) = 1
 
 struct JointInterval <: UQInput
     intervals::Vector{IntervalVariable}
@@ -125,6 +126,8 @@ struct JointInterval <: UQInput
 end
 
 Base.in(x::AbstractVector, ji::JointInterval) = x ∈ ji.hull
+names(ji::JointInterval) = names(ji.intervals)
+dimensions(ji::JointInterval) = length(ji.intervals)
 bounds(ji::JointInterval) = bounds.(ji.intervals)
 sample(ji::JointInterval, n::Integer=1) = sample(ji.intervals, n)
 to_standard_normal_space!(_::JointInterval, _::DataFrame) = nothing

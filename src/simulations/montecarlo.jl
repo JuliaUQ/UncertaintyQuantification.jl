@@ -74,22 +74,72 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
     return sample(inputs, sim.n)
 end
 
-function sample(inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo)
-    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
-    deterministic_inputs =
-        filter(i -> isa(i, Parameter) || isa(i, Interval), inputs) || isa(i, JointInterval)
+function sample(
+    inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo; intervals::Bool=true
+)
+    rvs = filter(i -> isa(i, RandomUQInput), inputs)
+    ivs = filter(i -> isa(i, IntervalVariable) || isa(i, JointInterval), inputs)
+    parameters = filter(i -> isa(i, Parameter), inputs)
 
-    n_rv = count_rvs(random_inputs)
-
-    u = qmc_samples(sim, n_rv)
-
-    samples = quantile.(Normal(), u)
-    samples = DataFrame(names(random_inputs) .=> eachrow(samples))
-
-    if !isempty(deterministic_inputs)
-        DataFrames.hcat!(samples, sample(deterministic_inputs, size(samples, 1)))
+    dependent = any(isa.(ivs, JointInterval))
+    # verify randomized QMC for dependent intervals
+    if dependent &
+        !intervals &
+        !(isa(sim, LatinHypercubeSampling) || isa(sim, RandomizedHaltonSample))
+        if sim.randomization == :none
+            error("QMC sampling must be randomized for joint intervals")
+        end
     end
 
+    n_rv = count_rvs(rvs)
+    n_int = !isempty(ivs) ? mapreduce(dimensions, +, ivs) : 0
+
+    # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
+    # if dependent intervals are involved sample much more than requested
+    u = qmc_samples(
+        dependent & !intervals ? typeof(sim)(10^6, sim.randomization) : sim,
+        intervals ? n_rv : n_rv + n_int,
+    )
+
+    samples = if intervals
+        DataFrame(names(rvs) .=> eachrow(u))
+    else
+        DataFrame(vcat(names(rvs), names(ivs)) .=> eachrow(u))
+    end
+
+    # map rvs into standard normal space
+    samples[:, names(rvs)] = quantile.(Normal(), samples[:, names(rvs)])
+
+    if !isempty(ivs)
+        if intervals
+            # append intervals if not sampled
+            DataFrames.hcat!(samples, sample(ivs, size(samples, 1)))
+        else
+            # translate qmc samples to interval ranges
+            for i in mapreduce(i -> isa(i, IntervalVariable) ? i : i.intervals, vcat, ivs)
+                samples[:, i.name] = samples[:, i.name] .* (i.ub - i.lb) .+ i.lb
+            end
+        end
+    end
+
+    # discard samples outside the permissible set
+    if dependent & !intervals
+        for ji in filter(i -> isa(i, JointInterval), ivs)
+            idx = findall(.!in.(eachrow(Matrix(samples[:, names(ji)])), ji))
+            deleteat!(samples, idx)
+        end
+        # discard excess samples
+        if size(samples)[1] > sim.n
+            deleteat!(samples, (sim.n + 1):size(samples)[1])
+        end
+    end
+
+    # finally append any parameters
+    if !isempty(parameters)
+        DataFrames.hcat!(samples, sample(parameters, size(samples, 1)))
+    end
+
+    # map rvs to physical space before returning the samples
     to_physical_space!(inputs, samples)
 
     return samples
