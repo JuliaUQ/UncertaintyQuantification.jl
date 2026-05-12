@@ -74,8 +74,16 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
     return sample(inputs, sim.n)
 end
 
+"""
+    sample(inputs::Vector{UQInput}, sim::AbstractQuasiMonteCarlo; intervals::Bool=true, n_internal::Integer=sim.n * 10)
+
+    Generate Quasi-Monte Carlo samples of the `inputs` using the QMC sampling method `sim`. By default any [`IntervalVariable`](@ref) or [`'JointInterval`]('ref) will be included as the original intervals. To apply the QMC sampling also to the intervals pass the keyword `;intervals=true`. For [`JointInterval`]('ref)s this will internally sample 10 times the desired samples and discard the samples outside the permissible set and any excess samples. If the permissible set is small more samples might be required to generated sufficient samples. In this case, the keyword `n_internal` can be used to increase the number of samples used.
+"""
 function sample(
-    inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo; intervals::Bool=true
+    inputs::Vector{<:UQInput},
+    sim::AbstractQuasiMonteCarlo;
+    intervals::Bool=true,
+    n_internal::Integer=sim.n * 10,
 )
     rvs = filter(i -> isa(i, RandomUQInput), inputs)
     ivs = filter(i -> isa(i, IntervalVariable) || isa(i, JointInterval), inputs)
@@ -87,19 +95,21 @@ function sample(
         !intervals &
         !(isa(sim, LatinHypercubeSampling) || isa(sim, RandomizedHaltonSample))
         if sim.randomization == :none
-            error("QMC sampling must be randomized for joint intervals")
+            error("QMC sampling must be randomized to be applied to joint intervals")
         end
     end
 
     n_rv = count_rvs(rvs)
     n_int = !isempty(ivs) ? mapreduce(dimensions, +, ivs) : 0
 
-    # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
-    # if dependent intervals are involved sample much more than requested
-    u = qmc_samples(
-        dependent & !intervals ? typeof(sim)(10^6, sim.randomization) : sim,
-        intervals ? n_rv : n_rv + n_int,
-    )
+    u = @suppress_err begin
+        # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
+        # if dependent intervals are involved sample much more than requested
+        qmc_samples(
+            dependent & !intervals ? typeof(sim)(n_internal, sim.randomization) : sim,
+            intervals ? n_rv : n_rv + n_int,
+        )
+    end
 
     samples = if intervals
         DataFrame(names(rvs) .=> eachrow(u))
@@ -131,6 +141,8 @@ function sample(
         # discard excess samples
         if size(samples)[1] > sim.n
             deleteat!(samples, (sim.n + 1):size(samples)[1])
+        else
+            @warn "Only $(size(samples)[1]) of $(sim.n) samples generated. Try increasing 'n_internal'"
         end
     end
 

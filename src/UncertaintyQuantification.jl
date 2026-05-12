@@ -28,6 +28,7 @@ using Random
 using Reexport
 using Roots
 using StatsBase
+using Suppressor
 using TransportMaps
 
 @reexport using TransportMaps
