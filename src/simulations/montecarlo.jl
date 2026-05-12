@@ -102,14 +102,12 @@ function sample(
     n_rv = count_rvs(rvs)
     n_int = !isempty(ivs) ? mapreduce(dimensions, +, ivs) : 0
 
-    u = @suppress_err begin
-        # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
-        # if dependent intervals are involved sample much more than requested
-        qmc_samples(
-            dependent & !intervals ? typeof(sim)(n_internal, sim.randomization) : sim,
-            intervals ? n_rv : n_rv + n_int,
-        )
-    end
+    # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
+    # if dependent intervals are involved sample much more than requested
+    u = qmc_samples(
+        dependent & !intervals ? typeof(sim)(n_internal, sim.randomization) : sim,
+        intervals ? n_rv : n_rv + n_int,
+    )
 
     samples = if intervals
         DataFrame(names(rvs) .=> eachrow(u))

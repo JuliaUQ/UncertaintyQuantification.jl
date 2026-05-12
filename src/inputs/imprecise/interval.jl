@@ -120,7 +120,7 @@ struct JointInterval <: UQInput
         ub = vec(maximum(x; dims=2))
 
         intervals = IntervalVariable.(lb, ub, names)
-        hull = VPolytope(convex_hull(collect(eachcol(x))))
+        hull = VPolytope(convex_hull([x[:, i] for i in axes(x, 2)]))
         return new(intervals, hull)
     end
 end
