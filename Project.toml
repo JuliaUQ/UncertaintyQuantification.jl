@@ -1,14 +1,11 @@
 name = "UncertaintyQuantification"
 uuid = "7183a548-a887-11e9-15ce-a56ab60bad7a"
 version = "0.14.0"
-authors = [
-    "Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>",
-    "Ander Gray <ander.gray@polytechnique.edu>",
-]
-
+authors = ["Jasper Behrensdorf <behrensdorf@irz.uni-hannover.de>", "Ander Gray <ander.gray@polytechnique.edu>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+AbstractGPs = "99985d1d-32ba-4be9-9821-2ec096f28918"
 Bootstrap = "e28b5b4c-05e8-5b66-bc03-6f0c0a0a06e0"
 Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
 CovarianceEstimation = "587fd27a-f159-11e8-2dae-1979310e6154"
@@ -28,6 +25,7 @@ Monomials = "272bfe72-f66c-432f-a94d-600f29493792"
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
+ParameterHandling = "2412ca09-6db7-441c-8e3a-88d5709968c5"
 Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 QuasiMonteCarlo = "8a4e6c94-4038-4cdc-81c3-7e6ffdb2a71b"
@@ -40,6 +38,7 @@ TransportMaps = "6fd49bf0-03ac-4dd1-b9b3-42e511274d6e"
 
 [compat]
 ADTypes = "1.21.0"
+AbstractGPs = "0.5.24"
 Bootstrap = "2.2"
 Copulas = "0.1.33"
 CovarianceEstimation = "0.2"

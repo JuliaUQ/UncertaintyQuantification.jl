@@ -4,6 +4,7 @@ using Distributed
 using HCubature
 using HypothesisTests
 using InteractiveUtils
+using ParameterHandling
 using QuasiMonteCarlo
 using Random
 using StatsBase: fit, Histogram, corkendall
@@ -27,6 +28,10 @@ include("inputs/stochasticprocesses/models.jl")
 
 include("models/external/solvers.jl")
 include("models/external/externalmodel.jl")
+include("models/gp/gaussianprocess.jl")
+include("models/gp/hyperparametertuning.jl")
+include("models/gp/parameterization.jl")
+include("models/gp/standardization.jl")
 include("models/model.jl")
 include("models/polyharmonicspline.jl")
 include("models/pce/pcebases.jl")

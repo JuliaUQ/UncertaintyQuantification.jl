@@ -24,7 +24,7 @@ authors:
     link: https://github.com/mlsuh
   - name: Felix Mett
     platform: github
-    link: https://github.com/Cr0gan
+    link: https://github.com/felixmett
   - name: Andrea Perin
     platform: github
     link: https://github.com/andreaperin
