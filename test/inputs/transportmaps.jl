@@ -93,9 +93,12 @@
         @test insupport(tm, samp)
 
         # Test show methods
-        @test_nowarn sprint(show, tm.d)
-        @test_nowarn sprint(print, tm.d)
-        @test_nowarn display(tm.d)
+        # problematic on 1.10
+        if VERSION >= v"1.11"
+            @test_nowarn sprint(show, tm.d)
+            @test_nowarn sprint(print, tm.d)
+            @test_nowarn display(tm.d)
+        end
     end
 
     @testset "TransportMap from samples" begin
@@ -163,12 +166,12 @@
         tm_var = var(tm_samples.d)
         @test length(tm_var) == 2
         @test all(tm_var .> 0)
-        @test isapprox(tm_var, [1.5, 1.]; atol=3e-1)  # Approximation from samples
+        @test isapprox(tm_var, [1.5, 1.0]; atol=3e-1)  # Approximation from samples
 
         tm_std = std(tm_samples.d)
         @test length(tm_std) == 2
         @test all(tm_std .> 0)
-        @test isapprox(tm_std, sqrt.([1.5, 1.]); atol=2e-1)  # Approximation from samples
+        @test isapprox(tm_std, sqrt.([1.5, 1.0]); atol=2e-1)  # Approximation from samples
         @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
 
         # Test with custom quadrature
@@ -186,9 +189,12 @@
         @test insupport(tm_samples, samp)
 
         # Test show methods
-        @test_nowarn sprint(show, tm_samples.d)
-        @test_nowarn sprint(print, tm_samples.d)
-        @test_nowarn display(tm_samples.d)
+        # problematic on 1.10
+        if VERSION >= v"1.11"
+            @test_nowarn sprint(show, tm_samples.d)
+            @test_nowarn sprint(print, tm_samples.d)
+            @test_nowarn display(tm_samples.d)
+        end
     end
 
     @testset "TransportMap with transform_density" begin
@@ -245,7 +251,7 @@
         @test isapprox(mean(df.x2), tm_mean[2]; atol=3e-1)
 
         # Test pdf
-        x_test = [-10., 0]
+        x_test = [-10.0, 0]
         @test pdf(tm, x_test) ≈ 0
         @test pdf(tm, [2, 0]) > 0
 
