@@ -22,23 +22,29 @@
     model_samples = sample(inputs, sim)
     evaluate!(model, model_samples)
 
-
     @testset "Standard Kucherenko Indices" begin
-        indices = kucherenkoindices([model], inputs, [:y], sim)
+        indices = kucherenkoindices([model], inputs, :y, sim)
 
+        @test size(indices, 1) == 3  # 3 variables
+        @test names(indices) == ["Variables", "FirstOrder", "TotalEffect"]
+        
+        # Check that indices are close to analytical values
         @test indices.FirstOrder ≈ firstorder_analytical rtol = 0.1
         @test indices.TotalEffect ≈ totaleffect_analytical rtol = 0.1
     end
 
-    @testset "_generate_conditional_samples" begin
-        marginals = [RandomVariable(Normal(0,1), :x1), RandomVariable(Normal(0,1), :x2)]
-        R = [1.0 0.5; 0.5 1.0]
-        joint_dist = JointDistribution(GaussianCopula(R), marginals)
-        samples_df = DataFrame(sample([joint_dist], MonteCarlo(100)))
-        cond_samples = UncertaintyQuantification._generate_conditional_samples(samples_df, joint_dist, [:x1])
-        @test names(cond_samples) == ["x1", "x2"]
-        @test nrow(cond_samples) == 100
-        @test cond_samples[!, :x1] ≈ samples_df[!, :x1]
+    @testset "Kucherenko Indices with multiple outputs" begin
+        # Create separate models for each output
+        model_y1 = Model(df -> df.x1 .+ df.x2 .+ df.x3, :y1)
+        model_y2 = Model(df -> df.x1 .* df.x2, :y2)
+        
+        indices_multi = kucherenkoindices([model_y1, model_y2], inputs, [:y1, :y2], sim)
+        
+        @test isa(indices_multi, Dict)
+        @test haskey(indices_multi, :y1)
+        @test haskey(indices_multi, :y2)
+        @test size(indices_multi[:y1], 1) == 3
+        @test size(indices_multi[:y2], 1) == 3
     end
 
     @testset "Kucherenko Indices with bins - Existing Samples" begin
@@ -97,6 +103,37 @@
         @test bin_assignments[1] == bin_assignments[2]
         @test bin_assignments[end-1] == bin_assignments[end]
         @test bin_assignments[1] != bin_assignments[end]
+    end
+
+    @testset "Mixed inputs (RandomVariables + JointDistribution)" begin
+        # Test case: Extract x1 from the JointDistribution as an independent RandomVariable
+        # and verify that the computed indices are consistent with the pure JD case
+        
+        x1_indep = RandomVariable(Normal(0, 1), :x1)
+        
+        marginals_reduced = RandomVariable[
+            RandomVariable(Normal(0, 1), :x2),
+            RandomVariable(Normal(0, σ), :x3)
+        ]
+        R_reduced = [1.0 ρ*σ; ρ*σ σ^2]
+        R_reduced = R_reduced ./ (sqrt.(diag(R_reduced)) * sqrt.(diag(R_reduced))')
+        jd_reduced = JointDistribution(GaussianCopula(R_reduced), marginals_reduced)
+        
+        mixed_inputs = [x1_indep, jd_reduced]
+        model_mixed = Model(df -> df.x1 .+ df.x2 .+ df.x3, :y)
+        
+        indices_mixed = kucherenkoindices([model_mixed], mixed_inputs, :y, sim)
+        
+        @test size(indices_mixed, 1) == 3
+        @test Set(indices_mixed.Variables) == Set([:x1, :x2, :x3])
+        
+        x1_idx_mixed = indices_mixed[indices_mixed.Variables .== :x1, :FirstOrder][1]
+        @test x1_idx_mixed ≈ firstorder_analytical[1] rtol = 0.2
+        
+        @test all(indices_mixed.FirstOrder .> 0)
+        @test all(indices_mixed.TotalEffect .> 0)
+        @test all(isfinite.(indices_mixed.FirstOrder))
+        @test all(isfinite.(indices_mixed.TotalEffect))
     end
 
 end
