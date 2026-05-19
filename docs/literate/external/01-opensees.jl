@@ -47,7 +47,7 @@ ext = ExternalModel(
 )
 
 # Run the probability of failure analysis with 1000 samples
-pf, samples = probability_of_failure(ext, df -> 0.35 .- df.disp, E, MonteCarlo(1000))
+pf, σ_pf, samples = probability_of_failure(ext, df -> 0.35 .- df.disp, E, MonteCarlo(1000))
 
 println("Probability of failure: $pf")
 

@@ -1,11 +1,14 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
 using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
+using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -13,6 +16,7 @@ using Format
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
+using Mooncake: Mooncake
 using Mustache
 using Optim
 using Primes
@@ -22,12 +26,17 @@ using Random
 using Reexport
 using Roots
 using StatsBase
+using TransportMaps
 
+@reexport using TransportMaps
 @reexport using Distributions
+@reexport using DifferentiationInterface
 
-import Base: rand, names, copy, run, length
-import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
-import Statistics: mean, var
+import Base: rand, names, copy, run, length, eltype
+import Distributions:
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
+import Statistics: mean, var, std
+import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -37,6 +46,8 @@ abstract type RandomUQInput <: UQInput end
 Abstract supertype for all model types
 """
 abstract type UQModel end
+
+abstract type AbstractBasis end
 
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
@@ -69,6 +80,8 @@ abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
 
+abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
+
 # Types
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
@@ -78,6 +91,7 @@ export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractQuasiMonteCarlo
 export AbstractSimulation
+export AbstractTransportMap
 export Copula
 export DeterministicUQInput
 export RandomUQInput
@@ -88,6 +102,7 @@ export UQModel
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
+export LinearBasisFunctionModel
 export BinnedData
 export BoxBehnken
 export CentralComposite
@@ -112,6 +127,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares
@@ -122,15 +138,18 @@ export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
 export Model
+export MonomialBasis
 export MonteCarlo
 export ParallelModel
 export Parameter
 export PlackettBurman
 export PolynomialChaosBasis
 export PolynomialChaosExpansion
+export PolyharmonicRadialBasis
 export PolyharmonicSpline
 export ProbabilityBox
 export RadialBasedImportanceSampling
+export GaussianRadialBasis
 export RandomVariable
 export RandomSlicing
 export ResponseSurface
@@ -143,7 +162,11 @@ export SubSetInfinity
 export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
+export TransportMap
+export TransportMapFromSamples
+export TransportMapBayesian
 export TwoLevelFactorial
+export UQTargetDensity
 
 # Methods
 export bayesianupdating
@@ -157,8 +180,12 @@ export evaluate!
 export gradient
 export gradient_in_standard_normal_space
 export linear_binning
+export logpdf
+export mapfromdensity
+export mapfromsamples
 export mean
 export multivariate_indices
+export pdf
 export periodogram
 export polynomialchaos
 export probability_of_failure
@@ -173,6 +200,7 @@ export kucherenkoindices
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
+export variancediagnostic
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
@@ -191,11 +219,15 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
+include("inputs/transportmaps.jl")
 
 include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
 include("inputs/stochasticprocesses/models.jl")
 
+include("models/basisfunctions/monomialbasis.jl")
+include("models/basisfunctions/radialbasis.jl")
+include("models/basisfunctions/basisfunctionmodels.jl")
 include("models/external/solver.jl")
 include("models/external/extractor.jl")
 include("models/external/externalmodel.jl")
@@ -211,6 +243,7 @@ include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
 
 include("modelupdating/bayesianMAP.jl")
+include("modelupdating/bayesianTM.jl")
 include("modelupdating/bayesianupdating.jl")
 
 include("sensitivity/finitedifferences.jl")
