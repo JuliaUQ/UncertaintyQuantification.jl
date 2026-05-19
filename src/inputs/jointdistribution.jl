@@ -82,75 +82,120 @@ function sample(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, n::I
     return DataFrame(permutedims(rand(jd.d, n)), jd.m)
 end
 
-function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, conditions::AbstractDict{<:Symbol,<:Real}, n::Integer=1)
-    dist, rv_names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
-    D = Copulas.SklarDist(jd.d, Tuple(dist))
+function condition(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, existing_sample::DataFrameRow)
+    dists, rv_names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
 
-    pairs = [(findfirst(==(name), rv_names), value) for (name, value) in conditions if findfirst(==(name), rv_names) !== nothing]
+    if any(x -> x isa ProbabilityBox, dists)
+        throw(ArgumentError("Conditional sampling using JointDistribution with P-box marginals is currently not supported"))
+    end
+
+    existing_cols = Symbol.(propertynames(existing_sample))
+    jd_cols = intersect(existing_cols, rv_names)
+    if isempty(jd_cols)
+        throw(ArgumentError("DataFrameRow must contain at least one column from the variable names in the joint distribution"))
+    end
+
+    D = Copulas.SklarDist(jd.d, Tuple(dists))
+
+    pairs = [
+        (findfirst(==(name), rv_names), convert(Float64, existing_sample[name])) for name in jd_cols
+    ]
     indices = first.(pairs)
     values = last.(pairs)
 
-    # map unconditioned indices (in original order) to rows of cond_samples
     uncond_indices = sort(setdiff(1:length(jd.m), indices))
 
     Dc = Copulas.condition(D, Tuple(indices), Tuple(values))
-    cond_samples = rand(Dc, n)
 
-    if length(uncond_indices) == 1 # ensure Matrix shape for vector output
-        cond_samples = reshape(cond_samples, 1, size(cond_samples, 1))
-    end
-
-    samples = DataFrame()
-    for (i, rv) in enumerate(jd.m)
-        if haskey(conditions, rv.name)
-            samples[!, rv.name] = fill(conditions[rv.name], n)
-        else
-            # find position of unconditioned index in reduced conditioned sample rows
-            pos = findfirst(==(i), uncond_indices)
-            samples[!, rv.name] = cond_samples[pos, :]
+    copula_cond = nothing
+    marginals_cond = nothing
+    
+    if hasproperty(Dc, :C)
+        copula_cond = Dc.C
+        if hasproperty(Dc, :m)
+            marginals_cond = Dc.m
         end
+    elseif hasproperty(Dc, :X)
+        copula_cond = Dc.X
+    elseif Distributions.isa(Dc, Union{Distributions.UnivariateDistribution, Distributions.ContinuousUnivariateDistribution})
+        copula_cond = Dc
+    else
+        error("Cannot extract copula from conditioned distribution of type $(typeof(Dc)); unknown type")
     end
 
-    return samples
+    # build conditional JointDistribution if there are unconditioned variables
+    fixed_params = [Parameter(values[i], rv_names[indices[i]]) for i in eachindex(indices)]
+    jd_cond = nothing
+    
+    if length(uncond_indices) > 1
+        if marginals_cond !== nothing
+            uncond_rvs = [RandomVariable(marginals_cond[j], jd.m[uncond_indices[j]].name) for j in eachindex(uncond_indices)]
+            jd_cond = JointDistribution(copula_cond, uncond_rvs)
+        else
+            jd_cond = JointDistribution(copula_cond, jd.m[uncond_indices])
+        end
+    elseif length(uncond_indices) == 1  # ensuring that a single variable left still returns a JD 
+        idx = uncond_indices[1]
+        cond_rv = RandomVariable(copula_cond, jd.m[idx].name)
+        copula_1d = Copulas.IndependentCopula(1)
+        jd_cond = JointDistribution(copula_1d, [cond_rv])
+    end
+
+    inputs = UQInput[]
+    if jd_cond !== nothing
+        push!(inputs, jd_cond)
+    end
+    append!(inputs, fixed_params)
+
+    return inputs
 end
 
 function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, existing_samples::DataFrame)
     dist, rv_names = ([rv.dist for rv in jd.m], [rv.name for rv in jd.m])
-    D = Copulas.SklarDist(jd.d, Tuple(dist))
 
-    if size(existing_samples, 2) >= length(rv_names) || size(existing_samples, 2) == 0
-        throw(ArgumentError("DataFrame has more columns than the number of variables in the joint distribution or is empty"))
-    end
-    existing_cols = Symbol.(DataFrames.names(existing_samples))
-    if !issubset(Set(existing_cols), Set(rv_names))
-        throw(ArgumentError("DataFrame columns must be a subset of the variable names in the joint distribution"))
+    if any(x -> x isa ProbabilityBox, dist)
+        throw(ArgumentError("Conditional sampling using JointDistribution with P-box marginals is currently not supported"))
     end
 
-    indices = map(name -> findfirst(==(name), rv_names), existing_cols)
-    cond_indices = [findfirst(==(name), rv_names) for name in existing_cols]
-    uncond_indices = sort(setdiff(1:length(jd.m), cond_indices))
+    existing_cols = Symbol.(propertynames(existing_samples))
+    jd_cols = intersect(Set(existing_cols), Set(rv_names))
+    if isempty(jd_cols)
+        throw(ArgumentError("DataFrame must contain at least one column from the joint distribution variables"))
+    end
 
-    rows = map(1:nrow(existing_samples)) do i
-        cond_values = Tuple(convert(Float64, existing_samples[i, c]) for c in existing_cols)
+    # Columns that aren't in the JointDistribution
+    other_cols = setdiff(existing_cols, rv_names)
 
-        Dc = Copulas.condition(D, Tuple(cond_indices), cond_values)
-        cs = rand(Dc, 1)
-        cs_mat = isa(cs, AbstractMatrix) ? cs : reshape(cs, length(cs), 1)
+    samples = vcat(map(i -> begin
+        conditioned_inputs = condition(jd, existing_samples[i, existing_cols])
 
-        # assemble row as Dict{Symbol,Any} preserving jd.m order via keys
-        Dict(
-            (rv.name => (
-                rv.name in existing_cols ? existing_samples[i, rv.name] :
-                begin
-                    pos = findfirst(==(j), uncond_indices)
-                    cs_mat[pos, 1]
+        sample_row = Dict{Symbol, Any}()
+
+        for input in conditioned_inputs
+            if input isa JointDistribution
+                sampled = sample(input, 1)
+                for name in names(input)
+                    sample_row[name] = sampled[1, name]
                 end
-            )) for (j, rv) in enumerate(jd.m)
-        )
-    end
+            elseif input isa Parameter
+                sample_row[input.name] = input.value
+            end
+        end
 
-    samples = DataFrame(rows)
-    return samples[:, Symbol.(rv_names)]
+        if length(sample_row) != length(jd.m)
+            @warn "incomplete sample_row at row $i"
+        end
+
+        result_dict = Dict(rv.name => [sample_row[rv.name]] for rv in jd.m)
+        
+        for col in other_cols
+            result_dict[col] = [existing_samples[i, col]]
+        end
+
+        DataFrame(result_dict)
+    end, 1:nrow(existing_samples))...)
+    
+    return samples
 end
 
 function to_physical_space!(
