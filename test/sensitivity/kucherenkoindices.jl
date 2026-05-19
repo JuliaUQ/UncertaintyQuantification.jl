@@ -38,7 +38,8 @@
         model_y1 = Model(df -> df.x1 .+ df.x2 .+ df.x3, :y1)
         model_y2 = Model(df -> df.x1 .* df.x2, :y2)
         
-        indices_multi = kucherenkoindices([model_y1, model_y2], inputs, [:y1, :y2], sim)
+        sim_small = MonteCarlo(2000)
+        indices_multi = kucherenkoindices([model_y1, model_y2], inputs, [:y1, :y2], sim_small)
         
         @test isa(indices_multi, Dict)
         @test haskey(indices_multi, :y1)
