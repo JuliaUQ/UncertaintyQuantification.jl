@@ -20,21 +20,75 @@ function kucherenkoindices(
     samples = sample(inputs, sim)
     evaluate!(models, samples)
     
-    random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
+    # This limits currently to only one JointDistribution
+    jd_list = filter(i -> isa(i, JointDistribution), inputs)
+    jd = isempty(jd_list) ? nothing : first(jd_list)
+    
+    all_random_vars = Symbol[]
+    for input in inputs
+        if isa(input, JointDistribution)
+            append!(all_random_vars, names(input))
+        elseif isa(input, RandomVariable)
+            push!(all_random_vars, input.name)
+        end
+    end
+    
+    jd_names = jd !== nothing ? Set(names(jd)) : Set()
     
     Y_orig = Vector(samples[:, output])
     total_var = var(Y_orig)
     
-    for i in random_names
-        
-        i_cond_samples = _generate_conditional_samples(samples, inputs[1], [i])
+    all_cols = Set(Symbol.(names(samples)))
+    non_jd_cols = setdiff(all_cols, union(jd_names, Set([output])))
+    
+    indep_rvs_by_name = Dict()
+    for input in inputs
+        if isa(input, RandomVariable) && input.name ∉ jd_names
+            indep_rvs_by_name[input.name] = input
+        end
+    end
+    
+    for i in all_random_vars
+        if i in jd_names
+            cols_to_pass = union(Set([i]), non_jd_cols)
+            i_cond_samples = sample(jd, samples[:, collect(cols_to_pass)])
+            
+            for (indep_name, indep_rv) in indep_rvs_by_name
+                resampled_indep = sample(indep_rv, size(samples, 1))
+                i_cond_samples[!, indep_name] = resampled_indep[!, indep_name]
+            end
+        else
+            i_cond_samples = copy(samples)
+            if jd !== nothing
+                jd_cols = collect(jd_names)
+                resampled_jd = sample(jd, size(samples, 1))
+                i_cond_samples[!, jd_cols] = resampled_jd[!, jd_cols]
+            end
+            
+            for (indep_name, indep_rv) in indep_rvs_by_name
+                if indep_name != i
+                    resampled_indep = sample(indep_rv, size(samples, 1))
+                    i_cond_samples[!, indep_name] = resampled_indep[!, indep_name]
+                end
+            end
+        end
         evaluate!(models, i_cond_samples)
+
         Y_cond = Vector(i_cond_samples[:, output])
         S_i = (mean(Y_orig .* Y_cond) - mean(Y_orig)^2) / total_var  # Kucherenko et. al. 2012  Eq. 5.3
 
-        other_vars = setdiff(random_names, [i])
-        other_cond_samples = _generate_conditional_samples(samples, inputs[1], other_vars)
+        if i in jd_names
+            other_jd_vars = setdiff(jd_names, [i])
+            cols_to_pass = union(other_jd_vars, non_jd_cols)
+            other_cond_samples = sample(jd, samples[:, collect(cols_to_pass)])
+        else
+            other_cond_samples = copy(samples)
+            resampled_i = sample(indep_rvs_by_name[i], size(samples, 1))
+            other_cond_samples[!, i] = resampled_i[!, i]
+        end
+
         evaluate!(models, other_cond_samples)
+
         Y_cond = Vector(other_cond_samples[:, output])
         ST_i = mean((Y_orig .- Y_cond).^2) / (2 * total_var) # Kucherenko et. al. 2012 Eq. 5.4
 
@@ -42,19 +96,6 @@ function kucherenkoindices(
     end
     
     return indices
-end
-
-function _generate_conditional_samples(
-    samples::DataFrame,
-    joint_dist::JointDistribution,
-    var_names::Vector{Symbol}
-)
-    conditional_samples = map(1:nrow(samples)) do i
-        x_values = [samples[i, var_name] for var_name in var_names]
-        cond = Dict(zip(var_names, x_values))
-        sample(joint_dist, cond, 1)
-    end
-    return vcat(conditional_samples...)
 end
 
 """
@@ -69,8 +110,9 @@ function kucherenkoindices(
     outputs::Vector{Symbol},
     sim::AbstractMonteCarlo
 )
-    
-    random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
+    # Extract the JointDistribution to get variable names
+    jd = first(filter(i -> isa(i, JointDistribution), inputs))
+    random_names = names(jd)
     
     indices = Dict([
         (name, DataFrame(_kucherenko_table_types, _kucherenko_table_header)) for name in outputs
