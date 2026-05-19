@@ -1,7 +1,7 @@
 """
     SingleComponentMetropolisHastings(proposal, x0, n, burnin, islog)
 
-Passed to [`bayesianupdating`](@ref) to run the single-component Metropolis-Hastings algorithm starting from `x0` with  univariate proposal distibution `proposal`. Will generate `n` samples *after* performing `burnin` steps of the Markov chain and discarding the samples. The flag `islog` specifies whether the prior and likelihood functions passed to the  [`bayesianupdating`](@ref) method are already  given as logarithms.
+Passed to [`bayesianupdating`](@ref) to run the single-component Metropolis-Hastings algorithm starting from `x0` with univariate proposal distibution `proposal` (or vector of proposal distributions per dimension). Will generate `n` samples *after* performing `burnin` steps of the Markov chain and discarding the samples. The flag `islog` specifies whether the prior and likelihood functions passed to the [`bayesianupdating`](@ref) method are already given as logarithms.
 
 Alternative constructor
 
@@ -11,14 +11,14 @@ Alternative constructor
 
 """
 struct SingleComponentMetropolisHastings <: AbstractBayesianMethod
-    proposal::UnivariateDistribution
+    proposal::Vector{<:UnivariateDistribution}
     x0::NamedTuple
     n::Int
     burnin::Int
     islog::Bool
 
     function SingleComponentMetropolisHastings(
-        proposal::UnivariateDistribution,
+        proposal::Union{UnivariateDistribution,Vector{<:UnivariateDistribution}},
         x0::NamedTuple,
         n::Int,
         burnin::Int,
@@ -26,6 +26,12 @@ struct SingleComponentMetropolisHastings <: AbstractBayesianMethod
     )
         if n <= 0
             error("Number of samples `n` must be positive")
+        end
+
+        if !isa(proposal, Vector)
+            proposal = fill(proposal, length(x0))
+        else
+            @assert length(x0) == length(proposal) "Number of proposal distribution must match the dimension."
         end
         return new(proposal, x0, n, burnin, islog)
     end
@@ -86,11 +92,11 @@ function bayesianupdating(
         x = DataFrame(samples[i, :])
 
         for d in 1:number_of_dimensions
-            x[1, d] += rand(mh.proposal)
+            x[1, d] += rand(mh.proposal[d])
 
             # safeguard for areas where the logprior is -Inf (prior = 0)
             while mh.islog ? isinf(prior(x)[1]) : isinf(log.(prior(x))[1])
-                x[1, d] = current[1, d] + rand(mh.proposal)
+                x[1, d] = current[1, d] + rand(mh.proposal[d])
             end
 
             if !isempty(models)
