@@ -35,3 +35,6 @@ end
 function (gb::GaussianRadialBasis)(x::AbstractVector{<:Real})
     return vec(exp(-gb.ϵ .* sqrt.(sum((gb.c .- x) .^ 2; dims=1))))
 end
+
+Base.length(b::GaussianRadialBasis) = size(b.c, 2)
+Base.length(b::PolyharmonicRadialBasis) = size(b.c, 2)

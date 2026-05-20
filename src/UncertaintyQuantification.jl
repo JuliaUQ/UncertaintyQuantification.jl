@@ -125,6 +125,7 @@ export HermiteBasis
 export ImportanceSampling
 export Interval
 export IntervalVariable
+export IntervalPredictorModel
 export JointDistribution
 export KanaiTajimi
 export LaplaceEstimateBayesian
@@ -235,6 +236,7 @@ include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
+include("models/ipm.jl")
 
 include("hpc/slurm.jl")
 
