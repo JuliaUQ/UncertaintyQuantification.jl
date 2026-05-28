@@ -45,7 +45,14 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
 
         x0 = [-10.0 * ones(n)..., 10.0 * ones(n)...]
 
-        res = optimize(δ, dfc, x0, IPNewton(); autodiff=ADTypes.AutoForwardDiff())
+        res = optimize(
+            δ,
+            dfc,
+            x0,
+            IPNewton(),
+            Optim.Options(; x_abstol=1e-12, f_reltol=1e-12, g_tol=1e-12);
+            autodiff=ADTypes.AutoForwardDiff(),
+        )
 
         p_lb = res.minimizer[1:n]
         p_ub = res.minimizer[(n + 1):end]
