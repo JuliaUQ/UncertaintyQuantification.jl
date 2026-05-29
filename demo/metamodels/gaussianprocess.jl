@@ -18,7 +18,7 @@ using Optim
 
 optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha=0.005), Optim.Options(; iterations=10, show_trace=false))
 
-input_transform = ZScoreTransform()
+input_transform = ZScoreTransformChoice()
 
 gp_model = GaussianProcess(
     gp_prior,
@@ -26,12 +26,13 @@ gp_model = GaussianProcess(
     himmelblau,
     :y,
     design;
-    input_transform=input_transform,
-    optimization=optimizer
+    input_transform=input_transform
 )
 
+optimized_gp_model = optimize_hyperparameters(gp_model, optimizer)
+
 test_data = sample(x, 1000)
-evaluate!(gp_model, test_data; mode=:mean_and_var)
+evaluate!(optimized_gp_model, test_data; mode=:mean_and_var)
 
 test_data = sample(x, 1000)
 evaluate!(gp_model, test_data)

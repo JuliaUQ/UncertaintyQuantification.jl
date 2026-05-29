@@ -38,6 +38,7 @@ TransportMaps = "6fd49bf0-03ac-4dd1-b9b3-42e511274d6e"
 
 [compat]
 ADTypes = "1.21.0"
+AbstractGPs = "0.5.24"
 Bootstrap = "2.2"
 Copulas = "0.1.34"
 CovarianceEstimation = "0.2"

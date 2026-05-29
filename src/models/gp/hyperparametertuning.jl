@@ -1,5 +1,3 @@
-using DifferentiationInterface
-
 abstract type AbstractHyperparameterOptimization end
 
 """
@@ -56,7 +54,7 @@ function optimize_hyperparameters(
         θ -> objective(model(unflatten(θ)), x, y, mle), 
         θ₀_flat, 
         mle.optimizer, mle.options; 
-        autodiff= AutoZygote()
+        autodiff= AutoMooncake()
         )
     return model(unflatten(result.minimizer))
 end
