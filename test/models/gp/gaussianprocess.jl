@@ -1,5 +1,5 @@
-function create_test_data(dim::Int)
-    data = rand(10, dim)
+function create_test_data(n_samples::Int, lower::Real, upper::Real, dim::Int)
+    data = lower .+ (upper-lower) .* rand(n_samples, dim)
     df = DataFrame()
     for i in 1:dim
         name = Symbol("x$i")
@@ -12,6 +12,9 @@ end
     # Input samples
     n_input_samples = 10
     design = LatinHypercubeSampling(n_input_samples)
+    # Lower and upper bound for inputs
+    lower = 0
+    upper = 5
 
     # Use same base gp for every test
     σ² = 1e-5
@@ -29,7 +32,7 @@ end
 
     @testset "1D Input" begin
         @testset "Dataframe" begin
-            x = collect(range(0, stop=5, length=n_input_samples))
+            x = collect(range(lower, stop=upper, length=n_input_samples))
             y = sin.(x)
             data = DataFrame(:x1 => x, :y => y)
             for input_transform in input_transform_choices, output_transform in output_transform_choices
@@ -51,7 +54,7 @@ end
                             input_transform=input_transform(),
                             output_transform=output_transform()
                         )
-                        df = create_test_data(1)
+                        df = create_test_data(n_input_samples, lower, upper, 1)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
                         @test :y_var in propertynames(df)
@@ -61,7 +64,7 @@ end
                             input_transform=input_transform(),
                             output_transform=output_transform()
                         )
-                        df = create_test_data(1)
+                        df = create_test_data(n_input_samples, lower, upper, 1)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
                         @test :y_var in propertynames(df)
@@ -70,7 +73,7 @@ end
             end
         end
         @testset "UQInput" begin
-            xrv = [Parameter(1.5, :p), RandomVariable(Uniform(0, 5), :x1)]
+            xrv = [Parameter(1.5, :p), RandomVariable(Uniform(lower, upper), :x1)]
             model = Model(
                 df -> df.p .* sin.(df.x1), :y
             )
@@ -81,7 +84,7 @@ end
                         input_transform=input_transform(),
                         output_transform=output_transform()
                     )
-                    df = create_test_data(1)
+                    df = sample(xrv, n_input_samples)
                     evaluate!(gp, df; mode=:mean_and_var)
                     @test :y_mean in propertynames(df)
                     @test :y_var in propertynames(df)
@@ -91,7 +94,7 @@ end
                         input_transform=input_transform(),
                         output_transform=output_transform()
                     )
-                    df = create_test_data(1)
+                    df = sample(xrv, n_input_samples)
                     evaluate!(gp, df; mode=:mean_and_var)
                     @test :y_mean in propertynames(df)
                     @test :y_var in propertynames(df)
@@ -101,7 +104,7 @@ end
     end
     @testset "2D Input" begin
         @testset "Dataframe" begin
-            x = [collect(range(0, stop=5, length=n_input_samples)) collect(range(0, stop=5, length=n_input_samples))]
+            x = [collect(range(lower, stop=upper, length=n_input_samples)) collect(range(lower, stop=upper, length=n_input_samples))]
             y = sin.(x[:, 1]) + cos.(x[:, 2])
             data = DataFrame(:x1 => x[:, 1], :x2 => x[:, 2], :y => y)
             for input_transform in input_transform_choices, output_transform in output_transform_choices
@@ -123,7 +126,7 @@ end
                             input_transform=input_transform(),
                             output_transform=output_transform()
                         )
-                        df = create_test_data(2)
+                        df = create_test_data(n_input_samples, lower, upper, 2)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
                         @test :y_var in propertynames(df)
@@ -133,7 +136,7 @@ end
                             input_transform=input_transform(),
                             output_transform=output_transform()
                         )
-                        df = create_test_data(2)
+                        df = create_test_data(n_input_samples, lower, upper, 2)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
                         @test :y_var in propertynames(df)
@@ -153,7 +156,7 @@ end
                         input_transform=input_transform(),
                         output_transform=output_transform()
                     )
-                    df = create_test_data(2)
+                    df = sample(xrv, n_input_samples)
                     evaluate!(gp, df; mode=:mean_and_var)
                     @test :y_mean in propertynames(df)
                     @test :y_var in propertynames(df)
@@ -163,7 +166,7 @@ end
                         input_transform=input_transform(),
                         output_transform=output_transform()
                     )
-                    df = create_test_data(2)
+                    df = sample(xrv, n_input_samples)
                     evaluate!(gp, df; mode=:mean_and_var)
                     @test :y_mean in propertynames(df)
                     @test :y_var in propertynames(df)
