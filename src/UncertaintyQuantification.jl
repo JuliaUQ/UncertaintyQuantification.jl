@@ -2,6 +2,7 @@ module UncertaintyQuantification
 
 using ADTypes
 using Bootstrap
+using Clarabel
 using Copulas
 using CovarianceEstimation
 using DataFrames
@@ -13,6 +14,8 @@ using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
 using Format
+using Ipopt
+using JuMP
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
