@@ -207,3 +207,37 @@
         end
     end
 end
+
+@testset "IPM Reliability Double Loop" begin
+    x1 = RandomVariable(Normal(), :x1)
+    x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
+    x3 = IntervalVariable(-1, 2, :x3)
+
+    # QMC Samples to fit IPM
+    data = sample(
+        [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
+        HaltonSampling(150),
+    )
+
+    m1 = Model(df -> df.x1 + df.x3, :x4)
+    m2 = Model(df -> 7 .- df.x4 .^ 2 .+ df.x2, :y)
+
+    evaluate!([m1, m2], data)
+
+    b = MonomialBasis(2, 3)
+
+    ipm = IntervalPredictorModel(data, :y, b, [:x2, :x4])
+
+    pf, x_lb, x_ub = probability_of_failure(
+        [m1, m2], df -> 5.0 .- df.y, [x1, x2, x3], DoubleLoop(FORM())
+    )
+
+    pf_ipm, x_lb_ipm, x_ub_ipm = probability_of_failure(
+        [m1, ipm], df -> 5.0 .- df.y, [x1, x2, x3], DoubleLoop(FORM())
+    )
+
+    @test pf.lb ≈ pf_ipm.lb atol = 1e-4
+    @test pf.ub ≈ pf_ipm.ub atol = 1e-4
+    @test x_lb ≈ x_lb_ipm atol = 1e-4
+    @test x_ub ≈ x_ub_ipm atol = 1e-4 broken = true
+end

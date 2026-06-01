@@ -3,18 +3,16 @@ struct LinearBasisFunctionModel{T<:AbstractBasis} <: UQModel
     β::Vector{<:Real}
     inputs::Vector{Symbol}
     out::Symbol
-    function LinearBasisFunctionModel(
-        df::DataFrame,
-        out::Symbol,
-        b::T,
-        inputs::Vector{Symbol}=propertynames(df[:, Not(out)]),
-    ) where {T<:AbstractBasis}
-        X = permutedims(Matrix(df[:, inputs]))
-        y = df[:, out]
+end
 
-        β = b(X)' \ y
-        return new{T}(b, β, inputs, out)
-    end
+function LinearBasisFunctionModel(
+    df::DataFrame, out::Symbol, b::T, inputs::Vector{Symbol}=propertynames(df[:, Not(out)])
+) where {T<:AbstractBasis}
+    X = permutedims(Matrix(df[:, inputs]))
+    y = df[:, out]
+
+    β = b(X)' \ y
+    return LinearBasisFunctionModel(b, β, inputs, out)
 end
 
 function evaluate!(bfm::LinearBasisFunctionModel, df::DataFrame)
@@ -24,3 +22,5 @@ function evaluate!(bfm::LinearBasisFunctionModel, df::DataFrame)
     df[!, bfm.out] = out
     return nothing
 end
+
+name(bfm::LinearBasisFunctionModel) = bfm.out

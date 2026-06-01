@@ -240,6 +240,7 @@ include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
 include("models/ipm.jl")
+include("models/models.jl")
 
 include("hpc/slurm.jl")
 

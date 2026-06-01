@@ -20,6 +20,7 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
         n = length(b)
 
         m = JuMP.Model(Ipopt.Optimizer)
+        set_silent(m)
         @variable(m, p_lb[1:n])
         @variable(m, p_ub[1:n])
 
@@ -46,10 +47,14 @@ function evaluate!(ipm::IntervalPredictorModel, df::DataFrame)
     lo = vec(ipm.p_ub' * ((φ - abs.(φ)) ./ 2) + ipm.p_lb' * ((φ + abs.(φ)) ./ 2))
     hi = vec(ipm.p_ub' * ((φ + abs.(φ)) ./ 2) + ipm.p_lb' * ((φ - abs.(φ)) ./ 2))
 
-    idx = findall(.!(lo .<= hi))
-
-    @show lo[idx], hi[idx]
-
     df[!, ipm.out] = Interval.(lo, hi)
     return nothing
 end
+
+isimprecise(ipm::IntervalPredictorModel) = true
+
+function bounds(ipm::IntervalPredictorModel)
+    return min.(ipm.p_lb, ipm.p_ub), max.(ipm.p_lb, ipm.p_ub)
+end
+
+name(ipm::IntervalPredictorModel) = ipm.out
