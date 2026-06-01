@@ -92,6 +92,7 @@ function probability_of_failure(
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
 
+    models = wrap(models)
     imprecise_models = filter(m -> isimprecise(m), models)
     precise_models = filter(m -> !isimprecise(m), models)
 
