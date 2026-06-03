@@ -1,7 +1,7 @@
 @testset "IntervalPredictorModel" begin
     N = 150
 
-    data = DataFrame(:x => rand(Uniform(-5.5, 5.5), N))
+    data = sample(RandomVariable(Uniform(-5.5, 5.5), :x), HaltonSampling(N))
 
     verify = copy(data)
 
@@ -18,9 +18,7 @@
 
     evaluate!(ipm, verify)
 
-    @test all(in.(data.y, verify.y))
+    @assert all(getproperty.(verify.y, :lb) .<= data.y .+ abs.(data.y) * 1e-8)
+
+    @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1e-8)
 end
-
-@testset "IPM Reliability DoubleLoop" begin end
-
-@testset "IPM Reliability RandomSlicing" begin end

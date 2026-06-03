@@ -8,7 +8,8 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
         df::DataFrame,
         out::Symbol,
         b::T,
-        inputs::Vector{Symbol}=propertynames(df[:, Not(out)]),
+        inputs::Vector{Symbol}=propertynames(df[:, Not(out)]);
+        tol::Real=1e-12,
     ) where {T<:AbstractBasis}
         X = permutedims(Matrix(df[:, inputs]))
         y = df[:, out]
@@ -19,18 +20,26 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
 
         n = length(b)
 
-        m = JuMP.Model(Ipopt.Optimizer)
+        m = JuMP.Model(Clarabel.Optimizer)
+        set_attribute(m, "tol_gap_abs", tol)
+        set_attribute(m, "tol_gap_rel", tol)
+        set_attribute(m, "tol_feas", tol)
+        set_attribute(m, "tol_infeas_abs", tol)
+        set_attribute(m, "tol_infeas_rel", tol)
         set_silent(m)
+
         @variable(m, p_lb[1:n])
         @variable(m, p_ub[1:n])
 
         @constraint(
-            m, vec(p_ub' * ((φ - abs.(φ)) ./ 2) + p_lb' * ((φ + abs.(φ)) ./ 2)) <= y
+            m, vec(p_ub' * ((φ - abs.(φ)) ./ 2) + p_lb' * ((φ + abs.(φ)) ./ 2)) .<= y
         )
 
         @constraint(
-            m, vec(p_ub' * ((φ + abs.(φ)) ./ 2) + p_lb' * ((φ - abs.(φ)) ./ 2)) >= y
+            m, vec(p_ub' * ((φ + abs.(φ)) ./ 2) + p_lb' * ((φ - abs.(φ)) ./ 2)) .>= y
         )
+
+        @constraint(m, p_lb <= p_ub)
 
         @objective(m, Min, sum((p_ub - p_lb)' * abs.(φ)))
 
