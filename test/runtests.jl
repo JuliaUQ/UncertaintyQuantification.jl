@@ -68,7 +68,6 @@ if Sys.islinux()
         @warn "Adding test utilities to PATH variable"
         path = ENV["PATH"]
         ENV["PATH"] = "$(pwd())/test_utilities:$path"
-        @show ENV["PATH"]
     end
 
     include("hpc/slurm.jl")
