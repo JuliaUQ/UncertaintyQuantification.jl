@@ -65,8 +65,11 @@ if Sys.islinux()
     end
 
     if HPC == false && !occursin("test/test_utilities", ENV["PATH"])
-        @warn "For slurm test to pass on Linux, test_utilities/sbatch must be added to PATH"
-        @warn "sbatch command line tool may use the fake test_utilities/sbatch"
+        @warn "Adding test utilities to PATH variable"
+        path = ENV["PATH"]
+        ENV["PATH"] = "$(pwd())/test_utilities:$path"
+        @show ENV["PATH"]
     end
+
     include("hpc/slurm.jl")
 end
