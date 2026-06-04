@@ -41,7 +41,7 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
 
         @constraint(m, p_lb <= p_ub)
 
-        @objective(m, Min, sum((p_ub - p_lb)' * abs.(φ)))
+        @objective(m, Min, mean((p_ub - p_lb)' * abs.(φ)))
 
         JuMP.optimize!(m)
 
@@ -49,14 +49,21 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
     end
 end
 
-function evaluate!(ipm::IntervalPredictorModel, df::DataFrame)
+function evaluate!(ipm::IntervalPredictorModel, df::DataFrame; bound::Symbol=:both)
     X = permutedims(Matrix{Float64}(df[:, ipm.inputs])) # convert to matrix, sort by bfm.inputs
     φ = ipm.b(X)
 
     lo = vec(ipm.p_ub' * ((φ - abs.(φ)) ./ 2) + ipm.p_lb' * ((φ + abs.(φ)) ./ 2))
     hi = vec(ipm.p_ub' * ((φ + abs.(φ)) ./ 2) + ipm.p_lb' * ((φ - abs.(φ)) ./ 2))
 
+    # check for possible crossover of the bounds
+    idx = lo .> hi
+    if !isempty(idx)
+        lo[idx], hi[idx] = hi[idx], lo[idx]
+    end
+
     df[!, ipm.out] = Interval.(lo, hi)
+
     return nothing
 end
 
