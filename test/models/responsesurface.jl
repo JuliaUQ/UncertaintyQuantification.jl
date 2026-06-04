@@ -1,4 +1,4 @@
-@testset "ResponseSurface" begin
+@testitem "ResponseSurface" begin
     x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 
     himmelblau = Model(

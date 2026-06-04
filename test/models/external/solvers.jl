@@ -1,4 +1,4 @@
-@testset "Solvers" begin
+@testitem "Solvers" begin
     binary = joinpath(Sys.BINDIR, "julia")
 
     solver = Solver(binary, "radius.jl"; args="--project")

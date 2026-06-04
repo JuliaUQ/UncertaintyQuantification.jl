@@ -1,4 +1,4 @@
-@testset "Model" begin
+@testitem "Model" setup = [Import] begin
     input = DataFrame(; a=1, b=2)
 
     model = Model(df -> df.a + 2 * df.b, :c)
@@ -9,7 +9,7 @@
     @test model(input) == [5]
 end
 
-@testset "ParallelModel" begin
+@testitem "ParallelModel" setup = [Import] begin
     procs = addprocs(2)
 
     @everywhere using UncertaintyQuantification

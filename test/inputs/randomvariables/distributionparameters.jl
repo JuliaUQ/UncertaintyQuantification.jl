@@ -1,4 +1,4 @@
-@testset "Distribution Parameters" begin
+@testitem "Distribution Parameters" begin
     # Beta
     d = Beta(0.5, 0.5)
     μ = mean(d)

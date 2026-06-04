@@ -1,4 +1,4 @@
-@testset "Parameter" begin
+@testitem "Parameter" setup = [Import] begin
     π = Parameter(3.14, :π)
     x = DataFrame(; π=[3.14, 3.14, 3.14, 3.14, 3.14])
 

@@ -1,4 +1,4 @@
-@testset "Stochastic Process Input Model" begin
+@testitem "Stochastic Process Input Model" begin
     ω = collect(0:0.01:25)
     t = collect(0:0.02:10)
     cp = CloughPenzien(ω, 1, π, 0.2, 4π, 0.3)
