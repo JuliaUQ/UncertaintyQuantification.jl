@@ -157,16 +157,12 @@ function probability_of_failure(
         min_mesh_size=1e-13,
     )
 
-    pf_lb = result_lb.f
-    pf_ub = -result_ub.f
+    pf = Interval(result_lb.f, -result_ub.f)
+    # We only return the values of the inputs leading to the lower and upper bound of the pf
+    x_lb = result_lb.x[1:length(lb_in)]
+    x_ub = result_ub.x[1:length(lb_in)]
 
-    if pf_lb == pf_ub
-        return pf_ub, result_lb.x[1:length(lb_in)], result_ub.x[1:length(lb_in)]
-    else
-        return Interval(pf_lb, pf_ub),
-        result_lb.x[1:length(lb_in)],
-        result_ub.x[1:length(lb_in)]
-    end
+    return pf, x_lb, x_ub
 end
 
 function bounds(inputs::AbstractVector{<:UQInput})
