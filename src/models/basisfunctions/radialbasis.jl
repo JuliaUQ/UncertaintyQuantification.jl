@@ -1,10 +1,21 @@
 abstract type AbstractRadialBasis <: AbstractBasis end
 
+"""
+    GaussianRadialBasis(c::AbstractMatrix{<:Real}, ϵ::Union{Real,Vector{<:Real}})
+
+Construct a guassian radial basis using the center points given in the columns of `c` and shape parameter `ϵ`.
+Different shape parameters can be assigned to each basis function by passing a vector as `ϵ`.
+"""
 struct GaussianRadialBasis <: AbstractRadialBasis
     c::AbstractMatrix{<:Real}
     ϵ::Union{Real,Vector{<:Real}}
 end
 
+"""
+    PolyharmonicRadialBasis(c::AbstractMatrix{<:Real}, k::Int)
+
+Construct a polyharmonic radial basis of degree `k` using the center points given in the columns of `c`.
+"""
 struct PolyharmonicRadialBasis <: AbstractRadialBasis
     c::AbstractMatrix{<:Real}
     k::Int

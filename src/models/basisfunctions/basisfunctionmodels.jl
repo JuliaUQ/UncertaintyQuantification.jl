@@ -1,3 +1,11 @@
+"""
+    LinearBasisFunctionModel(
+        df::DataFrame, out::Symbol, b:<AbstractBasis, inputs::Vector{Symbol}=propertynames(df[:, Not(out)])
+    )
+
+Construct a linear basis function model for the data in `df` using the basis `b`.By default the input
+variables are assumed to be all columns of the `DataFrame` except for `out`.
+"""
 struct LinearBasisFunctionModel{T<:AbstractBasis} <: UQModel
     b::T
     β::Vector{<:Real}

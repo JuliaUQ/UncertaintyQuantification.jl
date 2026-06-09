@@ -12,6 +12,7 @@ Pages = ["models.md"]
 UQModel
 Model
 ParallelModel
+LinearBasisFunctionModel
 ```
 
 ## Methods
