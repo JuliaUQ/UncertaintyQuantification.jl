@@ -1,4 +1,4 @@
-@testitem "PolyharmonicSpline" setup = [Import] begin
+@testitem "PolyharmonicSpline" setup = [TestSetup] begin
     x = RandomVariable.(Uniform(-π, π), [:x1, :x2, :x3])
     a = Parameter(7, :a)
     b = Parameter(0.1, :b)

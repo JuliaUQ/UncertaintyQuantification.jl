@@ -1,4 +1,4 @@
-@testset "Spectral Representation" begin
+@testitem "Spectral Representation" begin
     N = 128
     ω_u = 4π
     Δω = ω_u / N
@@ -39,39 +39,39 @@
     @test ϕ ≈ ϕ_temp
 
     t = collect(0:1:10)
-    @test_logs (:warn, r"The frequency of the signal") SpectralRepresentation(sd, t, :ShnzkNySR)
+    @test_logs (:warn, r"The frequency of the signal") SpectralRepresentation(
+        sd, t, :ShnzkNySR
+    )
+end
+@testitem "Spectral Representation: Reliability" begin
+    ω = collect(range(0, 50, 100))
 
-    @testset "Reliability" begin
-        
-        ω = collect(range(0, 50, 100))
+    cp = CloughPenzien(ω, 0.1, 0.8π, 0.6, 8π, 0.6)
 
-        cp = CloughPenzien(ω, 0.1, 0.8π, 0.6, 8π, 0.6)
+    gm = SpectralRepresentation(cp, collect(range(0, 10, 200)), :gm)
+    gm_model = StochasticProcessModel(gm)
 
-        gm = SpectralRepresentation(cp, collect(range(0, 10, 200)), :gm)
-        gm_model = StochasticProcessModel(gm)
+    capacity = Parameter(25, :cap)
 
-        capacity = Parameter(25, :cap)
-
-        function limitstate(df)
-            return df.cap - map(sum, df.gm)
-        end
-
-        models = [gm_model]
-        inputs = [gm, capacity]
-
-        mc = MonteCarlo(10^4)
-
-        pf_mc, _, _ = probability_of_failure(models, limitstate, inputs, mc)
-
-        # Reference solution obtained with 10^6 samples: 0.003529
-        @test 0.001 < pf_mc < 0.0064 # 99 percentiles obtained from 5000 independent runs with 10^4 samples
-
-        # We use subset to confirm that the mappings to sns are done correctly
-
-        ss = SubSetInfinityAdaptive(2000, 0.1, 20, 10, 0.6, 1)
-
-        pf_ss, _, _ = probability_of_failure(models, limitstate, inputs, ss)
-
-        @test 0.001 < pf_ss < 0.0064
+    function limitstate(df)
+        return df.cap - map(sum, df.gm)
     end
+
+    models = [gm_model]
+    inputs = [gm, capacity]
+
+    mc = MonteCarlo(10^4)
+
+    pf_mc, _, _ = probability_of_failure(models, limitstate, inputs, mc)
+
+    # Reference solution obtained with 10^6 samples: 0.003529
+    @test 0.001 < pf_mc < 0.0064 # 99 percentiles obtained from 5000 independent runs with 10^4 samples
+
+    # We use subset to confirm that the mappings to sns are done correctly
+
+    ss = SubSetInfinityAdaptive(2000, 0.1, 20, 10, 0.6, 1)
+
+    pf_ss, _, _ = probability_of_failure(models, limitstate, inputs, ss)
+
+    @test 0.001 < pf_ss < 0.0064
 end

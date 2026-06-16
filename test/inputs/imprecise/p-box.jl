@@ -1,4 +1,4 @@
-@testset "P-box" begin
+@testitem "P-box" begin
     params = Dict(
         :a => Interval(0.14, 0.16), :b => Interval(0.21, 0.23), :c => Interval(0, 1)
     )
@@ -52,60 +52,58 @@
     ) ProbabilityBox{Normal}(Dict(:μ => 0.0, :σ => 1.0))
 
     @test ProbabilityBox{Normal}(Dict(:μ => 0.0, :σ => 1.0)) == Normal()
+end
 
-    @testset "Invalid distributions" begin
-        @test_throws ArgumentError(
-            "Invalid Normal distribution for parameter combination (0, -1)"
-        ) ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(-1, 1)))
+@testitem "P-box: Invalid distributions" begin
+    @test_throws ArgumentError(
+        "Invalid Normal distribution for parameter combination (0, -1)"
+    ) ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(-1, 1)))
 
-        @test_throws ArgumentError(
-            "Invalid Uniform distribution for parameter combination (0.16, 0.16)"
-        ) ProbabilityBox{Uniform}(Dict(:a => Interval(0.14, 0.16), :b => 0.16))
-    end
+    @test_throws ArgumentError(
+        "Invalid Uniform distribution for parameter combination (0.16, 0.16)"
+    ) ProbabilityBox{Uniform}(Dict(:a => Interval(0.14, 0.16), :b => 0.16))
+end
 
-    @testset "Quantile and sampling" begin
-        p_box = ProbabilityBox{Normal}(Dict(:μ => Interval(0, 1), :σ => Interval(0.1, 1)))
-        a = UncertaintyQuantification.quantile(p_box, 0.25)
-        @test a.lb == quantile(Normal(0, 1), 0.25)
-        @test a.ub == quantile(Normal(1, 0.1), 0.25)
+@testitem "P-box: Quantile and sampling" begin
+    p_box = ProbabilityBox{Normal}(Dict(:μ => Interval(0, 1), :σ => Interval(0.1, 1)))
+    a = UncertaintyQuantification.quantile(p_box, 0.25)
+    @test a.lb == quantile(Normal(0, 1), 0.25)
+    @test a.ub == quantile(Normal(1, 0.1), 0.25)
 
-        a = UncertaintyQuantification.quantile(p_box, 0.5)
-        @test a.lb == quantile(Normal(0, 0.1), 0.5)
-        @test a.lb == quantile(Normal(0, 1), 0.5)
-        @test a.ub == quantile(Normal(1, 0.1), 0.5)
-        @test a.ub == quantile(Normal(1, 1), 0.5)
+    a = UncertaintyQuantification.quantile(p_box, 0.5)
+    @test a.lb == quantile(Normal(0, 0.1), 0.5)
+    @test a.lb == quantile(Normal(0, 1), 0.5)
+    @test a.ub == quantile(Normal(1, 0.1), 0.5)
+    @test a.ub == quantile(Normal(1, 1), 0.5)
 
-        a = UncertaintyQuantification.quantile(p_box, 0.75)
-        @test a.lb == quantile(Normal(0, 0.1), 0.75)
-        @test a.ub == quantile(Normal(1, 1), 0.75)
+    a = UncertaintyQuantification.quantile(p_box, 0.75)
+    @test a.lb == quantile(Normal(0, 0.1), 0.75)
+    @test a.ub == quantile(Normal(1, 1), 0.75)
 
-        p_box = ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(0.1, 1)))
-        @test UncertaintyQuantification.bounds(p_box) == ([0.1], [1])
+    p_box = ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(0.1, 1)))
+    @test UncertaintyQuantification.bounds(p_box) == ([0.1], [1])
 
-        a = UncertaintyQuantification.quantile(p_box, 0.25)
-        @test a.lb == quantile(Normal(0, 1), 0.25)
-        @test a.ub == quantile(Normal(0, 0.1), 0.25)
+    a = UncertaintyQuantification.quantile(p_box, 0.25)
+    @test a.lb == quantile(Normal(0, 1), 0.25)
+    @test a.ub == quantile(Normal(0, 0.1), 0.25)
 
-        a = UncertaintyQuantification.quantile(p_box, 0.5)
-        @test a == Interval(0.0, 0.0)
+    a = UncertaintyQuantification.quantile(p_box, 0.5)
+    @test a == Interval(0.0, 0.0)
 
-        a = UncertaintyQuantification.quantile(p_box, 0.75)
-        @test a.lb == quantile(Normal(0, 0.1), 0.75)
-        @test a.ub == quantile(Normal(0, 1), 0.75)
-    end
+    a = UncertaintyQuantification.quantile(p_box, 0.75)
+    @test a.lb == quantile(Normal(0, 0.1), 0.75)
+    @test a.ub == quantile(Normal(0, 1), 0.75)
+end
 
-    @testset "Inverse quantile" begin
-        p_box = ProbabilityBox{Uniform}(
-            Dict(:a => Interval(0, 0.2), :b => Interval(0.5, 1))
-        )
+@testitem "P-box: Inverse quantile" begin
+    p_box = ProbabilityBox{Uniform}(Dict(:a => Interval(0, 0.2), :b => Interval(0.5, 1)))
 
-        Nsamples = 1000
+    Nsamples = 1000
 
-        u = rand(Nsamples)
-        x = quantile.(Ref(p_box), u)
+    u = rand(Nsamples)
+    x = quantile.(Ref(p_box), u)
 
-        u_back = UncertaintyQuantification.reverse_quantile.(Ref(p_box), x)
+    u_back = UncertaintyQuantification.reverse_quantile.(Ref(p_box), x)
 
-        @test all(abs.(u_back .- u) .<= 10^-10)
-    end
+    @test all(abs.(u_back .- u) .<= 10^-10)
 end

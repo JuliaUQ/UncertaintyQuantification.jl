@@ -18,7 +18,7 @@
     @test sprint(show, interval) == "[0.14, 0.16]"
 end
 
-@testitem "IntervalVariable" setup = [Import] begin
+@testitem "IntervalVariable" setup = [TestSetup] begin
     name = :l
     lb = 0.14
     ub = 0.16

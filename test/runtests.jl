@@ -11,7 +11,7 @@ using Test
 using TestItemRunner
 using UncertaintyQuantification
 
-@testsnippet Import begin
+@testsnippet TestSetup begin
     using Copulas
     using DataFrames
     using Distributed

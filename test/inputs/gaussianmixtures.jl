@@ -1,4 +1,4 @@
-@testitem "GaussianMixtureModel" setup = [Import] begin
+@testitem "GaussianMixtureModel" setup = [TestSetup] begin
     # Test fitting with a DataFrame and initialization
     df = DataFrame(; x1=randn(100), x2=randn(100))
     gmm = GaussianMixtureModel(df, 3; maximum_iterations=1, tolerance=1e-3)

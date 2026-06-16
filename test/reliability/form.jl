@@ -1,4 +1,4 @@
-@testitem "FORM" setup = [Import] begin
+@testitem "FORM" setup = [TestSetup] begin
     form = FORM()
 
     x1 = RandomVariable(Normal(200, 20), :x1)

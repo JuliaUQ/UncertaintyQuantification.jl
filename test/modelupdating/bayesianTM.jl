@@ -1,4 +1,4 @@
-@testset "TM BMU - Transformations" begin
+@testsnippet TMBMU1 begin
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
     loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
@@ -7,72 +7,70 @@
 
     map = PolynomialMap(2, 2, Normal(), Softplus())
     quadrature = GaussHermiteWeights(3, 2)
-
-    @testset "With density transform" begin
-        tm_log = TransportMapBayesian(
-            prior, deepcopy(map), quadrature; islog=true, transformprior=true
-        )
-
-        tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
-        @test !iszero(getcoefficients(tm_result.d.map))
-
-        @test tm_result isa JointDistribution
-        @test tm_result.d isa TransportMap
-        @test length(tm_result.m) == 2
-
-        posterior_samples = sample(tm_result, 10)
-        @test nrow(posterior_samples) == 10
-    end
-
-    @testset "No density transform" begin
-        tm_log = TransportMapBayesian(
-            prior, deepcopy(map), quadrature; islog=true, transformprior=false
-        )
-
-        tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
-        @test !iszero(getcoefficients(tm_result.d.map))
-    end
-
-    @testset "Warning and errors" begin
-        tm_log = TransportMapBayesian(
-            prior, map, quadrature; islog=true, transformprior=true
-        )
-        @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
-            df -> df.x1, df -> df.L, [logL], tm_log
-        )
-
-        tm_forward = TransportMapBayesian(prior, map, quadrature, AutoForwardDiff())
-        @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
-    end
-
-    @testset "External Model" begin
-        sourcedir = tempdir()
-        sourcefile = ["radius.jl"]
-
-        radius = Extractor(
-            base -> begin
-                return parse(Float64, readline(joinpath(base, "out.txt")))
-            end, :r
-        )
-
-        binary = joinpath(Sys.BINDIR, "julia")
-        solver = Solver(binary, "radius.jl")
-
-        ext = ExternalModel(sourcedir, sourcefile, radius, solver;)
-        tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
-        @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
-    end
-
-    @testset "Show methods" begin
-        # Test show methods
-        tm = TransportMapBayesian(prior, map, quadrature)
-        @test_nowarn sprint(show, tm)
-        @test_nowarn sprint(print, tm)
-        @test_nowarn display(tm)
-    end
 end
 
-@testset "TM BMU - Benchmark" begin
+@testitem "TM BMU - Transformations: With density transform" setup = [TMBMU1, TestSetup] begin
+    tm_log = TransportMapBayesian(
+        prior, deepcopy(map), quadrature; islog=true, transformprior=true
+    )
+
+    tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
+    @test !iszero(getcoefficients(tm_result.d.map))
+
+    @test tm_result isa JointDistribution
+    @test tm_result.d isa TransportMap
+    @test length(tm_result.m) == 2
+
+    posterior_samples = sample(tm_result, 10)
+    @test nrow(posterior_samples) == 10
+end
+
+@testitem "TM BMU - Transformations: No density transform" setup = [TMBMU1] begin
+    tm_log = TransportMapBayesian(
+        prior, deepcopy(map), quadrature; islog=true, transformprior=false
+    )
+
+    tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
+    @test !iszero(getcoefficients(tm_result.d.map))
+end
+
+@testitem "TM BMU - Transformations: Warning and errors" setup = [TMBMU1, TestSetup] begin
+    tm_log = TransportMapBayesian(prior, map, quadrature; islog=true, transformprior=true)
+    @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
+        df -> df.x1, df -> df.L, [logL], tm_log
+    )
+
+    tm_forward = TransportMapBayesian(prior, map, quadrature, AutoForwardDiff())
+    @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
+end
+
+@testitem "TM BMU - Transformations: External Model" setup = [TMBMU1] begin
+    sourcedir = tempdir()
+    sourcefile = ["radius.jl"]
+
+    radius = Extractor(
+        base -> begin
+            return parse(Float64, readline(joinpath(base, "out.txt")))
+        end, :r
+    )
+
+    binary = joinpath(Sys.BINDIR, "julia")
+    solver = Solver(binary, "radius.jl")
+
+    ext = ExternalModel(sourcedir, sourcefile, radius, solver;)
+    tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
+    @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
+end
+
+@testitem "TM BMU - Transformations: Show methods" setup = [TMBMU1] begin
+    # Test show methods
+    tm = TransportMapBayesian(prior, map, quadrature)
+    @test_nowarn sprint(show, tm)
+    @test_nowarn sprint(print, tm)
+    @test_nowarn display(tm)
+end
+
+@testsnippet TMBMU2 begin
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
 
@@ -214,64 +212,64 @@ end
 
         return tm, mean(posterior_exact), std(posterior_exact)
     end
+end
 
-    @testset "TM normalmeanbenchmark" begin
-        prior = Normal(2, 10)
-        prior_RV = RandomVariable(prior, :x)
+@testitem "TM BMU - Benchmark: TM normalmeanbenchmark" setup = [TMBMU2] begin
+    prior = Normal(2, 10)
+    prior_RV = RandomVariable(prior, :x)
 
-        tm = PolynomialMap(1, 2)
-        quad = GaussHermiteWeights(10, 1)
-        map = TransportMapBayesian([prior_RV], tm, quad)
+    tm = PolynomialMap(1, 2)
+    quad = GaussHermiteWeights(10, 1)
+    map = TransportMapBayesian([prior_RV], tm, quad)
 
-        tm_opt, analytic_mean, analytic_std = normalmeanbenchmark(map, prior)
+    tm_opt, analytic_mean, analytic_std = normalmeanbenchmark(map, prior)
 
-        tm_mean = only(mean(tm_opt))
+    tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 5000)
-        tm_mean_samples = mean(df.x)
+    df = sample(tm_opt, 5000)
+    tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.1
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
-        @test std(df.x) ≈ analytic_std rtol = 0.1
-    end
+    @test tm_mean ≈ analytic_mean rtol = 0.1
+    @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+    @test std(df.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "TM binomialinferencebenchmark" begin
-        prior = Beta(1, 1)
-        prior_RV = RandomVariable(prior, :x)
+@testitem "TM BMU - Benchmark: TM binomialinferencebenchmark" setup = [TMBMU2] begin
+    prior = Beta(1, 1)
+    prior_RV = RandomVariable(prior, :x)
 
-        tm = PolynomialMap(1, 2)
-        quad = GaussHermiteWeights(10, 1)
-        map = TransportMapBayesian([prior_RV], tm, quad)
+    tm = PolynomialMap(1, 2)
+    quad = GaussHermiteWeights(10, 1)
+    map = TransportMapBayesian([prior_RV], tm, quad)
 
-        tm_opt, analytic_mean, analytic_std = binomialinferencebenchmark(map, prior)
+    tm_opt, analytic_mean, analytic_std = binomialinferencebenchmark(map, prior)
 
-        tm_mean = only(mean(tm_opt))
+    tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 5000)
-        tm_mean_samples = mean(df.x)
+    df = sample(tm_opt, 5000)
+    tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.1
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
-        @test std(df.x) ≈ analytic_std rtol = 0.1
-    end
+    @test tm_mean ≈ analytic_mean rtol = 0.1
+    @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+    @test std(df.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "TM normalvarbenchmark " begin
-        prior = InverseGamma(30, 100)
-        prior_RV = RandomVariable(prior, :x)
+@testitem "TM BMU - Benchmark: TM normalvarbenchmark " setup = [TMBMU2] begin
+    prior = InverseGamma(30, 100)
+    prior_RV = RandomVariable(prior, :x)
 
-        tm = PolynomialMap(1, 2)
-        quad = GaussHermiteWeights(10, 1)
-        map = TransportMapBayesian([prior_RV], tm, quad)
+    tm = PolynomialMap(1, 2)
+    quad = GaussHermiteWeights(10, 1)
+    map = TransportMapBayesian([prior_RV], tm, quad)
 
-        tm_opt, analytic_mean, analytic_std = normalvarbenchmark(map, prior)
+    tm_opt, analytic_mean, analytic_std = normalvarbenchmark(map, prior)
 
-        tm_mean = only(mean(tm_opt))
+    tm_mean = only(mean(tm_opt))
 
-        df = sample(tm_opt, 5000)
-        tm_mean_samples = mean(df.x)
+    df = sample(tm_opt, 5000)
+    tm_mean_samples = mean(df.x)
 
-        @test tm_mean ≈ analytic_mean rtol = 0.1
-        @test tm_mean_samples ≈ analytic_mean rtol = 0.1
-        @test std(df.x) ≈ analytic_std rtol = 0.1
-    end
+    @test tm_mean ≈ analytic_mean rtol = 0.1
+    @test tm_mean_samples ≈ analytic_mean rtol = 0.1
+    @test std(df.x) ≈ analytic_std rtol = 0.1
 end

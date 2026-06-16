@@ -1,158 +1,156 @@
-using Random, DataFrames
+@testsnippet JDSetup begin
+    using Random, DataFrames, Copulas, HCubature
 
-rv1 = RandomVariable(Exponential(1), :x)
-rv2 = RandomVariable(Exponential(1 / 2), :y)
+    rv1 = RandomVariable(Exponential(1), :x)
+    rv2 = RandomVariable(Exponential(1 / 2), :y)
 
-pbox1 = RandomVariable(ProbabilityBox{Exponential}(Interval(1 / 2, 1)), :x)
-pbox2 = RandomVariable(ProbabilityBox{Exponential}(Interval(3 / 4, 5 / 4)), :y)
+    pbox1 = RandomVariable(ProbabilityBox{Exponential}(Interval(1 / 2, 1)), :x)
+    pbox2 = RandomVariable(ProbabilityBox{Exponential}(Interval(3 / 4, 5 / 4)), :y)
 
-marginals = [rv1, rv2]
+    marginals = [rv1, rv2]
 
-imprecise_marginals = [pbox1, pbox2]
+    imprecise_marginals = [pbox1, pbox2]
 
-copula = GaussianCopula([1 0.8; 0.8 1])
+    copula = GaussianCopula([1 0.8; 0.8 1])
+end
 
-@testset "JointDistribution" begin
-    @testset "Copulas" begin
-        @testset "Constructor" begin
-            @test isa(JointDistribution(copula, marginals), JointDistribution)
-            @test isa(JointDistribution(copula, imprecise_marginals), JointDistribution)
+@testitem "JD-Copulas: Constructor" setup = [JDSetup] begin
+    @test isa(JointDistribution(copula, marginals), JointDistribution)
+    @test isa(JointDistribution(copula, imprecise_marginals), JointDistribution)
 
-            jd = JointDistribution(copula, marginals)
-            @test jd.m == marginals
-            @test jd.d == copula
+    jd = JointDistribution(copula, marginals)
+    @test jd.m == marginals
+    @test jd.d == copula
 
-            jd = JointDistribution(copula, imprecise_marginals)
-            @test jd.m == imprecise_marginals
-            @test jd.d == copula
+    jd = JointDistribution(copula, imprecise_marginals)
+    @test jd.m == imprecise_marginals
+    @test jd.d == copula
 
-            @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
-                GaussianCopula([1 0 0; 0 1 0; 0 0 1]), marginals
-            )
-            @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
-                GaussianCopula([1 0 0; 0 1 0; 0 0 1]), imprecise_marginals
-            )
-            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
-                copula, [rv1, rv1]
-            )
-        end
+    @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
+        GaussianCopula([1 0 0; 0 1 0; 0 0 1]), marginals
+    )
+    @test_throws ArgumentError("Dimension mismatch between copula and marginals.") JointDistribution(
+        GaussianCopula([1 0 0; 0 1 0; 0 0 1]), imprecise_marginals
+    )
+    @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+        copula, [rv1, rv1]
+    )
+end
 
-        @testset "sample" begin
-            jd = JointDistribution(copula, marginals)
-            @test size(sample(jd, 10)) == (10, 2)
-            @test size(sample(jd)) == (1, 2)
-            jd = JointDistribution(copula, imprecise_marginals)
-            @test size(sample(jd, 10)) == (10, 2)
-            @test size(sample(jd)) == (1, 2)
-        end
+@testitem "JD-Copulas: sample" setup = [JDSetup] begin
+    jd = JointDistribution(copula, marginals)
+    @test size(sample(jd, 10)) == (10, 2)
+    @test size(sample(jd)) == (1, 2)
+    jd = JointDistribution(copula, imprecise_marginals)
+    @test size(sample(jd, 10)) == (10, 2)
+    @test size(sample(jd)) == (1, 2)
+end
 
-        @testset "names" begin
-            jd = JointDistribution(copula, marginals)
-            @test names(jd) == [:x, :y]
-        end
+@testitem "JD-Copulas: names" setup = [JDSetup] begin
+    jd = JointDistribution(copula, marginals)
+    @test names(jd) == [:x, :y]
+end
 
-        @testset "mean" begin
-            jd = JointDistribution(copula, marginals)
-            @test mean(jd) == [1.0, 0.5]
-        end
+@testitem "JD-Copulas: mean" setup = [JDSetup] begin
+    jd = JointDistribution(copula, marginals)
+    @test mean(jd) == [1.0, 0.5]
+end
 
-        @testset "to_standard_normal_space" begin
-            jd = JointDistribution(copula, marginals)
+@testitem "JD-Copulas: to_standard_normal_space" setup = [JDSetup] begin
+    jd = JointDistribution(copula, marginals)
 
-            samples = sample(jd, 10^6)
+    samples = sample(jd, 10^6)
 
-            @test isapprox(mean(samples.x), 1.0; atol=0.01)
-            @test isapprox(mean(samples.y), 0.5; atol=0.01)
+    @test isapprox(mean(samples.x), 1.0; atol=0.01)
+    @test isapprox(mean(samples.y), 0.5; atol=0.01)
 
-            @test cor(samples.x, samples.y) ≈ 0.77 atol = 0.01
+    @test cor(samples.x, samples.y) ≈ 0.77 atol = 0.01
 
-            to_standard_normal_space!(jd, samples)
+    to_standard_normal_space!(jd, samples)
 
-            @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
-            @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
+    @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
+    @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
 
-            @test isapprox(std(samples.x), 1.0; atol=0.01)
-            @test isapprox(std(samples.y), 1.0; atol=0.01)
+    @test isapprox(std(samples.x), 1.0; atol=0.01)
+    @test isapprox(std(samples.y), 1.0; atol=0.01)
 
-            @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
+    @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
 
-            jd = JointDistribution(copula, imprecise_marginals)
+    jd = JointDistribution(copula, imprecise_marginals)
 
-            samples = sample(jd, 10^6)
+    samples = sample(jd, 10^6)
 
-            @test eltype(samples.x) == Interval
-            @test eltype(samples.y) == Interval
+    @test eltype(samples.x) == Interval
+    @test eltype(samples.y) == Interval
 
-            to_standard_normal_space!(jd, samples)
+    to_standard_normal_space!(jd, samples)
 
-            @test eltype(samples.x) <: Real
-            @test eltype(samples.y) <: Real
+    @test eltype(samples.x) <: Real
+    @test eltype(samples.y) <: Real
 
-            @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
-            @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
-            @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
-        end
+    @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
+    @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
+    @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
+end
 
-        @testset "densities" begin
-            jd = JointDistribution(
-                copula,
-                [RandomVariable(Uniform(-1.0, 1.0), :x), RandomVariable(Uniform(), :y)],
-            )
+@testitem "JD-Copulas: densities" setup = [JDSetup] begin
+    jd = JointDistribution(
+        copula, [RandomVariable(Uniform(-1.0, 1.0), :x), RandomVariable(Uniform(), :y)]
+    )
 
-            @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈
-                cdf(jd, [0.5, 0.5]) atol = 1e-4
-        end
+    @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈ cdf(jd, [0.5, 0.5]) atol =
+        1e-4
+end
 
-        @testset "to_physical_space" begin
-            jd = JointDistribution(copula, marginals)
+@testitem "JD-Copulas: to_physical_space" setup = [JDSetup] begin
+    jd = JointDistribution(copula, marginals)
 
-            samples = DataFrame(:x => rand(Normal(), 10^5), :y => rand(Normal(), 10^5))
+    samples = DataFrame(:x => rand(Normal(), 10^5), :y => rand(Normal(), 10^5))
 
-            to_physical_space!(jd, samples)
+    to_physical_space!(jd, samples)
 
-            @test isapprox(mean(samples.x), 1.0; atol=0.01)
-            @test isapprox(mean(samples.y), 0.5; atol=0.01)
+    @test isapprox(mean(samples.x), 1.0; atol=0.01)
+    @test isapprox(mean(samples.y), 0.5; atol=0.01)
 
-            @test round(cor(samples.x, samples.y); digits=2) == 0.77
-        end
-    end
+    @test round(cor(samples.x, samples.y); digits=2) == 0.77
+end
 
-    @testset "MultivariateDistribution" begin
-        dist = MvNormal([1.0 0.71; 0.71 1.0])
-        m = [:x, :y]
-        jd = JointDistribution(dist, m)
-        @testset "Constructor" begin
-            @test jd.d == dist
-            @test jd.m == m
+@testsnippet MVSetup begin
+    dist = MvNormal([1.0 0.71; 0.71 1.0])
+    m = [:x, :y]
+    jd = JointDistribution(dist, m)
+end
 
-            @test_throws ArgumentError("Dimension mismatch between distribution and names.") JointDistribution(
-                dist, [:x, :y, :z]
-            )
-            @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
-                dist, [:x, :x]
-            )
-        end
+@testitem "JD-Nultivariate Distribution: Constructor" setup = [JDSetup, MVSetup] begin
+    @test jd.d == dist
+    @test jd.m == m
 
-        @testset "sample" begin
-            samples = sample(jd, 10^6)
+    @test_throws ArgumentError("Dimension mismatch between distribution and names.") JointDistribution(
+        dist, [:x, :y, :z]
+    )
+    @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
+        dist, [:x, :x]
+    )
+end
 
-            @test size(samples) == (10^6, 2)
+@testitem "JD-Nultivariate Distribution: sample" setup = [JDSetup, MVSetup] begin
+    samples = sample(jd, 10^6)
 
-            @test cor(samples.x, samples.y) ≈ 0.71 atol = 0.01
-        end
+    @test size(samples) == (10^6, 2)
 
-        @testset "functions" begin
-            @test mean(jd) == [0.0, 0.0]
-            @test dimensions(jd) == 2
-            @test names(jd) == [:x, :y]
+    @test cor(samples.x, samples.y) ≈ 0.71 atol = 0.01
+end
 
-            samples = sample(jd, 10^6)
-            @test_throws ErrorException(
-                "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to standard normal space.",
-            ) to_standard_normal_space!(jd, samples)
-            @test_throws ErrorException(
-                "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to physical space."
-            ) to_physical_space!(jd, samples)
-        end
-    end
+@testitem "JD-Nultivariate Distribution: functions" setup = [JDSetup, MVSetup] begin
+    @test mean(jd) == [0.0, 0.0]
+    @test dimensions(jd) == 2
+    @test names(jd) == [:x, :y]
+
+    samples = sample(jd, 10^6)
+    @test_throws ErrorException(
+        "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to standard normal space."
+    ) to_standard_normal_space!(jd, samples)
+    @test_throws ErrorException(
+        "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to physical space."
+    ) to_physical_space!(jd, samples)
 end
