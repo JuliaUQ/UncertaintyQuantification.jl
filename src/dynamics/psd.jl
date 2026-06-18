@@ -80,13 +80,10 @@ S_0 = 1.0
 kt = KanaiTajimi(w, S_0, ω_0, ζ)
 ```
 """
-function KanaiTajimi(
-    ω::AbstractVector{<:Real}, S_0::Real, ω_0::Real, ζ::Real
-)
-    p = 
+function KanaiTajimi(ω::AbstractVector{<:Real}, S_0::Real, ω_0::Real, ζ::Real)
+    p =
         S_0 .* (1 .+ 4 * ζ^2 .* (ω ./ ω_0) .^ 2) ./
-        ((1 .- (ω ./ ω_0) .^ 2) .^ 2 .+ 4 * ζ^2 * (ω ./ ω_0) .^ 2
-        )
+        ((1 .- (ω ./ ω_0) .^ 2) .^ 2 .+ 4 * ζ^2 * (ω ./ ω_0) .^ 2)
 
     return KanaiTajimi(ω, S_0, ω_0, ζ, p)
 end
@@ -162,4 +159,69 @@ end
 
 function evaluate(ep::EmpiricalPSD)
     return ep.p
+end
+
+struct ImprecisePSD <: AbstractPowerSpectralDensity
+    b::AbstractBasis
+    p_lb::AbstractVector{<:Real}
+    p_ub::AbstractVector{<:Real}
+    ω::AbstractVector{<:Real}
+
+    function ImprecisePSD(
+        w::AbstractVector{<:Real},
+        e::AbstractMatrix{<:Real},
+        b::AbstractBasis,
+        tol::Real=1e-12,
+    )
+        y_max = vec(maximum(e; dims=1))
+        y_min = vec(minimum(e; dims=1))
+
+        m = JuMP.Model(Clarabel.Optimizer)
+
+        set_attribute(m, "tol_gap_abs", tol)
+        set_attribute(m, "tol_gap_rel", tol)
+        set_attribute(m, "tol_feas", tol)
+        set_attribute(m, "tol_infeas_abs", tol)
+        set_attribute(m, "tol_infeas_rel", tol)
+        set_silent(m)
+
+        n = length(b)
+
+        φ = b(permutedims(w))
+        @variable(m, p_lb[1:n])
+        @variable(m, p_ub[1:n])
+
+        @constraint(m, vec(p_lb' * φ) .<= y_min)
+        # lower bound must be positive
+        @constraint(m, vec(p_lb' * φ) .>= 0.0)
+        @constraint(m, vec(p_ub' * φ) .>= y_max)
+
+        @constraint(
+            m, vec(p_ub' * ((φ - abs.(φ)) ./ 2) + p_lb' * ((φ + abs.(φ)) ./ 2)) .<= y_min
+        )
+        @constraint(
+            m, vec(p_ub' * ((φ - abs.(φ)) ./ 2) + p_lb' * ((φ + abs.(φ)) ./ 2)) .>= 0.0
+        )
+
+        @constraint(
+            m, vec(p_ub' * ((φ + abs.(φ)) ./ 2) + p_lb' * ((φ - abs.(φ)) ./ 2)) .>= y_max
+        )
+
+        @constraint(m, p_lb <= p_ub)
+
+        @objective(m, Min, mean((p_ub - p_lb)' * abs.(φ)))
+
+        JuMP.optimize!(m)
+
+        return new(b, value.(p_lb), value.(p_ub), w)
+    end
+end
+
+function evaluate(psd::ImprecisePSD)
+    φ = psd.b(permutedims(psd.w))
+    # lo = vec(psd.p_lb' * φ)
+    # hi = vec(psd.p_ub' * φ)
+    lo = vec(psd.p_ub' * ((φ - abs.(φ)) ./ 2) + psd.p_lb' * ((φ + abs.(φ)) ./ 2))
+    hi = vec(psd.p_ub' * ((φ + abs.(φ)) ./ 2) + psd.p_lb' * ((φ - abs.(φ)) ./ 2))
+    return Interval.(lo, hi)
 end

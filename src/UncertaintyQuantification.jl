@@ -125,6 +125,7 @@ export GaussQuadrature
 export HaltonSampling
 export HermiteBasis
 export ImportanceSampling
+export ImprecisePSD
 export Interval
 export IntervalVariable
 export IntervalPredictorModel

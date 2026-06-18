@@ -139,6 +139,8 @@ function probability_of_failure(
 
     x0 = middle.(lb, ub)
 
+    @show x0
+
     result_lb = minimize(
         isa(dl.lb, FORM) ? OrthoMADS(length(x0)) : RobustOrthoMADS(length(x0)),
         x -> pf_low(x),
@@ -203,6 +205,12 @@ function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInp
                 end
             end
             push!(precise_inputs, JointDistribution(i.d, precise_marginals))
+        elseif isa(i, SpectralRepresentation)
+            p = [popfirst!(x) for _ in 1:length(i.psd.p_lb)]
+            φ = i.psd.b(permutedims(i.psd.ω))
+            psd = EmpiricalPSD(i.psd.ω, vec(p' * φ))
+            @show psd
+            push!(precise_inputs, SpectralRepresentation(psd, i.time, i.name))
         end
     end
     return precise_inputs

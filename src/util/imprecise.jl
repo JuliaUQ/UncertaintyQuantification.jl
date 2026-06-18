@@ -8,5 +8,6 @@ function isimprecise(input::UQInput)
            (
                isa(input, JointDistribution{<:Copulas.Copula,<:RandomVariable}) &&
                any(isa.(input.m, RandomVariable{<:ProbabilityBox}))
-           )
+           ) ||
+           (input isa SpectralRepresentation && input.psd isa ImprecisePSD)
 end
