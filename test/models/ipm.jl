@@ -22,3 +22,34 @@
 
     @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1e-8)
 end
+
+@testset "Interval propagation IPM" begin
+    X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1)), :X1)
+    X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
+    X3 = RandomVariable(Normal(0, 1), :X3)
+    X4 = Parameter(5, :X4)
+
+    inputs = [X1, X2, X3, X4]
+    models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, :g)
+
+    data_ipm = sample(
+        [
+            RandomVariable(Normal(1.5, 1), :X1),
+            RandomVariable(Uniform(-1.5, 2), :X2),
+            X3,
+            X4,
+        ],
+        HaltonSampling(150),
+    )
+
+    evaluate!(models, data_ipm)
+
+    b = MonomialBasis(2, 3)
+    ipm = IntervalPredictorModel(data_ipm, :g, b, [:X1, :X2, :X3])
+
+    df = sample(inputs, 500)
+
+    propagate_intervals!(ipm, df)
+
+    @test eltype(df.g) == Interval
+end
