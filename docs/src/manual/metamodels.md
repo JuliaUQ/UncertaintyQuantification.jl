@@ -107,7 +107,7 @@ scatter(data.x, data.y; markershape=:xcross, color=:red, label="data") # hide
 plot_data = DataFrame(x = collect(range(-5.5, 5.5; length=1000))) # hide
 evaluate!(lbfm, plot_data) # hide
 plot!(plot_data.x, plot_data.y, color=:blue, label="model") # hide
-savefig("lbfm.svg") # hide
+savefig("lbfm.svg"); nothing # hide
 ```
 
 ![Linear Basis Function Model Plot](lbfm.svg)
