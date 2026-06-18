@@ -57,7 +57,7 @@ Note, that polyharmonic radial basis functions do not require a shape parameter.
 Despite the nonlinearity of the basis functions, the model remains linear in its parameters, which allows efficient estimation of the weights using ordinary least squares. Given ``m`` observations ``(\mathbf{x}_i, y_i)``, for ``i = 1,\ldots,m`` we construct the design matrix ``\Phi`` where each row contains the evaluated basis functions for one input:
 
 ```math
-\Phi_{ij} = \varphi_j(\mathbf{x}_i), \text{for} i=1,\ldots,n \text{and} j=1,\ldots,m
+\Phi_{ij} = \varphi_j(\mathbf{x}_i), \text{ for } i=1,\ldots,n \text{ and } j=1,\ldots,m
 ```
 
 The optimal weight vector is found by minimizing the sum-of-squares error
