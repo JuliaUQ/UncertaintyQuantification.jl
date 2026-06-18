@@ -15,7 +15,7 @@ where ``\varphi_i(x)`` are nonlinear basis functions that map the input space in
 Monomial basis functions are defined as the powers, or products of powers in the multivariate case, of the input variables with a total degree of less than or equal to ``d``. For example, the monomial basis in two variables of degree ``d=3`` in graded reverse lexicographic order is given by
 
 ```math
-\varphi(x) = \left[1, x_2, x_1, x_2^2, x_1x_2, x_1^2, x_2^3, x_1x_2^2, x_1^2x_2, x_1³\right]
+\varphi(x) = \left[1, x_2, x_1, x_2^2, x_1x_2, x_1^2, x_2^3, x_1x_2^2, x_1^2x_2, x_1^3\right]
 ```
 
 The construction of this [`MonomialBasis`](@ref) is presented next.
