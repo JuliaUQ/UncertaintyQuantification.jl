@@ -108,6 +108,16 @@ function probability_of_failure(
             models
         end
         if !isempty(imprecise_models)
+            mc_models = convert(Vector{UQModel}, mc_models)
+            for m in imprecise_models
+                if m isa StochasticProcessModel
+                    for i in mc_inputs
+                        if i isa SpectralRepresentation && i.name == m.name
+                            push!(mc_models, StochasticProcessModel(i))
+                        end
+                    end
+                end
+            end
             order_models!(model_names, mc_models)
         end
 
@@ -124,7 +134,18 @@ function probability_of_failure(
         else
             models
         end
+
         if !isempty(imprecise_models)
+            mc_models = convert(Vector{UQModel}, mc_models)
+            for m in imprecise_models
+                if m isa StochasticProcessModel
+                    for i in mc_inputs
+                        if i.name == m.name
+                            push!(mc_models, StochasticProcessModel(i))
+                        end
+                    end
+                end
+            end
             order_models!(model_names, mc_models)
         end
 
@@ -138,8 +159,6 @@ function probability_of_failure(
     ub = [ub_in..., ub_m...]
 
     x0 = middle.(lb, ub)
-
-    @show x0
 
     result_lb = minimize(
         isa(dl.lb, FORM) ? OrthoMADS(length(x0)) : RobustOrthoMADS(length(x0)),
@@ -207,9 +226,8 @@ function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInp
             push!(precise_inputs, JointDistribution(i.d, precise_marginals))
         elseif isa(i, SpectralRepresentation)
             p = [popfirst!(x) for _ in 1:length(i.psd.p_lb)]
-            φ = i.psd.b(permutedims(i.psd.ω))
-            psd = EmpiricalPSD(i.psd.ω, vec(p' * φ))
-            @show psd
+            psd = EmpiricalPSD(i.psd.ω, vec(p' * i.psd.b(permutedims(i.psd.ω))))
+
             push!(precise_inputs, SpectralRepresentation(psd, i.time, i.name))
         end
     end
@@ -232,7 +250,6 @@ end
 function order_models!(names::AbstractVector{Symbol}, models::AbstractVector{<:UQModel})
     for (i, n) in enumerate(names)
         j = findfirst(m -> UncertaintyQuantification.name(m) == n, models)
-        # swap models
         if i != j
             models[i], models[j] = models[j], models[i]
         end
