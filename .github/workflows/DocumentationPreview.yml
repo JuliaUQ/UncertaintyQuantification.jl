@@ -16,7 +16,7 @@ jobs:
       name: pr-${{github.event.number}}
       url: https://juliauq.github.io/UncertaintyQuantification.jl/previews/PR${{github.event.number}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1"
