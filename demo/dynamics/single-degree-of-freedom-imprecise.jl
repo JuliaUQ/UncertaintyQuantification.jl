@@ -62,19 +62,18 @@ function g(df)
     end
 end
 
+N = 1000
+
 global n_calls = 0
-@time pf, x_lb, x_ub = probability_of_failure(
-    models, g, inputs, DoubleLoop(MonteCarlo(1000))
-);
+@time pf, x_lb, x_ub = probability_of_failure(models, g, inputs, DoubleLoop(MonteCarlo(N)));
 
 println("Double Loop pf: $pf ($n_calls model calls)")
 
 global n_calls = 0
 
 @time pf, out_lb, out_ub = probability_of_failure(
-    models, g, inputs, RandomSlicing(MonteCarlo(1000))
+    models, g, inputs, RandomSlicing(MonteCarlo(N))
 );
 
 println("RandomSlicing pf: $pf ($n_calls model calls)")
 
-# rmprocs(workers())
