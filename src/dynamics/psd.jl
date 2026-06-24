@@ -218,10 +218,8 @@ struct ImprecisePSD <: AbstractPowerSpectralDensity
 end
 
 function evaluate(psd::ImprecisePSD)
-    φ = psd.b(permutedims(psd.w))
-    # lo = vec(psd.p_lb' * φ)
-    # hi = vec(psd.p_ub' * φ)
+    φ = psd.b(permutedims(psd.ω))
     lo = vec(psd.p_ub' * ((φ - abs.(φ)) ./ 2) + psd.p_lb' * ((φ + abs.(φ)) ./ 2))
     hi = vec(psd.p_ub' * ((φ + abs.(φ)) ./ 2) + psd.p_lb' * ((φ - abs.(φ)) ./ 2))
-    return Interval.(lo, hi)
+    return interval.(lo, hi)
 end

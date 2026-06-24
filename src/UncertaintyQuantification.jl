@@ -14,6 +14,7 @@ using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
 using Format
+using IntervalArithmetic
 using JuMP
 using LinearAlgebra
 using MeshAdaptiveDirectSearch

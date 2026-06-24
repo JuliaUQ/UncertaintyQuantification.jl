@@ -5,7 +5,7 @@ struct SpectralRepresentation <: AbstractStochasticProcess
     time::AbstractVector{<:Real}
     ωt::AbstractMatrix{<:Real}
     Δω::Real
-    A::AbstractVector{<:Real}
+    A::Union{AbstractVector{<:Real},AbstractVector{IntervalArithmetic.Interval}}
     name::Symbol
     ϕnames::Vector{Symbol}
 end
@@ -66,12 +66,13 @@ function SpectralRepresentation(
             [Symbol("$(name)_ϕ_$i") for i in 1:length(psd.ω)],
         )
     else
+        A = sqrt.(2 * evaluate(psd) * Δω)
         return SpectralRepresentation(
             psd,
             time,
             psd.ω * time',
             Δω,
-            zeros(size(psd.ω)),
+            A,
             name,
             [Symbol("$(name)_ϕ_$i") for i in 1:length(psd.ω)],
         )
@@ -129,11 +130,16 @@ process_values = evaluate(sr, ϕ)
 ```
 
 """
-function evaluate(sr::SpectralRepresentation, ϕ::AbstractVector{<:Real})
+function evaluate(
+    sr::SpectralRepresentation,
+    ϕ::Union{AbstractVector{<:Real},AbstractVector{IntervalArithmetic.Interval}},
+)
     return sqrt(2) * vec(sr.A' * cos.(sr.ωt .+ ϕ))
 end
 
-function (sr::SpectralRepresentation)(ϕ::AbstractVector{<:Real})
+function (sr::SpectralRepresentation)(
+    ϕ::Union{AbstractVector{<:Real},AbstractVector{IntervalArithmetic.Interval}}
+)
     return evaluate(sr, ϕ)
 end
 

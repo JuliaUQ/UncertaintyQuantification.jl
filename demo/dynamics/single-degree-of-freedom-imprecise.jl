@@ -5,8 +5,6 @@ using DifferentialEquations
 using DelimitedFiles
 using Interpolations
 
-@show Threads.nthreads()
-
 w = vec(readdlm("w.csv"))
 centers = readdlm("centers.csv")
 ensemble = readdlm("ensemble.csv")
@@ -19,10 +17,8 @@ m = Parameter(1, :m)
 k = Parameter(3, :k)
 c = Parameter(0.5, :c)
 
-# epsd = EmpiricalPSD(w, ensemble[1, :])
-
 psd = ImprecisePSD(w, ensemble, GaussianRadialBasis(centers, 0.2))
-gm = SpectralRepresentation(psd, collect(0:0.02:10), :gm)
+gm = SpectralRepresentation(psd, collect(0:0.1:10), :gm)
 gm_model = StochasticProcessModel(gm)
 
 # counter for model calls
@@ -32,7 +28,7 @@ function sdof(df::DataFrame)
     global n_calls += size(df, 1)
     solver = AutoTsit5(Rosenbrock23())
 
-    X = zeros(length(gm.time), size(df, 1))
+    X = zeros(size(df, 1))
 
     Threads.@threads for (i, s) in collect(enumerate(eachrow(df)))
         gm_itp = linear_interpolation(gm.time, df[i, :gm])
@@ -49,9 +45,9 @@ function sdof(df::DataFrame)
 
         sol = solve(prob, solver; saveat=gm.time)
 
-        X[:, i] = sol[1, :]
+        X[i] = maximum(abs.(sol[1, :]))
     end
-    return collect(eachcol(X))
+    return X
 end
 
 displacement = Model(sdof, :d)
@@ -62,14 +58,23 @@ models = [gm_model, displacement]
 
 function g(df)
     return map(eachrow(df)) do s
-        1.5 - maximum(abs.(s.d))
+        1.5 - s.d
     end
 end
 
+global n_calls = 0
 @time pf, x_lb, x_ub = probability_of_failure(
     models, g, inputs, DoubleLoop(MonteCarlo(1000))
-)
+);
 
-@show pf, n_calls
+println("Double Loop pf: $pf ($n_calls model calls)")
+
+global n_calls = 0
+
+@time pf, out_lb, out_ub = probability_of_failure(
+    models, g, inputs, RandomSlicing(MonteCarlo(1000))
+);
+
+println("RandomSlicing pf: $pf ($n_calls model calls)")
 
 # rmprocs(workers())

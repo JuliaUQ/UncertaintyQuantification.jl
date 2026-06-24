@@ -8,7 +8,13 @@ function StochasticProcessModel(proc::AbstractStochasticProcess)
 end
 
 function evaluate!(m::StochasticProcessModel, df::DataFrame)
-    df[!, m.name] = missings(Vector{eltype(m.proc.time)}, size(df, 1))
+    if isimprecise(m.proc)
+        df[!, m.name] = Vector{AbstractVector{IntervalArithmetic.Interval}}(
+            undef, size(df, 1)
+        )
+    else
+        df[!, m.name] = missings(Vector{eltype(m.proc.time)}, size(df, 1))
+    end
 
     ϕ = Matrix(df[:, m.proc.ϕnames])
 

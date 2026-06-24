@@ -13,14 +13,25 @@ function propagate_intervals!(
     for (i, m) in enumerate(models)
         if isa(m, IntervalPredictorModel) && i != length(models)
             ipm_models = [filter(x -> name(x) in m.inputs, models)..., m]
-            propagate_intervals!(ipm_models, df)
+            propagate_intervals!(ipm_models, df, bound)
             append!(evaluated_models, names(ipm_models))
         end
     end
 
-    interval_cols = findall(eltype.(eachcol(df)) .== Interval)
+    interval_cols = findall(eltype.(eachcol(df)) .== UncertaintyQuantification.Interval)
+
+    interval_vec_cols = findall(
+        eltype.(eachcol(df)) .== AbstractVector{IntervalArithmetic.Interval}
+    )
+
+    if isempty(interval_cols) && isempty(interval_vec_cols) && length(models) > 1
+        evaluate!(models[1], df)
+        propagate_intervals!(models[2:end], df, bound)
+        return nothing
+    end
 
     interval_names = propertynames(df[:, interval_cols])
+    interval_vec_name = propertynames(df[:, interval_vec_cols])[1]
 
     output = name(models[end])
 
@@ -29,11 +40,23 @@ function propagate_intervals!(
         pure = .!degenerates
 
         lb, ub = if any(degenerates)
-            getproperty.(collect(row[interval_names[pure]]), :lb),
-            getproperty.(collect(row[interval_names[pure]]), :ub)
+            [
+                getproperty.(collect(row[interval_names[pure]]), :lb)...,
+                getproperty.(getproperty.(row[interval_vec_name], :bareinterval), :lo)...,
+            ],
+            [
+                getproperty.(collect(row[interval_names[pure]]), :ub)...,
+                getproperty.(getproperty.(row[interval_vec_name], :bareinterval), :hi)...,
+            ]
         else
-            getproperty.(collect(row[interval_names]), :lb),
-            getproperty.(collect(row[interval_names]), :ub)
+            [
+                getproperty.(collect(row[interval_names]), :lb)...,
+                getproperty.(getproperty.(row[interval_vec_name], :bareinterval), :lo)...,
+            ],
+            [
+                getproperty.(collect(row[interval_names]), :ub)...,
+                getproperty.(getproperty.(row[interval_vec_name], :bareinterval), :hi)...,
+            ]
         end
 
         x0 = middle.(lb, ub)
@@ -41,18 +64,22 @@ function propagate_intervals!(
         # create a  single-row DataFrame for evaluation
         precise_df = hcat(
             DataFrame([[0.0] for _ in 1:length(interval_names)], interval_names),
-            select(DataFrame(row), Not(interval_names)),
+            DataFrame(
+                [[[0.0]] for _ in 1:length([interval_vec_name])], [interval_vec_name]
+            ),
+            select(DataFrame(row), Not([interval_names..., interval_vec_name])),
         )
 
         # set degenerate intervals to their precise value
         if any(degenerates)
-            precise_df[1, interval_names[degenerates]] .=
-                getproperty.(collect(row[interval_names[degenerates]]), :lb)
+            precise_df[1, interval_names[degenerates]] .= getproperty.(
+                collect(row[interval_names[degenerates]]), :lb
+            )
         end
 
         function f(x)
-            precise_df[1, interval_names[pure]] .= x
-
+            precise_df[1, interval_names[pure]] .= x[1:length(interval_cols)]
+            precise_df[1, interval_vec_name] = x[(length(interval_cols) + 1):end]
             if !isempty(evaluated_models)
                 # skip models already evaluated
                 evaluate!(filter(m -> !(name(m) in evaluated_models), models), precise_df)
@@ -67,6 +94,8 @@ function propagate_intervals!(
             y = f(x)
             if y isa Interval
                 return y.lb
+            elseif y isa IntervalArithmetic.Interval
+                return y.bareinterval.lo
             else
                 return y
             end
@@ -76,6 +105,8 @@ function propagate_intervals!(
             y = f(x)
             if y isa Interval
                 return y.ub
+            elseif y isa IntervalArithmetic.Interval
+                return y.bareinterval.hi
             else
                 return y
             end
@@ -88,7 +119,7 @@ function propagate_intervals!(
                 x0;
                 lowerbound=lb,
                 upperbound=ub,
-                min_mesh_size=1e-13,
+                min_mesh_size=1e-8,
             ).f
         elseif bound == :ub
             return -minimize(
@@ -97,7 +128,7 @@ function propagate_intervals!(
                 x0;
                 lowerbound=lb,
                 upperbound=ub,
-                min_mesh_size=1e-13,
+                min_mesh_size=1e-8,
             ).f
         else
             result_lb = minimize(
@@ -106,7 +137,7 @@ function propagate_intervals!(
                 x0;
                 lowerbound=lb,
                 upperbound=ub,
-                min_mesh_size=1e-13,
+                min_mesh_size=1e-8,
             )
 
             result_ub = minimize(
@@ -115,7 +146,7 @@ function propagate_intervals!(
                 x0;
                 lowerbound=lb,
                 upperbound=ub,
-                min_mesh_size=1e-13,
+                min_mesh_size=1e-8,
             )
 
             return Interval(result_lb.f, -result_ub.f)

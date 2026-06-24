@@ -309,6 +309,8 @@ function transform_to_sns_input(i::UQInput)
         return RandomVariable(Normal(), i.name)
     elseif isa(i, JointDistribution)
         return RandomVariable.(Normal(), names(i))
+    elseif isa(i, SpectralRepresentation)
+        return RandomVariable.(Normal(), i.ϕnames)
     elseif isa(i, Parameter)
         return i
     end
