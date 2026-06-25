@@ -18,7 +18,7 @@ k = Parameter(3, :k)
 c = Parameter(0.5, :c)
 
 psd = ImprecisePSD(w, ensemble, GaussianRadialBasis(centers, 0.2))
-gm = SpectralRepresentation(psd, collect(0:0.1:10), :gm)
+gm = SpectralRepresentation(psd, collect(0:0.02:10), :gm)
 gm_model = StochasticProcessModel(gm)
 
 # counter for model calls
@@ -76,4 +76,3 @@ global n_calls = 0
 );
 
 println("RandomSlicing pf: $pf ($n_calls model calls)")
-

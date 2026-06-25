@@ -8,18 +8,12 @@ function StochasticProcessModel(proc::AbstractStochasticProcess)
 end
 
 function evaluate!(m::StochasticProcessModel, df::DataFrame)
-    if isimprecise(m.proc)
-        df[!, m.name] = Vector{AbstractVector{IntervalArithmetic.Interval}}(
-            undef, size(df, 1)
-        )
-    else
-        df[!, m.name] = missings(Vector{eltype(m.proc.time)}, size(df, 1))
-    end
-
     ϕ = Matrix(df[:, m.proc.ϕnames])
 
+    df[!, m.name] = missings(Vector{eltype(m.proc.time)}, size(df, 1))
     for i in axes(ϕ, 1)
-        df[i, m.name] = evaluate(m.proc, ϕ[i, :])
+        df[i, m.name] =
+            sqrt(2) * vec(df[i, "$(m.proc.name)_A"]' * cos.(m.proc.ωt .+ ϕ[i, :]))
     end
 
     return nothing
@@ -31,5 +25,5 @@ end
 
 function bounds(m::StochasticProcessModel)
     @assert isimprecise(m)
-    return [], []
+    return bounds(m.proc.psd)
 end

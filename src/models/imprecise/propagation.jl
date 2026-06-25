@@ -21,14 +21,14 @@ function propagate_intervals!(
     interval_cols = findall(eltype.(eachcol(df)) .== UncertaintyQuantification.Interval)
 
     interval_vec_cols = findall(
-        eltype.(eachcol(df)) .== AbstractVector{IntervalArithmetic.Interval}
+        eltype.(eachcol(df)) .== Vector{IntervalArithmetic.Interval{Float64}}
     )
 
-    if isempty(interval_cols) && isempty(interval_vec_cols) && length(models) > 1
-        evaluate!(models[1], df)
-        propagate_intervals!(models[2:end], df, bound)
-        return nothing
-    end
+    # if isempty(interval_cols) && isempty(interval_vec_cols) && length(models) > 1
+    #     evaluate!(models[1], df)
+    #     propagate_intervals!(models[2:end], df, bound)
+    #     return nothing
+    # end
 
     interval_names = propertynames(df[:, interval_cols])
     interval_vec_name = propertynames(df[:, interval_vec_cols])[1]
@@ -80,6 +80,7 @@ function propagate_intervals!(
         function f(x)
             precise_df[1, interval_names[pure]] .= x[1:length(interval_cols)]
             precise_df[1, interval_vec_name] = x[(length(interval_cols) + 1):end]
+
             if !isempty(evaluated_models)
                 # skip models already evaluated
                 evaluate!(filter(m -> !(name(m) in evaluated_models), models), precise_df)

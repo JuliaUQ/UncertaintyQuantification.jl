@@ -223,3 +223,10 @@ function evaluate(psd::ImprecisePSD)
     hi = vec(psd.p_ub' * ((φ + abs.(φ)) ./ 2) + psd.p_lb' * ((φ - abs.(φ)) ./ 2))
     return interval.(lo, hi)
 end
+
+function bounds(psd::ImprecisePSD)
+    φ = psd.b(permutedims(psd.ω))
+    lo = vec(psd.p_ub' * ((φ - abs.(φ)) ./ 2) + psd.p_lb' * ((φ + abs.(φ)) ./ 2))
+    hi = vec(psd.p_ub' * ((φ + abs.(φ)) ./ 2) + psd.p_lb' * ((φ - abs.(φ)) ./ 2))
+    return lo, hi
+end

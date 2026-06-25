@@ -103,9 +103,10 @@ samples = sample(sr, 5)
 
 """
 function sample(sr::SpectralRepresentation, n::Integer=1)
-    return DataFrame(names(sr) .=> eachcol(rand(Uniform(0, 2π), (n, length(sr.psd.ω)))))
+    df = DataFrame(names(sr) .=> eachcol(rand(Uniform(0, 2π), (n, length(sr.psd.ω)))))
+    df[!, "$(sr.name)_A"] = [sr.A for _ in 1:n]
+    return df
 end
-
 """
     evaluate(sr::SpectralRepresentation, ϕ::AbstractVector{<:Real}) -> AbstractVector{<:Real}
 
