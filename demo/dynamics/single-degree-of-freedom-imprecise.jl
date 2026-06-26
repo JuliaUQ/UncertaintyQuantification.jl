@@ -63,12 +63,9 @@ using Distributed
     N = 10
 end
 
-global n_calls = 0
 @time pf, x_lb, x_ub = probability_of_failure(models, g, inputs, DoubleLoop(MonteCarlo(N)));
 
 println("Double Loop pf: $pf ($n_calls model calls)")
-
-global n_calls = 0
 
 @time pf, out_lb, out_ub = probability_of_failure(
     models, g, inputs, RandomSlicing(MonteCarlo(N))
