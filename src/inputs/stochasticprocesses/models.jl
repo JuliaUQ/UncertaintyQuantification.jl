@@ -18,12 +18,3 @@ function evaluate!(m::StochasticProcessModel, df::DataFrame)
 
     return nothing
 end
-
-function isimprecise(m::StochasticProcessModel)
-    return m.proc.psd isa ImprecisePSD
-end
-
-function bounds(m::StochasticProcessModel)
-    @assert isimprecise(m)
-    return bounds(m.proc.psd)
-end

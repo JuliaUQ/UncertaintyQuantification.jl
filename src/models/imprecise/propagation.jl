@@ -24,12 +24,6 @@ function propagate_intervals!(
         eltype.(eachcol(df)) .== Vector{IntervalArithmetic.Interval{Float64}}
     )
 
-    # if isempty(interval_cols) && isempty(interval_vec_cols) && length(models) > 1
-    #     evaluate!(models[1], df)
-    #     propagate_intervals!(models[2:end], df, bound)
-    #     return nothing
-    # end
-
     interval_names = propertynames(df[:, interval_cols])
     interval_vec_name = propertynames(df[:, interval_vec_cols])[1]
 

@@ -166,7 +166,7 @@ function probability_of_failure(
         x0;
         lowerbound=lb,
         upperbound=ub,
-        min_mesh_size=1e-13,
+        min_mesh_size=1e-8,
     )
 
     result_ub = minimize(
@@ -175,7 +175,7 @@ function probability_of_failure(
         x0;
         lowerbound=lb,
         upperbound=ub,
-        min_mesh_size=1e-13,
+        min_mesh_size=1e-8,
     )
 
     pf = Interval(result_lb.f, -result_ub.f)
