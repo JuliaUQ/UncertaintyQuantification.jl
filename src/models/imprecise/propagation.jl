@@ -29,7 +29,7 @@ function propagate_intervals!(
 
     output = name(models[end])
 
-    y = map(eachrow(df)) do row
+    y = pmap(eachrow(df)) do row
         degenerates = isdegenerate.(collect(row[interval_names]))
         pure = .!degenerates
 

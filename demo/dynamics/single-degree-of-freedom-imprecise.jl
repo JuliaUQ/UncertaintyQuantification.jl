@@ -1,68 +1,67 @@
-using UncertaintyQuantification
-using DataFrames
-using Base.Threads
-using DifferentialEquations
-using DelimitedFiles
-using Interpolations
+using Distributed
 
-w = vec(readdlm("w.csv"))
-centers = readdlm("centers.csv")
-ensemble = readdlm("ensemble.csv")
+@everywhere begin
+    using UncertaintyQuantification
+    using DataFrames
+    using DifferentialEquations
+    using DelimitedFiles
+    using Dierckx
 
-# SDOF parameters
-#m = IntervalVariable(0.5, 1.0, :m)
-#k = IntervalVariable(2, 3, :k)
-#c = IntervalVariable(0, 1, :c)
-m = Parameter(1, :m)
-k = Parameter(3, :k)
-c = Parameter(0.5, :c)
+    w = vec(readdlm("w.csv"))
+    centers = readdlm("centers.csv")
+    ensemble = readdlm("ensemble.csv")
 
-psd = ImprecisePSD(w, ensemble, GaussianRadialBasis(centers, 0.2))
-gm = SpectralRepresentation(psd, collect(0:0.02:10), :gm)
-gm_model = StochasticProcessModel(gm)
+    # SDOF parameters
+    #m = IntervalVariable(0.5, 1.0, :m)
+    #k = IntervalVariable(2, 3, :k)
+    #c = IntervalVariable(0, 1, :c)
+    m = Parameter(1, :m)
+    k = Parameter(3, :k)
+    c = Parameter(0.5, :c)
 
-# counter for model calls
-global n_calls::Integer = 0
+    psd = ImprecisePSD(w, ensemble, GaussianRadialBasis(centers, 0.2))
+    gm = SpectralRepresentation(psd, collect(0:0.05:10), :gm)
+    gm_model = StochasticProcessModel(gm)
 
-function sdof(df::DataFrame)
-    global n_calls += size(df, 1)
-    solver = AutoTsit5(Rosenbrock23())
+    # counter for model calls
+    global n_calls::Integer = 0
 
-    X = zeros(size(df, 1))
+    function sdof(df::DataFrame)
+        global n_calls += size(df, 1)
+        solver = Tsit5()
 
-    Threads.@threads for (i, s) in collect(enumerate(eachrow(df)))
-        gm_itp = linear_interpolation(gm.time, df[i, :gm])
+        return pmap(eachrow(df)) do s
+            gm_itp = Spline1D(gm.time, s.gm; k=1)
 
-        function f(dy, y, _, t)
-            dy[1] = y[2]
+            function f(dy, y, _, t)
+                dy[1] = y[2]
 
-            dy[2] = @views -df[i, :c] / df[i, :m] * y[2] - df[i, :k] / df[i, :m] * y[1] +
-                gm_itp(t)
-            return nothing
+                dy[2] = -s.c / s.m * y[2] - s.k / s.m * y[1] + gm_itp(t)
+                return nothing
+            end
+
+            prob = ODEProblem(f, [0.0, 0.0], (gm.time[1], gm.time[end]))
+
+            sol = solve(prob, solver; saveat=gm.time)
+
+            return maximum(abs.(sol[1, :]))
         end
-
-        prob = ODEProblem(f, [0.0, 0.0], (gm.time[1], gm.time[end]))
-
-        sol = solve(prob, solver; saveat=gm.time)
-
-        X[i] = maximum(abs.(sol[1, :]))
     end
-    return X
-end
 
-displacement = Model(sdof, :d)
+    displacement = Model(sdof, :d)
 
-inputs = [gm, m, k, c]
+    inputs = [gm, m, k, c]
 
-models = [gm_model, displacement]
+    models = [gm_model, displacement]
 
-function g(df)
-    return map(eachrow(df)) do s
-        1.5 - s.d
+    function g(df)
+        return map(eachrow(df)) do s
+            1.5 - s.d
+        end
     end
-end
 
-N = 1000
+    N = 10
+end
 
 global n_calls = 0
 @time pf, x_lb, x_ub = probability_of_failure(models, g, inputs, DoubleLoop(MonteCarlo(N)));
