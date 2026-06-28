@@ -26,7 +26,7 @@ function (m::Model)(df::DataFrame)
 end
 
 function (m::ParallelModel)(df::DataFrame)
-    return pmap(m.func, eachrow(df))
+    return pmap(row -> only(m.func(DataFrame(row))), eachrow(df))
 end
 
 """
@@ -46,7 +46,7 @@ Calls `m.func` for each row of `df` and adds the result to the `DataFrame` as a 
 If workers are added through `Distributed`, the rows will be evaluated in parallel.
 """
 function evaluate!(m::ParallelModel, df::DataFrame)
-    df[!, m.name] = pmap(m.func, eachrow(df))
+    df[!, m.name] = pmap(row -> only(m.func(DataFrame(row))), eachrow(df))
     return nothing
 end
 

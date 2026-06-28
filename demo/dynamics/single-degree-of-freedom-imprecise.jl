@@ -11,6 +11,15 @@ using Distributed
     centers = readdlm("centers.csv")
     ensemble = readdlm("ensemble.csv")
 
+    global counter = 0
+
+    function count()
+        return counter
+    end
+
+    function reset()
+        global counter = 0
+    end
     # SDOF parameters
     #m = IntervalVariable(0.5, 1.0, :m)
     #k = IntervalVariable(2, 3, :k)
@@ -23,16 +32,11 @@ using Distributed
     gm = SpectralRepresentation(psd, collect(0:0.05:10), :gm)
     gm_model = StochasticProcessModel(gm)
 
-    # counter for model calls
-    global n_calls::Integer = 0
-
     function sdof(df::DataFrame)
-        global n_calls += size(df, 1)
         solver = Tsit5()
-
-        return pmap(eachrow(df)) do s
+        global counter += size(df, 1)
+        return map(eachrow(df)) do s
             gm_itp = Spline1D(gm.time, s.gm; k=1)
-
             function f(dy, y, _, t)
                 dy[1] = y[2]
 
@@ -48,27 +52,39 @@ using Distributed
         end
     end
 
-    displacement = Model(sdof, :d)
+    disp = Model(sdof, :d)
+    disp_par = ParallelModel(sdof, :d)
 
     inputs = [gm, m, k, c]
 
-    models = [gm_model, displacement]
+    models = [gm_model, disp]
 
     function g(df)
-        return map(eachrow(df)) do s
-            1.5 - s.d
-        end
+        return 1.5 .- df.d
     end
-
-    N = 10
 end
 
-@time pf, x_lb, x_ub = probability_of_failure(models, g, inputs, DoubleLoop(MonteCarlo(N)));
+N = 10
 
-println("Double Loop pf: $pf ($n_calls model calls)")
-
-@time pf, out_lb, out_ub = probability_of_failure(
-    models, g, inputs, RandomSlicing(MonteCarlo(N))
+@time pf, x_lb, x_ub = probability_of_failure(
+    [gm_model, disp_par], g, inputs, DoubleLoop(MonteCarlo(N))
 );
 
-println("RandomSlicing pf: $pf ($n_calls model calls)")
+@show [remotecall_fetch(count, w) for w in workers()]
+println(
+    "Double loop pf: $pf ($(sum([remotecall_fetch(count, w) for w in workers()])) model calls)",
+)
+
+@everywhere reset()
+
+println("Zero: $(sum([remotecall_fetch(count, w) for w in workers()])))")
+
+@time pf, out_lb, out_ub = probability_of_failure(
+    [gm_model, disp], g, inputs, RandomSlicing(MonteCarlo(N))
+);
+
+println(
+    "RandomSlicing pf: $pf ($(sum([remotecall_fetch(count, w) for w in workers()])) model calls)",
+)
+
+@show [remotecall_fetch(count, w) for w in workers()]
