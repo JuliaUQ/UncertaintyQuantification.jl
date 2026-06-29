@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+title: UncertaintyQuantification.jl
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Jasper
+    family-names: Behrensdorf
+    orcid: 'https://orcid.org/0000-0001-9628-7250'
+    email: behrensdorf@irz.uni-hannover.de
+  - given-names: Ander
+    family-names: Gray
+    orcid: 'https://orcid.org/0000-0002-1585-0900'
+    email: ander.gray@polytechnique.edu
+  - given-names: Andrea
+    family-names: Perin
+    orcid: 'https://orcid.org/0009-0007-4710-7939'
+  - given-names: Jan
+    family-names: Grashorn
+    orcid: 'https://orcid.org/0000-0003-1820-1372'
+  - given-names: Max
+    family-names: Luttmann
+  - given-names: Lukas
+    family-names: Fritsch
+    orcid: 'https://orcid.org/0009-0000-0998-7479'
+  - given-names: Filip
+    family-names: Belik
+    orcid: 'https://orcid.org/0009-0004-0500-7583'
+  - given-names: Matteo
+    family-names: Broggi
+    orcid: 'https://orcid.org/0000-0002-3683-3907'
+  - given-names: Felix
+    family-names: Mett
+  - given-names: Marius
+    family-names: Bittner
+    orcid: 'https://orcid.org/0000-0001-5156-3821'
+  - given-names: Laurenz
+    family-names: Knipper
+  - given-names: Marco
+    family-names: Behrendt
+    orcid: 'https://orcid.org/0000-0002-7393-6518'
+  - given-names: Mira
+    family-names: Schmidt
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.3993816
+repository-code: 'https://github.com/JuliaUQ/UncertaintyQuantification.jl'
+license: MIT
+version: 0.14.0
+preferred-citation:
+  authors:
+    - given-names: Jasper
+      family-names: Behrensdorf
+    - given-names: Ander
+      family-names: Gray
+    - given-names: Matteo
+      family-names: Broggi
+    - given-names: Michael
+      family-names: Beer
+  title: 'UncertaintyQuantification.jl : A New Framework for Uncertainty Quantification in Julia'
+  type: conference-paper
+  conference:
+    name: UNCECOMP 2023
+    country: GR
+  doi: 10.7712/120223.10347.19810
+  year: 2023
