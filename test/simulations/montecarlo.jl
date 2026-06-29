@@ -111,3 +111,27 @@ end
         @test sample(inputs, lattice) != sample(inputs, lattice)
     end
 end
+
+@testitem "JointInterval sampling" begin
+    x = rand(3, 10)
+    ji = JointInterval(x, [:x1, :x2, :x3])
+    rv = RandomVariable(Normal(), :y)
+    i = IntervalVariable(-1, 5, :z)
+
+    inputs = [i, ji, rv]
+
+    samples = sample(inputs, SobolSampling(256, :matousek); intervals=false)
+
+    @test size(samples)[1] == 256
+
+    @test all(insupport.(rv, samples.y))
+    @test all(in.(samples.z, i))
+    @test all(in.(samples.x1, ji.intervals[1]))
+    @test all(in.(samples.x2, ji.intervals[2]))
+    @test all(in.(samples.x3, ji.intervals[3]))
+    @test all(in.(eachrow(Matrix(samples[:, [:x1, :x2, :x3]])), ji))
+
+    @test_throws ErrorException(
+        "QMC sampling must be randomized to be applied to joint intervals"
+    ) sample(inputs, SobolSampling(256, :none); intervals=false)
+end

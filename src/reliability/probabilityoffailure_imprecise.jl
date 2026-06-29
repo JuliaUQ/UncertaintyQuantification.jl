@@ -92,6 +92,23 @@ function probability_of_failure(
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
 
+    imprecise_names = names(imprecise_inputs)
+    joint_int = filter(x -> isa(x, JointInterval), imprecise_inputs)
+    joint_int_idx = [findfirst(x -> x == n, imprecise_names) for n in names(joint_int)]
+
+    function constraints(x)
+        i = 1
+        for ji in joint_int
+            idx = joint_int_idx[i:(i + dimensions(ji) - 1)]
+            if !(x[idx] ∈ ji)
+                x, x[idx] ∈ ji
+                return false
+            end
+            i += dimensions(ji)
+        end
+        return true
+    end
+
     function pf_low(x)
         imprecise_inputs_x = map_to_precise_inputs(x, imprecise_inputs)
         mc_inputs = [precise_inputs..., imprecise_inputs_x...]
@@ -116,6 +133,7 @@ function probability_of_failure(
         lowerbound=lb,
         upperbound=ub,
         min_mesh_size=1e-13,
+        constraints=isempty(joint_int) ? [] : [constraints],
     )
 
     result_ub = minimize(
@@ -125,6 +143,7 @@ function probability_of_failure(
         lowerbound=lb,
         upperbound=ub,
         min_mesh_size=1e-13,
+        constraints=isempty(joint_int) ? [] : [constraints],
     )
 
     pf_lb = result_lb.f
@@ -167,6 +186,10 @@ function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInp
                 end
             end
             push!(precise_inputs, JointDistribution(i.d, precise_marginals))
+        elseif isa(i, JointInterval)
+            for iv in i.intervals
+                push!(precise_inputs, map_to_precise(popfirst!(params), iv))
+            end
         end
     end
     return precise_inputs

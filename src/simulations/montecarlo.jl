@@ -74,21 +74,82 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
     return sample(inputs, sim.n)
 end
 
-function sample(inputs::Vector{<:UQInput}, sim::AbstractQuasiMonteCarlo)
-    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
-    deterministic_inputs = filter(i -> isa(i, Parameter) || isa(i, Interval), inputs)
+"""
+    sample(inputs::Vector{UQInput}, sim::AbstractQuasiMonteCarlo; intervals::Bool=true, n_internal::Integer=sim.n * 10)
 
-    n_rv = count_rvs(random_inputs)
+    Generate Quasi-Monte Carlo samples of the `inputs` using the QMC sampling method `sim`. By default any [`IntervalVariable`](@ref) or [`'JointInterval`]('ref) will be included as the original intervals. To apply the QMC sampling also to the intervals pass the keyword `;intervals=true`. For [`JointInterval`]('ref)s this will internally sample 10 times the desired samples and discard the samples outside the permissible set and any excess samples. If the permissible set is small more samples might be required to generated sufficient samples. In this case, the keyword `n_internal` can be used to increase the number of samples used.
+"""
+function sample(
+    inputs::Vector{<:UQInput},
+    sim::AbstractQuasiMonteCarlo;
+    intervals::Bool=true,
+    n_internal::Integer=sim.n * 10,
+)
+    rvs = filter(i -> isa(i, RandomUQInput), inputs)
+    ivs = filter(i -> isa(i, IntervalVariable) || isa(i, JointInterval), inputs)
+    parameters = filter(i -> isa(i, Parameter), inputs)
 
-    u = qmc_samples(sim, n_rv)
-
-    samples = quantile.(Normal(), u)
-    samples = DataFrame(names(random_inputs) .=> eachrow(samples))
-
-    if !isempty(deterministic_inputs)
-        DataFrames.hcat!(samples, sample(deterministic_inputs, size(samples, 1)))
+    dependent = any(isa.(ivs, JointInterval))
+    # verify randomized QMC for dependent intervals
+    if dependent &
+        !intervals &
+        !(isa(sim, LatinHypercubeSampling) || isa(sim, RandomizedHaltonSample))
+        if sim.randomization == :none
+            error("QMC sampling must be randomized to be applied to joint intervals")
+        end
     end
 
+    n_rv = count_rvs(rvs)
+    n_int = !isempty(ivs) ? mapreduce(dimensions, +, ivs) : 0
+
+    # if intervals is true only rvs need to be sampled. If not we also obtain qmc samples for intervals
+    # if dependent intervals are involved sample much more than requested
+    u = qmc_samples(
+        dependent & !intervals ? typeof(sim)(n_internal, sim.randomization) : sim,
+        intervals ? n_rv : n_rv + n_int,
+    )
+
+    samples = if intervals
+        DataFrame(names(rvs) .=> eachrow(u))
+    else
+        DataFrame(vcat(names(rvs), names(ivs)) .=> eachrow(u))
+    end
+
+    # map rvs into standard normal space
+    samples[:, names(rvs)] = quantile.(Normal(), samples[:, names(rvs)])
+
+    if !isempty(ivs)
+        if intervals
+            # append intervals if not sampled
+            DataFrames.hcat!(samples, sample(ivs, size(samples, 1)))
+        else
+            # translate qmc samples to interval ranges
+            for i in mapreduce(i -> isa(i, IntervalVariable) ? i : i.intervals, vcat, ivs)
+                samples[:, i.name] = samples[:, i.name] .* (i.ub - i.lb) .+ i.lb
+            end
+        end
+    end
+
+    # discard samples outside the permissible set
+    if dependent & !intervals
+        for ji in filter(i -> isa(i, JointInterval), ivs)
+            idx = findall(.!in.(eachrow(Matrix(samples[:, names(ji)])), ji))
+            deleteat!(samples, idx)
+        end
+        # discard excess samples
+        if size(samples)[1] > sim.n
+            deleteat!(samples, (sim.n + 1):size(samples)[1])
+        else
+            @warn "Only $(size(samples)[1]) of $(sim.n) samples generated. Try increasing 'n_internal'"
+        end
+    end
+
+    # finally append any parameters
+    if !isempty(parameters)
+        DataFrames.hcat!(samples, sample(parameters, size(samples, 1)))
+    end
+
+    # map rvs to physical space before returning the samples
     to_physical_space!(inputs, samples)
 
     return samples

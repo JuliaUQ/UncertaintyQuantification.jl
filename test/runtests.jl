@@ -8,7 +8,11 @@ using QuasiMonteCarlo
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
+using TestItems
+using TestItemRunner
 using UncertaintyQuantification
+
+@run_package_tests
 
 include("inputs/empiricaldistribution.jl")
 include("dynamics/psd.jl")

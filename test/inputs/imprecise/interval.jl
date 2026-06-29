@@ -1,4 +1,4 @@
-@testset "Interval" begin
+@testitem "Interval" begin
     name = :l
     lb = 0.14
     ub = 0.16
@@ -18,7 +18,8 @@
     @test sprint(show, interval) == "[0.14, 0.16]"
 end
 
-@testset "IntervalVariable" begin
+@testitem "IntervalVariable" begin
+    using DataFrames
     name = :l
     lb = 0.14
     ub = 0.16
@@ -56,4 +57,20 @@ end
     @test var(interval) == Interval(0.0, 0.25)
 
     @test UncertaintyQuantification.sample(interval) == DataFrame(; x=Interval(interval))
+end
+
+@testitem "JointInterval" begin
+    x = rand(3, 10)
+    ji = JointInterval(x, [:x1, :x2, :x3])
+
+    @test names(ji) == [:x1, :x2, :x3]
+    @test UncertaintyQuantification.bounds(ji) ==
+        UncertaintyQuantification.bounds(ji.intervals)
+    @test dimensions(ji) == 3
+    for i in 1:3
+        @test ji.intervals[i].lb == minimum(x[i, :])
+        @test ji.intervals[i].ub == maximum(x[i, :])
+    end
+
+    @test all(in.(eachcol(x), ji))
 end

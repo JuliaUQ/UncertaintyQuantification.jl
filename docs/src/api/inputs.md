@@ -16,6 +16,7 @@ RandomVariable
 IntervalVariable
 EmpiricalDistribution
 JointDistribution
+JointInterval
 ```
 
 ## Functions

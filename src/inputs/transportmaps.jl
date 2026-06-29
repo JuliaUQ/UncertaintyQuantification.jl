@@ -231,7 +231,7 @@ end
 A transport map constructed from samples in the physical space X which are mapped to the standard normal space Z. The `map` is the optimized composed map, `samples` is a DataFrame of samples in the physical space X used to fit the map, and `names` is a vector of variable names.
 """
 struct TransportMapFromSamples <: AbstractTransportMap
-    map::ComposedMap{LinearMap}
+    map::ComposedMap{TransportMaps.LinearMap}
     samples::DataFrame
     names::Vector{Symbol}
 end
@@ -274,7 +274,7 @@ function mapfromsamples(
     target_samples = Matrix(X)
 
     # First, fit a linear map
-    linear_map = LinearMap(target_samples)
+    linear_map = TransportMaps.LinearMap(target_samples)
     # Optimize transportmap
     optimize!(
         transportmap, target_samples, linear_map; optimizer=optimizer, options=options
