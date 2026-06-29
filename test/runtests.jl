@@ -7,6 +7,7 @@ using InteractiveUtils
 using QuasiMonteCarlo
 using Random
 using StatsBase: fit, Histogram, corkendall
+using LinearAlgebra: diag
 using Test
 using UncertaintyQuantification
 
@@ -45,6 +46,7 @@ include("reliability/probabilityoffailure_imprecise.jl")
 
 include("sensitivity/gradient.jl")
 include("sensitivity/sobolindices.jl")
+include("sensitivity/kucherenkoindices.jl")
 
 include("simulations/doe.jl")
 include("simulations/montecarlo.jl")
