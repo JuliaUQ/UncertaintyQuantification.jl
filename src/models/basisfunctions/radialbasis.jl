@@ -40,11 +40,11 @@ function _ϕ(r::Real, k::Int)
 end
 
 function (gb::GaussianRadialBasis)(x::AbstractMatrix{<:Real})
-    return mapreduce(xᵢ -> pb(xᵢ), hcat, eachcol(x))
+    return mapreduce(xᵢ -> gb(xᵢ), hcat, eachcol(x))
 end
 
 function (gb::GaussianRadialBasis)(x::AbstractVector{<:Real})
-    return vec(exp(-gb.ϵ .* sqrt.(sum((gb.c .- x) .^ 2; dims=1))))
+    return vec(exp.(-(gb.ϵ .* sqrt.(sum((gb.c .- x) .^ 2; dims=1))) .^ 2))
 end
 
 Base.length(b::GaussianRadialBasis) = size(b.c, 2)
