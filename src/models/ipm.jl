@@ -68,9 +68,15 @@ function evaluate!(ipm::IntervalPredictorModel, df::DataFrame; bound::Symbol=:bo
     return nothing
 end
 
+"""
+    reliability(ipm::IntervalPredictorModel, ϵ::Real)
+Returns the confidence parameter ``\\beta \\in (0,1)``, such that the reliability of the IPM,
+that is the probability unobserved data points will fall in its bounds,
+is no less than ``1 -  \\epsilon`` with confidence ``1 - \\beta``, with ``\epsilon \\in (0,1)``. 
+"""
 function reliability(ipm::IntervalPredictorModel, ϵ::Real)
-    @assert 0 <= ϵ <= 1
-    return 1 - cdf(Binomial(ipm.N, ϵ), 2 * length(ipm.b) - 1)
+    @assert 0 < ϵ < 1
+    return cdf(Binomial(ipm.N, ϵ), 2 * length(ipm.b) - 1)
 end
 
 isimprecise(ipm::IntervalPredictorModel) = true

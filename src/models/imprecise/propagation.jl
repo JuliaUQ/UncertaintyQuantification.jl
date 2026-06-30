@@ -20,6 +20,16 @@ function propagate_intervals!(
 
     interval_cols = findall(eltype.(eachcol(df)) .== Interval)
 
+    if isempty(interval_cols) && !isimprecise(UQInput[], models)
+        error("No intervals to propagate.")
+    end
+
+    # if all inputs are precise and the only model is an imprecise model we just evaluate it.
+    if isempty(interval_cols) && length(models) == 1 && isimprecise(only(models))
+        evaluate!(only(models), df)
+        return nothing
+    end
+
     interval_names = propertynames(df[:, interval_cols])
 
     output = name(models[end])
@@ -46,8 +56,9 @@ function propagate_intervals!(
 
         # set degenerate intervals to their precise value
         if any(degenerates)
-            precise_df[1, interval_names[degenerates]] .=
-                getproperty.(collect(row[interval_names[degenerates]]), :lb)
+            precise_df[1, interval_names[degenerates]] .= getproperty.(
+                collect(row[interval_names[degenerates]]), :lb
+            )
         end
 
         function f(x)

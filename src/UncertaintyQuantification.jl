@@ -197,6 +197,7 @@ export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
+export reliability
 export sample
 export sobolindices
 export to_physical_space!
