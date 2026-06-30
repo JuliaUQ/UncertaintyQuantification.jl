@@ -26,7 +26,7 @@ function propagate_intervals!(
 
     # if all inputs are precise and the only model is an imprecise model we just evaluate it.
     if isempty(interval_cols) && length(models) == 1 && isimprecise(only(models))
-        evaluate!(only(models), df)
+        evaluate!(only(models), df, bound)
         return nothing
     end
 

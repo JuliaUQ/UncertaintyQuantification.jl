@@ -50,7 +50,8 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
     end
 end
 
-function evaluate!(ipm::IntervalPredictorModel, df::DataFrame; bound::Symbol=:both)
+function evaluate!(ipm::IntervalPredictorModel, df::DataFrame, bound::Symbol=:both)
+    @assert bound in [:lb, :ub, :both]
     X = permutedims(Matrix{Float64}(df[:, ipm.inputs])) # convert to matrix, sort by bfm.inputs
     φ = ipm.b(X)
 
@@ -63,7 +64,13 @@ function evaluate!(ipm::IntervalPredictorModel, df::DataFrame; bound::Symbol=:bo
         lo[idx], hi[idx] = hi[idx], lo[idx]
     end
 
-    df[!, ipm.out] = Interval.(lo, hi)
+    if bound==:lb
+        df[!, ipm.out] = lo
+    elseif bound==:ub
+        df[!, ipm.out] = hi
+    else
+        df[!, ipm.out] = Interval.(lo, hi)
+    end
 
     return nothing
 end

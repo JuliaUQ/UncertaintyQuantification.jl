@@ -22,6 +22,16 @@
 
     @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1e-8)
 
+    # lower bound only
+    verify = copy(data)
+    evaluate!(ipm, verify, :lb)
+    @assert all(verify.y .<= data.y .+ abs.(data.y) * 1e-8)
+
+    # upper bound only
+    verify = copy(data)
+    evaluate!(ipm, verify, :ub)
+    @assert all(verify.y .>= data.y .- abs.(data.y) * 1e-8)
+
     @test ipm.N == 150
     @test reliability(ipm, 0.1548) ≈ 0.01 atol=0.001
 end
