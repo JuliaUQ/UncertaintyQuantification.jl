@@ -86,13 +86,12 @@ function probability_of_failure(
     inputs::Union{Vector{<:UQInput},UQInput},
     dl::DoubleLoop,
 )
-    @assert isimprecise(inputs)
+    inputs, models = wrap.([inputs, models])
+    @assert isimprecise(inputs, models)
 
-    inputs = wrap(inputs)
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
 
-    models = wrap(models)
     imprecise_models = filter(m -> isimprecise(m), models)
     precise_models = filter(m -> !isimprecise(m), models)
 
@@ -256,13 +255,12 @@ function probability_of_failure(
     inputs::Union{Vector{<:UQInput},UQInput},
     rs::RandomSlicing,
 )
-    @assert isimprecise(inputs)
-
-    inputs = wrap(inputs)
+    inputs, models = wrap.([inputs, models])
+    @assert isimprecise(inputs, models)
 
     sns_inputs = mapreduce(transform_to_sns_input, vcat, inputs)
 
-    models = [wrap(models)..., Model(x -> performance(x), :g_slice)]
+    models = [models..., Model(x -> performance(x), :g_slice)]
 
     sm_min = SlicingModel(models, inputs, false)
 

@@ -21,6 +21,9 @@
     @assert all(getproperty.(verify.y, :lb) .<= data.y .+ abs.(data.y) * 1e-8)
 
     @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1e-8)
+
+    @test ipm.N == 150
+    @test reliability(ipm, 0.1548) ≈ 0.99 atol=0.001
 end
 
 @testset "Interval propagation IPM" begin

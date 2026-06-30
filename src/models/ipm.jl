@@ -4,6 +4,7 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
     p_ub::Vector{<:Real}
     inputs::Vector{Symbol}
     out::Symbol
+    N::Integer # number of data points used to fit the IPM
     function IntervalPredictorModel(
         df::DataFrame,
         out::Symbol,
@@ -45,7 +46,7 @@ struct IntervalPredictorModel{T<:AbstractBasis} <: UQModel
 
         JuMP.optimize!(m)
 
-        return new{T}(b, value.(p_lb), value.(p_ub), inputs, out)
+        return new{T}(b, value.(p_lb), value.(p_ub), inputs, out, size(df, 1))
     end
 end
 
@@ -65,6 +66,11 @@ function evaluate!(ipm::IntervalPredictorModel, df::DataFrame; bound::Symbol=:bo
     df[!, ipm.out] = Interval.(lo, hi)
 
     return nothing
+end
+
+function reliability(ipm::IntervalPredictorModel, ϵ::Real)
+    @assert 0 <= ϵ <= 1
+    return 1 - cdf(Binomial(ipm.N, ϵ), 2 * length(ipm.b) - 1)
 end
 
 isimprecise(ipm::IntervalPredictorModel) = true
