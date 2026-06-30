@@ -20,4 +20,5 @@ LinearBasisFunctionModel
 ```@docs
 evaluate!(m::Model, df::DataFrame)
 evaluate!(m::ParallelModel, df::DataFrame)
+reliability(ipm::IntervalPredictorModel, ϵ::Real)
 ```

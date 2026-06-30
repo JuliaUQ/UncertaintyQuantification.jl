@@ -224,3 +224,14 @@ savefig("ipm.svg"); nothing # hide
 
 ![IPM Plot](ipm.svg)
 
+### IPM reliability
+
+The reliability of the IPM, that is the probability that and unobserved data point ``(x,y)`` will fall in the interval ``I_y(x,P)`` can be assessed using the [`reliability`](@ref) function. The function `reliability(ipm, ϵ)` returns the confidence parameter ``\beta``. Then, the reliability of the IPM is no less than  ``1 - \epsilon`` with confidence ``1 - \beta``.
+
+```@example ipm
+1 - reliability(ipm, 0.1548)
+```
+
+### Reliability analysis
+
+As the IPM is an imprecise model, it can only be applied in a reliability analysis using the [`DoubleLoop`](@ref) or [`RandomSlicing`](@ref). For more information, see [Imprecise Reliability Analysis](@ref).
