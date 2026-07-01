@@ -5,10 +5,7 @@ on:
   pull_request:
     branches:
       - master
-    paths:
-      - CITATION.cff
   workflow_dispatch:
-
 name: CITATION.cff
 jobs:
   Validate-CITATION-cff:
