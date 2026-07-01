@@ -86,27 +86,56 @@ function probability_of_failure(
     inputs::Union{Vector{<:UQInput},UQInput},
     dl::DoubleLoop,
 )
-    @assert isimprecise(inputs)
+    inputs, models = wrap.([inputs, models])
+    @assert isimprecise(inputs, models)
 
-    inputs = wrap(inputs)
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
 
+    imprecise_models = filter(m -> isimprecise(m), models)
+    precise_models = filter(m -> !isimprecise(m), models)
+
+    model_names = names(models)
+
     function pf_low(x)
-        imprecise_inputs_x = map_to_precise_inputs(x, imprecise_inputs)
-        mc_inputs = [precise_inputs..., imprecise_inputs_x...]
-        mc_pf, _, _ = probability_of_failure(models, performance, mc_inputs, dl.lb)
+        p = collect(x)
+        mc_inputs = [precise_inputs..., map_to_precise_inputs(p, imprecise_inputs)...]
+
+        mc_models = if !isempty(imprecise_models)
+            [precise_models..., map_to_precise_models(p, imprecise_models)...]
+        else
+            models
+        end
+        if !isempty(imprecise_models)
+            order_models!(model_names, mc_models)
+        end
+
+        mc_pf, _, _ = probability_of_failure(mc_models, performance, mc_inputs, dl.lb)
         return mc_pf
     end
 
     function pf_high(x)
-        imprecise_inputs_x = map_to_precise_inputs(x, imprecise_inputs)
-        mc_inputs = [precise_inputs..., imprecise_inputs_x...]
-        mc_pf, _, _ = probability_of_failure(models, performance, mc_inputs, dl.ub)
+        p = collect(x)
+        mc_inputs = [precise_inputs..., map_to_precise_inputs(p, imprecise_inputs)...]
+
+        mc_models = if !isempty(imprecise_models)
+            [precise_models..., map_to_precise_models(p, imprecise_models)...]
+        else
+            models
+        end
+        if !isempty(imprecise_models)
+            order_models!(model_names, mc_models)
+        end
+
+        mc_pf, _, _ = probability_of_failure(mc_models, performance, mc_inputs, dl.ub)
         return mc_pf
     end
 
-    lb, ub = float.(bounds(inputs))
+    lb_in, ub_in = float.(bounds(inputs))
+    lb_m, ub_m = bounds(imprecise_models)
+    lb = [lb_in..., lb_m...]
+    ub = [ub_in..., ub_m...]
+
     x0 = middle.(lb, ub)
 
     result_lb = minimize(
@@ -127,14 +156,12 @@ function probability_of_failure(
         min_mesh_size=1e-13,
     )
 
-    pf_lb = result_lb.f
-    pf_ub = -result_ub.f
+    pf = Interval(result_lb.f, -result_ub.f)
+    # We only return the values of the inputs leading to the lower and upper bound of the pf
+    x_lb = result_lb.x[1:length(lb_in)]
+    x_ub = result_ub.x[1:length(lb_in)]
 
-    if pf_lb == pf_ub
-        return pf_ub
-    else
-        return Interval(pf_lb, pf_ub), result_lb.x, result_ub.x
-    end
+    return pf, x_lb, x_ub
 end
 
 function bounds(inputs::AbstractVector{<:UQInput})
@@ -146,21 +173,29 @@ function bounds(inputs::AbstractVector{<:UQInput})
     return lb, ub
 end
 
+function bounds(models::AbstractVector{<:UQModel})
+    imprecise_models = filter(m -> isimprecise(m), models)
+
+    b = bounds.(imprecise_models)
+    lb = vcat(getindex.(b, 1)...)
+    ub = vcat(getindex.(b, 2)...)
+    return lb, ub
+end
+
 function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInput})
     precise_inputs = UQInput[]
-    params = collect(x)
     for i in inputs
         if isa(i, IntervalVariable)
-            push!(precise_inputs, map_to_precise(popfirst!(params), i))
+            push!(precise_inputs, map_to_precise(popfirst!(x), i))
         elseif isa(i, RandomVariable{<:ProbabilityBox})
             d = count(x -> isa(x, Interval), values(i.dist.parameters))
-            p = [popfirst!(params) for _ in 1:d]
+            p = [popfirst!(x) for _ in 1:d]
             push!(precise_inputs, map_to_precise(p, i))
         elseif isa(i, JointDistribution)
             precise_marginals = map(i.m) do rv
                 if isimprecise(rv)
                     d = count(x -> isa(x, Interval), values(rv.dist.parameters))
-                    p = [popfirst!(params) for _ in 1:d]
+                    p = [popfirst!(x) for _ in 1:d]
                     return map_to_precise(p, rv)
                 else
                     return rv
@@ -170,6 +205,29 @@ function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInp
         end
     end
     return precise_inputs
+end
+
+function map_to_precise_models(x::AbstractVector, models::AbstractVector{<:UQModel})
+    precise_models = UQModel[]
+    for m in models
+        if isa(m, IntervalPredictorModel)
+            lbfm = LinearBasisFunctionModel(
+                m.b, [popfirst!(x) for _ in 1:length(m.b)], m.inputs, m.out
+            )
+            push!(precise_models, lbfm)
+        end
+    end
+    return precise_models
+end
+
+function order_models!(names::AbstractVector{Symbol}, models::AbstractVector{<:UQModel})
+    for (i, n) in enumerate(names)
+        j = findfirst(m -> UncertaintyQuantification.name(m) == n, models)
+        # swap models
+        if i != j
+            models[i], models[j] = models[j], models[i]
+        end
+    end
 end
 
 """
@@ -197,13 +255,12 @@ function probability_of_failure(
     inputs::Union{Vector{<:UQInput},UQInput},
     rs::RandomSlicing,
 )
-    @assert isimprecise(inputs)
-
-    inputs = wrap(inputs)
+    inputs, models = wrap.([inputs, models])
+    @assert isimprecise(inputs, models)
 
     sns_inputs = mapreduce(transform_to_sns_input, vcat, inputs)
 
-    models = [wrap(models)..., Model(x -> performance(x), :g_slice)]
+    models = [models..., Model(x -> performance(x), :g_slice)]
 
     sm_min = SlicingModel(models, inputs, false)
 

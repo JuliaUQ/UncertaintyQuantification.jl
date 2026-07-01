@@ -38,11 +38,11 @@ function probability_of_failure(
     inputs::Union{Vector{<:UQInput},UQInput},
     sim::FORM,
 )
-    if isimprecise(inputs)
-        error("You must use DoubleLoop or RandomSlicing with imprecise inputs.")
-    end
-
     models, inputs = wrap.([models, inputs])
+
+    if isimprecise(inputs, models)
+        error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
+    end
 
     # create reference point in standard normal space origin
     random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
