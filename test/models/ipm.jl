@@ -65,4 +65,12 @@ end
     propagate_intervals!(ipm, df)
 
     @test eltype(df.g) == Interval
+
+    inputs = [RandomVariable.(Normal(), [:X1, :X2, :X3])..., X4]
+
+    df = sample(inputs, 500)
+
+    propagate_intervals!(ipm, df)
+
+    @test eltype(df.g) == Interval
 end
