@@ -1,5 +1,5 @@
-function isimprecise(inputs::AbstractVector{<:UQInput})
-    return any(isimprecise.(inputs))
+function isimprecise(inputs::AbstractVector{<:UQInput}, models::AbstractVector{<:UQModel})
+    return any(isimprecise.(inputs)) || any(isimprecise.(models))
 end
 
 function isimprecise(input::UQInput)
@@ -10,3 +10,4 @@ function isimprecise(input::UQInput)
                any(isa.(input.m, RandomVariable{<:ProbabilityBox}))
            )
 end
+

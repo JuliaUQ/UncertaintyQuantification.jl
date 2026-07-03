@@ -2,6 +2,7 @@ module UncertaintyQuantification
 
 using ADTypes
 using Bootstrap
+using Clarabel
 using Copulas
 using CovarianceEstimation
 using DataFrames
@@ -13,6 +14,7 @@ using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
 using Format
+using JuMP
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
@@ -125,6 +127,7 @@ export HermiteBasis
 export ImportanceSampling
 export Interval
 export IntervalVariable
+export IntervalPredictorModel
 export JointDistribution
 export KanaiTajimi
 export LaplaceEstimateBayesian
@@ -194,6 +197,7 @@ export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
+export reliability
 export sample
 export sobolindices
 export to_physical_space!
@@ -235,6 +239,8 @@ include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
+include("models/ipm.jl")
+include("models/models.jl")
 
 include("hpc/slurm.jl")
 
