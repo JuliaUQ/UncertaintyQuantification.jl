@@ -15,13 +15,16 @@ A Julia package for uncertainty quantification. Current functionality includes:
   * Quasi Monte Carlo simulation (Sobol, Halton)
   * (Advanced) Line Sampling
   * Subset Simulation
+  * Propagation of imprecise probabilites
 * Sensitivity analysis
   * Gradients
   * Sobol indices
 * Metamodeling
   * Polyharmonic splines
-  * Response Surface
+  * Response Surface Methodology
+  * Radial basis function networks
   * Polynomial Chaos Expansion
+  * Interval Predictor Models
 * Bayesian Updating
 * Third-party solvers
   * Connect to any solver by injecting random samples into source files
