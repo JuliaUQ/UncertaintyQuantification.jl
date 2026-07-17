@@ -218,7 +218,9 @@ function mapfromdensity(
     optimizer::Optim.AbstractOptimizer=LBFGS(),
     options::Optim.Options=Optim.Options(),
 )
-    optimize!(transportmap, target, quadrature; optimizer=optimizer, options=options)
+    TransportMaps.optimize!(
+        transportmap, target, quadrature; optimizer=optimizer, options=options
+    )
 
     tm = TransportMap(transportmap, target, transform_density, names)
 
@@ -276,7 +278,7 @@ function mapfromsamples(
     # First, fit a linear map
     linear_map = LinearMap(target_samples)
     # Optimize transportmap
-    optimize!(
+    TransportMaps.optimize!(
         transportmap, target_samples, linear_map; optimizer=optimizer, options=options
     )
     # define ComposedMap
