@@ -11,4 +11,4 @@ jobs:
           with:
             REMOTE: 'ssh://git@codeberg.org/JuliaUQ/UncertaintyQuantification.jl'
             GIT_SSH_PRIVATE_KEY: ${{ secrets.CODEBERG_PRIVATE }}
-            GIT_SSH_KNOWN_HOSTS: ${{ secrets.KNOWN_HOSTS}}
+            GIT_SSH_NO_VERIFY_HOST: "true"
