@@ -63,5 +63,8 @@ preferred-citation:
   conference:
     name: UNCECOMP 2023
     country: GR
+    city: Athens
+    date-start: "2023-06-12"
+    date-end: "2023-06-14"
   doi: 10.7712/120223.10347.19810
   year: 2023
