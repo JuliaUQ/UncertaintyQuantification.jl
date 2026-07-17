@@ -24,10 +24,8 @@ end
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: P-boxes with Copula: independent" setup = [
-    P_failure_imprecise
+    TestSetup, P_failure_imprecise
 ] begin
-    using Copulas
-
     c = GaussianCopula([1 0.0; 0.0 1])
 
     jd = JointDistribution(c, [X, Y])
@@ -41,9 +39,8 @@ end
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: P-boxes with Copula: dependent" setup = [
-    P_failure_imprecise
+    TestSetup, P_failure_imprecise
 ] begin
-    using Copulas
     c = GaussianCopula([1 0.71; 0.71 1])
 
     jd = JointDistribution(c, [X, Y])
@@ -118,8 +115,9 @@ end
     @test pf.ub ≈ failure_analty.ub atol = 1e-6
 end
 
-@testitem "Imprecise Probability of Failure: Random Slicing: P-boxes with Copula" begin
-    using Copulas
+@testitem "Imprecise Probability of Failure: Random Slicing: P-boxes with Copula" setup = [
+    TestSetup
+] begin
     X = RandomVariable(
         ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => Interval(1, 2))), :X
     )
