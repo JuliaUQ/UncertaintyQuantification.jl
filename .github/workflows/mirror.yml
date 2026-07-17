@@ -9,6 +9,6 @@ jobs:
             fetch-depth: 0
         - uses: yesolutions/mirror-action@v0.7.0
           with:
-            REMOTE: 'ssh:git@codeberg.org/JuliaUQ/UncertaintyQuantification.jl'
+            REMOTE: 'ssh://git@codeberg.org/JuliaUQ/UncertaintyQuantification.jl'
             GIT_SSH_PRIVATE_KEY: ${{ secrets.CODEBERG_PRIVATE }}
             GIT_SSH_KNOWN_HOSTS: ${{ secrets.KNOWN_HOSTS}}
