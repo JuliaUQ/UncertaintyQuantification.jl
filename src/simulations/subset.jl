@@ -40,8 +40,9 @@ struct SubSetSimulation <: AbstractSubSetSimulation
             @warn "A proposal pdf with large variance (≥ 2) can be inefficient."
         end
         (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
-        if levels > floor(log10(eps(1.0))/log10(target))
-            levels = Integer(floor(log10(eps(1.0))/log10(target)))
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
             @warn "Number of levels restricted to $levels"
         end
             
@@ -81,8 +82,9 @@ struct SubSetInfinity <: AbstractSubSetSimulation
     function SubSetInfinity(n::Integer, target::Float64, levels::Integer, s::Real)
         (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (0 <= s <= 1) || error("standard deviation must be between 0.0 and 1.0")
-        if levels > floor(log10(eps(1.0))/log10(target))
-            levels = Integer(floor(log10(eps(1.0))/log10(target)))
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
             @warn "Number of levels restricted to $levels"
         end
         return new(n, target, levels, s)
@@ -170,8 +172,9 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
             "Scaling parameter must be between 0.0 and 1.0. A good initial choice is 1.0",
         )
         (0 <= s <= 1) || error("standard deviation must be between 0.0 and 1.0")
-        if levels > floor(log10(eps(1.0))/log10(target))
-            levels = Integer(floor(log10(eps(1.0))/log10(target)))
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
             @warn "Number of levels restricted to $levels"
         end
         return new(n, target, levels, Na, λ, s)
