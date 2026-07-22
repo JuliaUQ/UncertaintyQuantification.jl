@@ -6,7 +6,7 @@ abstract type AbstractSubSetSimulation <: AbstractSimulation end
 Defines the properties of a Subset simulation where `n` is the number of initial samples,
 `target` is the target probability of failure at each level, `levels` is the maximum number
 of levels and `proposal` is the proposal distribution for the Markov chain Monte Carlo.
-The maximum number of levels is autotomatically limited such that the probability of failure
+The maximum number of levels is automatically limited such that the probability of failure
 can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
 function is wrongly defined and it is never negative.
 
@@ -54,7 +54,7 @@ end
 Defines the properties of a Subset-∞ simulation where `n` is the number of initial samples,
 `target` is the target probability of failure at each level, `levels` is the maximum number
 of levels and `s` is the standard deviation for the proposal samples.
-The maximum number of levels is autotomatically limited such that the probability of failure
+The maximum number of levels is automatically limited such that the probability of failure
 can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
 function is wrongly defined and it is never negative.
 
@@ -113,7 +113,7 @@ Defines the properties of a Subset-∞ adaptive where `n` are the number of samp
 `target` is the target probability of failure at each level, `levels` is the maximum number
 of levels, `λ` (λ = 1 recommended) is the initial scaling parameter, and `Na` is the number simulations that will be run before `λ`
 is updated. Note that Na must be a multiple of n * target: `mod(ceil(n * target), Na) == 0)`. The initial variance of the proposal distribution is `s`.
-The maximum number of levels is autotomatically limited such that the probability of failure
+The maximum number of levels is automatically limited such that the probability of failure
 can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
 function is wrongly defined and it is never negative.
 

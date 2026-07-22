@@ -272,7 +272,7 @@ println("Probability of failure: $pf_sus")
 println("Coefficient of variation: $(std_sus/pf_sus)")
 ```
 
-For all the SubSet algorithms, the termination criteria are given by either reaching the failure domain, or by reaching the specified maximum number of levels. This latter termination is spurious, meaning that no samples have a negative performance function value and that the probability of failure is upper bounded at ``p_0 ^{N_levels}``. In order to avoid excessively long simulation in the case where the failure domain is non-existing or not identified, the maximum number of level is limited to ``\frac{log(\epsilon)}{log(p_0)}``, where ``\epsilon`` is the floating precision of the number 1.0, ```eps(1.0)```.
+For all the SubSet algorithms, the termination criteria are either reaching the failure domain or reaching the specified maximum number of levels. The latter is spurious (no samples have a negative performance function value), and the probability of failure is upper bounded by ``p_0^{N_{levels}}``. To avoid excessively long simulations when the failure domain does not exist or is not identified, the maximum number of levels is limited to ``\frac{\log(\epsilon)}{\log(p_0)}``, where ``\epsilon`` is machine epsilon for 1.0 (i.e. `eps(1.0)`).
 
 ## Imprecise Reliability Analysis
 
