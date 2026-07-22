@@ -252,7 +252,7 @@ For `AdvancedLineSampling`, we can also define the (initial) direction and optio
 Subset simulation [auEstimationSmallFailure2001](@cite) is an advanced simulation technique for the estimation of small failure probabilities.
 This approach involves decomposing the problem into a sequence of conditional probabilities that are estimated using Markov Chain Monte Carlo.
 
-We create the [`SubSetSimulation`](@ref) object and compute the probability of failure using a standard Gaussian proposal PDF. The value for the target probability of failure at each intermediate level is set to ``0.1`` which is generally accepted as the optimal value.
+We create the [`SubSetSimulation`](@ref) object and compute the probability of failure using a standard Gaussian proposal PDF. The value for the target probability of failure at each intermediate level ``p_0`` is set to ``0.1`` which is generally accepted as the optimal value.
 
 ```@example reliability
 subset = SubSetSimulation(1000, 0.1, 10, Normal())
@@ -271,6 +271,8 @@ pf_sus, std_sus, samples = probability_of_failure(y, g, x, subset)
 println("Probability of failure: $pf_sus")
 println("Coefficient of variation: $(std_sus/pf_sus)")
 ```
+
+For all the SubSet algorithms, the termination criteria are given by either reaching the failure domain, or by reaching the specified maximum number of levels. This latter termination is spurious, meaning that no samples have a negative performance function value and that the probability of failure is upper bounded at ``p_0 ^{N_levels}``. In order to avoid excessively long simulation in the case where the failure domain is non-existing or not identified, the maximum number of level is limited to ``\frac{log(\epsilon)}{log(p_0)}``, where ``\epsilon`` is the floating precision of the number 1.0, ```eps(1.0)```.
 
 ## Imprecise Reliability Analysis
 
