@@ -39,6 +39,7 @@ struct SubSetSimulation <: AbstractSubSetSimulation
         elseif var(proposal) ≥ 2
             @warn "A proposal pdf with large variance (≥ 2) can be inefficient."
         end
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         if levels > floor(log10(eps(1.0))/log10(target))
             levels = Integer(floor(log10(eps(1.0))/log10(target)))
             @warn "Number of levels restricted to $levels"
@@ -78,6 +79,7 @@ struct SubSetInfinity <: AbstractSubSetSimulation
     s::Real
 
     function SubSetInfinity(n::Integer, target::Float64, levels::Integer, s::Real)
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (0 <= s <= 1) || error("standard deviation must be between 0.0 and 1.0")
         if levels > floor(log10(eps(1.0))/log10(target))
             levels = Integer(floor(log10(eps(1.0))/log10(target)))
@@ -159,7 +161,7 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
         n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real, s::Real
     )
         number_of_seeds = Int64(max(1, ceil(n * target)))
-
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (Na <= number_of_seeds) ||
             error("Number of partitions Na must be less than `n` * `target`")
         (mod(number_of_seeds, Na) == 0) ||

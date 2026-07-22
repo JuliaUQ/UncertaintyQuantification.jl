@@ -8,6 +8,9 @@
     @test subset.levels == 10
     @test subset.proposal == proposal
 
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+        2000, -0.2, 10, Uniform(-1,1)
+    )
     @test_throws ErrorException("proposal must be a symmetric distribution") SubSetSimulation(
         2000, 0.2, 10, Exponential()
     )
@@ -82,7 +85,9 @@ end
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinity(
         2000, 0.2, 10, -1.0
     )
-      
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+        2000, -0.2, 10, 0.5
+    )
     @test_logs (
         :warn,
         "Number of levels restricted to 15",
@@ -141,6 +146,9 @@ end
     @test subset.λ == 1
     @test subset.s == 1
 
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+        2000, -0.2,  10, 2, 1, 3
+    )
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinityAdaptive(
         2000, 0.1, 10, 2, 1, 3
     )
