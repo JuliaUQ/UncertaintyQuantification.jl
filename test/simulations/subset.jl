@@ -85,7 +85,7 @@ end
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinity(
         2000, 0.2, 10, -1.0
     )
-    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinity(
         2000, -0.2, 10, 0.5
     )
     @test_logs (
@@ -146,7 +146,7 @@ end
     @test subset.λ == 1
     @test subset.s == 1
 
-    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinityAdaptive(
         2000, -0.2,  10, 2, 1, 3
     )
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinityAdaptive(
