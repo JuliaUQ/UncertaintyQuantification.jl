@@ -5,7 +5,10 @@ abstract type AbstractSubSetSimulation <: AbstractSimulation end
 
 Defines the properties of a Subset simulation where `n` is the number of initial samples,
 `target` is the target probability of failure at each level, `levels` is the maximum number
-of levels and `proposal` is the proposal distribution for the markov chain monte carlo.
+of levels and `proposal` is the proposal distribution for the Markov chain Monte Carlo.
+The maximum number of levels is automatically limited such that the probability of failure
+can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
+function is wrongly defined and it is never negative.
 
 # Examples
 
@@ -36,6 +39,13 @@ struct SubSetSimulation <: AbstractSubSetSimulation
         elseif var(proposal) ≥ 2
             @warn "A proposal pdf with large variance (≥ 2) can be inefficient."
         end
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
+            @warn "Number of levels restricted to $levels"
+        end
+            
         return new(n, target, levels, proposal)
     end
 end
@@ -46,6 +56,9 @@ end
 Defines the properties of a Subset-∞ simulation where `n` is the number of initial samples,
 `target` is the target probability of failure at each level, `levels` is the maximum number
 of levels and `s` is the standard deviation for the proposal samples.
+The maximum number of levels is automatically limited such that the probability of failure
+can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
+function is wrongly defined and it is never negative.
 
 # Examples
 
@@ -67,7 +80,13 @@ struct SubSetInfinity <: AbstractSubSetSimulation
     s::Real
 
     function SubSetInfinity(n::Integer, target::Float64, levels::Integer, s::Real)
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (0 <= s <= 1) || error("standard deviation must be between 0.0 and 1.0")
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
+            @warn "Number of levels restricted to $levels"
+        end
         return new(n, target, levels, s)
     end
 end
@@ -98,7 +117,9 @@ Defines the properties of a Subset-∞ adaptive where `n` are the number of samp
 `target` is the target probability of failure at each level, `levels` is the maximum number
 of levels, `λ` (λ = 1 recommended) is the initial scaling parameter, and `Na` is the number simulations that will be run before `λ`
 is updated. Note that Na must be a multiple of n * target: `mod(ceil(n * target), Na) == 0)`. The initial variance of the proposal distribution is `s`.
-
+The maximum number of levels is automatically limited such that the probability of failure
+can't be smaller than eps(1.0). This is to avoid too long loops in the case the performance
+function is wrongly defined and it is never negative.
 
 Idea behind this algorithm is to adaptively select the correlation parameter of `s`
 at each intermediate level, by simulating a subset Na of the chains
@@ -142,7 +163,7 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
         n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real, s::Real
     )
         number_of_seeds = Int64(max(1, ceil(n * target)))
-
+        (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (Na <= number_of_seeds) ||
             error("Number of partitions Na must be less than `n` * `target`")
         (mod(number_of_seeds, Na) == 0) ||
@@ -151,6 +172,11 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
             "Scaling parameter must be between 0.0 and 1.0. A good initial choice is 1.0",
         )
         (0 <= s <= 1) || error("standard deviation must be between 0.0 and 1.0")
+        max_levels = floor(Int, log(eps(1.0)) / log(target))
+        if levels > max_levels
+            levels = max_levels
+            @warn "Number of levels restricted to $levels"
+        end
         return new(n, target, levels, Na, λ, s)
     end
 end

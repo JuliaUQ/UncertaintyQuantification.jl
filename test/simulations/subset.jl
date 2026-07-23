@@ -8,6 +8,9 @@
     @test subset.levels == 10
     @test subset.proposal == proposal
 
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
+        2000, -0.2, 10, Uniform(-1,1)
+    )
     @test_throws ErrorException("proposal must be a symmetric distribution") SubSetSimulation(
         2000, 0.2, 10, Exponential()
     )
@@ -17,6 +20,11 @@
     @test_logs (:warn, "A proposal pdf with large variance (≥ 2) can be inefficient.") SubSetSimulation(
         2000, 0.2, 10, Uniform(-4, 4)
     )
+  
+    @test_logs (
+        :warn,
+        "Number of levels restricted to 15",
+    ) SubSetSimulation(1000,0.1,25,Uniform(-.5,.5))
     @testset "nextlevelsamples" begin
         x = RandomVariable(Uniform(0.0, 1.0), :x)
         y = RandomVariable(Uniform(0.0, 1.0), :y)
@@ -77,6 +85,13 @@ end
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinity(
         2000, 0.2, 10, -1.0
     )
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinity(
+        2000, -0.2, 10, 0.5
+    )
+    @test_logs (
+        :warn,
+        "Number of levels restricted to 15",
+    ) SubSetInfinity(1000,0.1,25,0.5)
     @testset "nextlevelsamples" begin
         x = RandomVariable(Uniform(0.0, 1.0), :x)
         y = RandomVariable(Uniform(0.0, 1.0), :y)
@@ -131,6 +146,9 @@ end
     @test subset.λ == 1
     @test subset.s == 1
 
+    @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinityAdaptive(
+        2000, -0.2,  10, 2, 1, 3
+    )
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinityAdaptive(
         2000, 0.1, 10, 2, 1, 3
     )
@@ -150,6 +168,11 @@ end
     @test_throws ErrorException("Number of partitions Na must be less than `n` * `target`") SubSetInfinityAdaptive(
         2000, 0.1, 10, 400, 1
     )
+          
+    @test_logs (
+        :warn,
+        "Number of levels restricted to 15",
+    ) SubSetInfinityAdaptive(1000, 0.1, 25, 100, 0.1, 0.5)
     @testset "nextlevelsamples" begin
         x = RandomVariable(Uniform(0.0, 1.0), :x)
         y = RandomVariable(Uniform(0.0, 1.0), :y)
