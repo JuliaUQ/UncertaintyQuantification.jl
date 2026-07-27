@@ -182,6 +182,7 @@ export evaluate
 export evaluate!
 export gradient
 export gradient_in_standard_normal_space
+export isimprecise
 export linear_binning
 export logpdf
 export mapfromdensity
