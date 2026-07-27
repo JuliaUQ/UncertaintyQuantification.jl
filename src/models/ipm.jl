@@ -86,8 +86,6 @@ function reliability(ipm::IntervalPredictorModel, ϵ::Real)
     return cdf(Binomial(ipm.N, ϵ), 2 * length(ipm.b) - 1)
 end
 
-isimprecise(ipm::IntervalPredictorModel) = true
-
 function bounds(ipm::IntervalPredictorModel)
     return min.(ipm.p_lb, ipm.p_ub), max.(ipm.p_lb, ipm.p_ub)
 end
