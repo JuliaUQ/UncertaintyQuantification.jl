@@ -44,6 +44,44 @@ copula = GaussianCopula([1 0.8; 0.8 1])
             jd = JointDistribution(copula, imprecise_marginals)
             @test size(sample(jd, 10)) == (10, 2)
             @test size(sample(jd)) == (1, 2)
+
+            conditioning_df = DataFrame(:x => [0.25, 0.5])
+            conditioned_samples = sample(JointDistribution(copula, marginals), conditioning_df)
+
+            @test size(conditioned_samples) == (2, 2)
+            @test conditioned_samples.x == conditioning_df.x
+        end
+
+        @testset "sample with mixed columns" begin
+            jd = JointDistribution(copula, marginals)
+            
+            mixed_df = DataFrame(:x => [0.25, 0.5], :a => [1.0, 2.0], :b => [10, 20])
+            
+            conditioned_samples = sample(jd, mixed_df[:, [:x, :a, :b]])
+            
+            @test size(conditioned_samples) == (2, 4)  # x, y (resampled), a, b
+            @test Set(Symbol.(names(conditioned_samples))) == Set([:x, :y, :a, :b])
+            
+            @test conditioned_samples.x == mixed_df.x
+            
+            @test conditioned_samples.a == mixed_df.a
+            @test conditioned_samples.b == mixed_df.b
+            
+            @test eltype(conditioned_samples.y) == Float64
+            @test all(isfinite.(conditioned_samples.y))
+        end
+
+        @testset "condition" begin
+            jd = JointDistribution(copula, marginals)
+            conditioning_df = DataFrame(:x => [0.25, 0.5])
+            inputs = UncertaintyQuantification.condition(jd, conditioning_df[1, :])
+        
+            @test length(inputs) == 2
+            @test inputs[1] isa JointDistribution
+            @test inputs[2] isa Parameter
+            @test inputs[2].name == :x
+            @test inputs[2].value == 0.25
+            @test names(inputs[1]) == [:y]
         end
 
         @testset "names" begin

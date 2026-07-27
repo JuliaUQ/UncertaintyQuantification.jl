@@ -201,6 +201,7 @@ export rand
 export reliability
 export sample
 export sobolindices
+export kucherenkoindices
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
@@ -265,6 +266,7 @@ include("simulations/importancesampling.jl")
 include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
+include("sensitivity/kucherenkoindices.jl")
 
 include("util/imprecise.jl")
 end
