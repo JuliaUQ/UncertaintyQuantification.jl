@@ -182,6 +182,7 @@ export evaluate
 export evaluate!
 export gradient
 export gradient_in_standard_normal_space
+export isimprecise
 export linear_binning
 export logpdf
 export mapfromdensity
@@ -208,7 +209,6 @@ export variancediagnostic
 include("util/binning.jl")
 include("util/fourier-transform.jl")
 include("util/wrap.jl")
-include("util/imprecise.jl")
 include("util/kde.jl")
 
 include("inputs/empiricaldistribution.jl")
@@ -266,4 +266,5 @@ include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
 
+include("util/imprecise.jl")
 end
