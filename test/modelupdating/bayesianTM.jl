@@ -34,8 +34,18 @@ end
     @test !iszero(getcoefficients(tm_result.d.map))
 end
 
-# TODO fix testitem
-@testitem "TM BMU - Transformations: Warning and errors" setup = [TMBMU1, TestSetup] begin
+@testset "TM BMU - Transformations: Warning and errors" begin
+    #setup
+    prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
+
+    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
+
+    logL = ParallelModel(df -> loglikelihood(df.x1, df.x2), :L)
+
+    map = PolynomialMap(2, 2, Normal(), Softplus())
+    quadrature = GaussHermiteWeights(3, 2)
+
+    # begin
     tm_log = TransportMapBayesian(prior, map, quadrature; islog=true, transformprior=true)
     @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
         df -> df.x1, df -> df.L, [logL], tm_log

@@ -48,6 +48,9 @@ end
 
 end
 include("models/model.jl")
+include("modelupdating/bayesianTM.jl")
+include("inputs/jointdistribution.jl")
+include("inputs/imprecise/p-box.jl")
 @run_package_tests
 
 

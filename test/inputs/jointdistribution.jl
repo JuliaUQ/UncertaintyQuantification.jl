@@ -145,8 +145,13 @@ end
     @test cor(samples.x, samples.y) ≈ 0.71 atol = 0.01
 end
 
-# TODO fix testitem
-@testitem "JD-Multivariate Distribution: functions" setup = [MVSetup] begin
+@testset "JD-Multivariate Distribution: functions" begin
+    # setup
+    dist = MvNormal([1.0 0.71; 0.71 1.0])
+    m = [:x, :y]
+    jd = JointDistribution(dist, m)
+
+    # begin
     @test mean(jd) == [0.0, 0.0]
     @test dimensions(jd) == 2
     @test names(jd) == [:x, :y]

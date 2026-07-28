@@ -55,8 +55,7 @@
 end
 
 # TODO fix testitem
-@testitem "P-box: Invalid distributions" begin
-    using Distributions
+@testset "P-box: Invalid distributions" begin
     @test_throws ArgumentError(
         "Invalid Normal distribution for parameter combination (0, -1)"
     ) ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(-1, 1)))
