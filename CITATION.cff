@@ -47,7 +47,7 @@ identifiers:
     value: 10.5281/zenodo.3993816
 repository-code: 'https://github.com/JuliaUQ/UncertaintyQuantification.jl'
 license: MIT
-version: 0.14.0
+version: 0.15.0
 preferred-citation:
   authors:
     - given-names: Jasper
