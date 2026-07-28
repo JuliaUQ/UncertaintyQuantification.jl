@@ -54,7 +54,9 @@
     @test ProbabilityBox{Normal}(Dict(:μ => 0.0, :σ => 1.0)) == Normal()
 end
 
+# TODO fix testitem
 @testitem "P-box: Invalid distributions" begin
+    using Distributions
     @test_throws ArgumentError(
         "Invalid Normal distribution for parameter combination (0, -1)"
     ) ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(-1, 1)))

@@ -116,12 +116,14 @@ end
 end
 
 @testsnippet MVSetup begin
+    using Random, DataFrames, Copulas, HCubature
+
     dist = MvNormal([1.0 0.71; 0.71 1.0])
     m = [:x, :y]
     jd = JointDistribution(dist, m)
 end
 
-@testitem "JD-Nultivariate Distribution: Constructor" setup = [JDSetup, MVSetup] begin
+@testitem "JD-Multivariate Distribution: Constructor" setup = [MVSetup] begin
     @test jd.d == dist
     @test jd.m == m
 
@@ -133,7 +135,9 @@ end
     )
 end
 
-@testitem "JD-Nultivariate Distribution: sample" setup = [JDSetup, MVSetup] begin
+@testitem "JD-Multivariate Distribution: sample" setup = [MVSetup] begin
+    using Random, DataFrames, Copulas, HCubature
+
     samples = sample(jd, 10^6)
 
     @test size(samples) == (10^6, 2)
@@ -141,7 +145,8 @@ end
     @test cor(samples.x, samples.y) ≈ 0.71 atol = 0.01
 end
 
-@testitem "JD-Nultivariate Distribution: functions" setup = [JDSetup, MVSetup] begin
+# TODO fix testitem
+@testitem "JD-Multivariate Distribution: functions" setup = [MVSetup] begin
     @test mean(jd) == [0.0, 0.0]
     @test dimensions(jd) == 2
     @test names(jd) == [:x, :y]
