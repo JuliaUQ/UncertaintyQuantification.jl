@@ -145,22 +145,14 @@ end
     @test cor(samples.x, samples.y) ≈ 0.71 atol = 0.01
 end
 
-@testset "JD-Multivariate Distribution: functions" begin
-    # setup
-    dist = MvNormal([1.0 0.71; 0.71 1.0])
-    m = [:x, :y]
-    jd = JointDistribution(dist, m)
-
-    # begin
+@testitem "JD-Multivariate Distribution: functions" setup = [MVSetup] begin
     @test mean(jd) == [0.0, 0.0]
     @test dimensions(jd) == 2
     @test names(jd) == [:x, :y]
 
     samples = sample(jd, 10^6)
-    @test_throws ErrorException(
-        "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to standard normal space."
-    ) to_standard_normal_space!(jd, samples)
-    @test_throws ErrorException(
-        "Cannot map ZeroMeanFullNormal{Tuple{Base.OneTo{Int64}}} to physical space."
-    ) to_physical_space!(jd, samples)
+    @test_throws ["Cannot map", "to standard normal space."] to_standard_normal_space!(
+        jd, samples
+    )
+    @test_throws ["Cannot map", "to physical space."] to_physical_space!(jd, samples)
 end
