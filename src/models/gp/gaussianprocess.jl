@@ -1,14 +1,15 @@
 struct GaussianProcess <: UQModel
-    posterior_gp::AbstractGPs.PosteriorGP
-    prior_gp::Union{GP, NoisyGP}
+    posterior::AbstractGPs.PosteriorGP
     output::Symbol
+    σ²::Float64
     input_transformer::GaussianProcessInputTransformer
     output_transformer::GaussianProcessOutputTransformer
+    training_data::DataFrame
 end
 
 """
     GaussianProcess(
-        gp::Union{GP, NoisyGP}, 
+        gp::GP, 
         data::DataFrame, 
         output::Symbol; 
         input_transform::AbstractTransformChoice=IdentityTransformChoice(),
@@ -38,11 +39,14 @@ julia> gp_model = GaussianProcess(gp, data, :y);
 ```
 """
 function GaussianProcess(
-    gp::Union{GP, NoisyGP},
+    gp::GP,
     data::DataFrame,
     output::Symbol;
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    output_transform::AbstractTransformChoice=IdentityTransformChoice()
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 ) 
     input = propertynames(data[:, Not(output)]) # Is this always the case?
 
@@ -54,20 +58,28 @@ function GaussianProcess(
     x = transform(data, input_transformer)
     y = transform(data, output_transformer)
 
-    # build posterior gp
-    posterior_gp = posterior(gp(x), y)
+    # build gp
+    _gp = AbstractGPs.posterior(gp(x), y)
+
+    # optimize hyperparameters
+    _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
+    posterior_gp = posterior(_gp(x), y)
+
+    println("σ optimized: ", _gp.σ²)
+
     return GaussianProcess(
         posterior_gp,
-        gp,
         output,
+        _gp.σ²,
         input_transformer,
-        output_transformer
+        output_transformer,
+        data
     )
 end
 
 """
     GaussianProcess(
-        gp::Union{GP, NoisyGP}, 
+        gp::GP, 
         input::Union{UQInput, Vector{<:UQInput}},
         model::Union{UQModel, Vector{<:UQModel}},
         output::Symbol,
@@ -104,96 +116,95 @@ julia> begin # hide
 ```
 """
 function GaussianProcess(
-    gp::Union{GP, NoisyGP},
+    gp::GP,
     input::Vector{<:UQInput},
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
     experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    output_transform::AbstractTransformChoice=IdentityTransformChoice()
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
     # build DataFrame
     data = sample(input, experimentaldesign)
     evaluate!(model, data)
 
     # Repeated deterministic input will break the GP kernel
-    random_input = filter(i -> isa(i, RandomVariable), input)
-
-    # build in- and output transforms
-    # note: this will let the gp model extract random inputs only from any evaluation input
-    input_transformer = fit_input_transform(data, random_input, input_transform)
-    output_transformer = fit_output_transform(data, output, output_transform)
-
-    # transform data
-    x = transform(data, input_transformer)
-    y = transform(data, output_transformer)
-
-    # build posterior gp
-    posterior_gp = posterior(gp(x), y)
-    return GaussianProcess(
-        posterior_gp,
-        gp,
-        output,
-        input_transformer,
-        output_transformer
-    )
+    random_input = names(filter(i -> isa(i, RandomVariable), input))
+    
+    return GaussianProcess(gp, data[!,[random_input...,output]], output;
+                           input_transform=input_transform,
+                           output_transform=output_transform,
+                           σ²=σ²,
+                           learn_noise=learn_noise,
+                           optimizer=optimizer)
 end
 
 function GaussianProcess(
-    gp::Union{GP, NoisyGP},
+    gp::GP,
     input::UQInput,
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol,
     experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    output_transform::AbstractTransformChoice=IdentityTransformChoice()
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false
 )
     return GaussianProcess(
         gp, [input], model, output, experimentaldesign; 
-        input_transform=input_transform, output_transform=output_transform
+        input_transform=input_transform, output_transform=output_transform, σ²=σ², learn_noise=learn_noise
     )
 end
 
-"""
-    optimize_hyperparameters(gp_model::GaussianProcess, optimization::AbstractHyperparameterOptimization)
-
-Optimizes the hyperparameters of a [`GaussianProcess`](@ref) model. 
-
-# Arguments
-- `gp_model`: An instatiated [`GaussianProcess`](@ref) model.
-- `optimization`: An optimization routine.
-
-# Examples
-```jldoctest
-julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
-
-julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
-
-julia> gp_model = GaussianProcess(gp, data, :y);
-
-julia> optimized_gp_model = optimize_hyperparameters(gp_model, MaximumLikelihoodEstimation());
-```
-"""
-function optimize_hyperparameters(
-    gp_model::GaussianProcess, 
-    optimization::AbstractHyperparameterOptimization
+function GaussianProcess(
+    input::Union{UQInput, Vector{<:UQInput}},
+    model::Union{UQModel, Vector{<:UQModel}},
+    output::Symbol;
+    n_design_points::Int=10,
+    experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
+    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
+    kernel::Kernel=SqExponentialKernel(),
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
-    # retrieve data used for fitting the posterior gp
-    # note: PosteriorGP stores targets y implicitly as δ = y - m,
-    # where m is the mean of the prior at fitting inputs x
-    x = gp_model.posterior_gp.data.x
-    y = gp_model.posterior_gp.data.δ + mean(gp_model.prior_gp(x))
-    optimized_gp = optimize_hyperparameters(gp_model.prior_gp, x, y, optimization)
-    posterior_gp = posterior(optimized_gp(x), y)
 
-    return GaussianProcess(
-        posterior_gp,
-        optimized_gp,
-        gp_model.output,
-        gp_model.input_transformer,
-        gp_model.output_transformer
-    ) 
-end 
+    gp = GP(mean_fct, kernel)
+    return GaussianProcess(gp, input, model, output, experimentaldesign;
+                           input_transform=input_transform,
+                           output_transform=output_transform,
+                           σ²=σ²,
+                           learn_noise=learn_noise,
+                           optimizer=optimizer)
+
+end
+
+function GaussianProcess(
+    data::DataFrame,
+    output::Symbol;
+    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
+    kernel::Kernel=SqExponentialKernel(),
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
+)
+
+    gp = GP(mean_fct, kernel)
+    
+    return GaussianProcess(gp, data, output;
+                           input_transform=input_transform,
+                           output_transform=output_transform,
+                           σ²=σ²,
+                           learn_noise=learn_noise,
+                           optimizer=optimizer)
+end
 
 """
     evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
@@ -250,7 +261,7 @@ function evaluate!(
     n_samples::Int = 1
 )
     x = transform(data, gp.input_transformer)
-    finite_projection = gp.posterior_gp(x)
+    finite_projection = gp.posterior(x, gp.σ²)
 
     if mode === :mean
         μ = mean(finite_projection)

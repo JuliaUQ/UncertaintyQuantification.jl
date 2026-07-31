@@ -35,14 +35,14 @@ MaximumLikelihoodEstimation() = MaximumLikelihoodEstimation(
 )
 
 objective(
-    f::Union{AbstractGPs.GP, NoisyGP}, 
+    f::PriorGP, 
     x::Union{RowVecs{<:Real}, Vector{<:Real}}, 
     y::Vector{<:Real}, 
     ::MaximumLikelihoodEstimation
 ) = -logpdf(f(x), y)
 
 function optimize_hyperparameters(
-    gp::Union{AbstractGPs.GP, NoisyGP}, 
+    gp::PriorGP, 
     x::Union{RowVecs{<:Real}, Vector{<:Real}}, 
     y::Vector{<:Real}, 
     mle::MaximumLikelihoodEstimation

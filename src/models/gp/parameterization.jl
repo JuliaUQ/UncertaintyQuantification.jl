@@ -205,20 +205,16 @@ function apply_parameters(f::GP, θ)
     GP(apply_parameters(f.mean, θ[1]), apply_parameters(f.kernel, θ[2]))
 end
 
-# ---
-# NoisyGP(gp::GP, σ²::Real)
-#
-# Wraps a Gaussian process `gp` and adds learnable Gaussian observation noise
-# with zero mean and variance `σ²` to the diagonal of its finite-dimensional
-# covariance matrix.
-# ---
-struct NoisyGP{T<:GP,Tn<:Real}
+"""
+Internal struct for hyperparameter optimization. The struct saves the GP that is to be optimized and the noise.
+"""
+struct PriorGP{T<:GP,Tn<:Real}
     gp::T
     σ²::Tn
+    learn_noise::Bool
 end
 
-(gp::NoisyGP)(x) = gp.gp(x, gp.σ²)
-
+(gp::PriorGP)(x) = gp.gp(x, gp.σ²)
 """
     with_gaussian_noise(gp::AbstractGPs.GP, σ²::Real)
 
@@ -234,10 +230,17 @@ julia> gp = GP(SqExponentialKernel());
 julia> noisy_gp = with_gaussian_noise(gp, 0.1);
 ```
 """
-with_gaussian_noise(gp::GP, σ²::Real) = NoisyGP(gp, σ²)
 
-function extract_parameters(f::NoisyGP)
-    (extract_parameters(f.gp), ParameterHandling.positive(f.σ², exp, 1e-6))
+extract_parameters(f::PriorGP) = begin 
+   f.learn_noise ? (
+    extract_parameters(f.gp), 
+    ParameterHandling.positive(f.σ², exp, 1e-6)
+    ) :
+    (extract_parameters(f.gp))
 end
 
-apply_parameters(f::NoisyGP, θ) = NoisyGP(apply_parameters(f.gp, θ[1]), θ[2])
+apply_parameters(f::PriorGP, θ) = begin
+    f.learn_noise ? 
+    PriorGP(apply_parameters(f.gp, θ[1]), θ[2], f.learn_noise) :
+    PriorGP(apply_parameters(f.gp, θ), f.σ², f.learn_noise)
+end
