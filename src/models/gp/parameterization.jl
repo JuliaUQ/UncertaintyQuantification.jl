@@ -45,7 +45,6 @@ apply_parameters(::ConstMean, θ) = ConstMean(θ)
 extract_parameters(::CustomMean) = nothing
 apply_parameters(m::CustomMean, θ) = m
 
-
 extract_parameters(::ZeroKernel) = nothing
 apply_parameters(k::ZeroKernel, _) = k
 
@@ -95,21 +94,30 @@ extract_parameters(::IdentityTransform) = nothing
 apply_parameters(t::IdentityTransform, _) = t
 
 function extract_parameters(::IndependentMOKernel)
-    throw(ArgumentError("IndependentMOKernel not supported."))
+    throw(
+        ArgumentError("IndependentMOKernel not supported for hyper parameter optimization.")
+    )
+end
 function extract_parameters(::IntrinsicCoregionMOKernel)
-    throw(ArgumentError("IntrinsicCoregionMOKernel not supported."))
+    throw(
+        ArgumentError(
+            "IntrinsicCoregionMOKernel not supported hyper parameter optimization."
+        ),
+    )
 end
 function extract_parameters(::LatentFactorMOKernel)
-    throw(ArgumentError("LatentFactorMOKernel not supported."))
+    throw(ArgumentError("LatentFactorMOKernel not supported hyper parameter optimization."))
 end
 function extract_parameters(::LinearMixingModelKernel)
-    throw(ArgumentError("LinearMixingModelKernel not supported."))
+    throw(
+        ArgumentError("LinearMixingModelKernel not supported hyper parameter optimization.")
+    )
 end
 function extract_parameters(::KernelFunctions.NeuralKernelNetwork)
-    throw(ArgumentError("NeuralKernelNetwork not supported."))
+    throw(ArgumentError("NeuralKernelNetwork not supported hyper parameter optimization."))
 end
 function extract_parameters(::GibbsKernel)
-    throw(ArgumentError("GibbsKernel not supported."))
+    throw(ArgumentError("GibbsKernel not supported hyper parameter optimization."))
 end
 
 extract_parameters(k::ConstantKernel) = ParameterHandling.positive(k.c)
@@ -231,4 +239,5 @@ with_gaussian_noise(gp::GP, σ²::Real) = NoisyGP(gp, σ²)
 function extract_parameters(f::NoisyGP)
     (extract_parameters(f.gp), ParameterHandling.positive(f.σ², exp, 1e-6))
 end
+
 apply_parameters(f::NoisyGP, θ) = NoisyGP(apply_parameters(f.gp, θ[1]), θ[2])
