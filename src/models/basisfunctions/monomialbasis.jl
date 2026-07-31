@@ -18,3 +18,5 @@ end
 function (b::MonomialBasis)(x::AbstractVecOrMat{<:Real})
     return b.m(x)
 end
+
+Base.length(b::MonomialBasis) = length(b.m)

@@ -4,4 +4,6 @@
 
 ```@docs
 MonomialBasis
+GaussianRadialBasis
+PolyharmonicRadialBasis
 ```

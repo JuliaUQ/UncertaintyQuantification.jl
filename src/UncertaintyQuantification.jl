@@ -2,6 +2,7 @@ module UncertaintyQuantification
 
 using ADTypes
 using Bootstrap
+using Clarabel
 using Copulas
 using CovarianceEstimation
 using DataFrames
@@ -13,6 +14,7 @@ using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
 using Format
+using JuMP
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
@@ -129,6 +131,7 @@ export IdentityTransformChoice
 export ImportanceSampling
 export Interval
 export IntervalVariable
+export IntervalPredictorModel
 export JointDistribution
 export KanaiTajimi
 export LaplaceEstimateBayesian
@@ -187,6 +190,7 @@ export evaluate
 export evaluate!
 export gradient
 export gradient_in_standard_normal_space
+export isimprecise
 export linear_binning
 export logpdf
 export mapfromdensity
@@ -203,6 +207,7 @@ export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
+export reliability
 export sample
 export sobolindices
 export to_physical_space!
@@ -214,7 +219,6 @@ export with_gaussian_noise
 include("util/binning.jl")
 include("util/fourier-transform.jl")
 include("util/wrap.jl")
-include("util/imprecise.jl")
 include("util/kde.jl")
 
 include("inputs/empiricaldistribution.jl")
@@ -249,6 +253,8 @@ include("models/gp/standardization.jl")
 include("models/gp/parameterization.jl")
 include("models/gp/hyperparametertuning.jl")
 include("models/gp/gaussianprocess.jl")
+include("models/ipm.jl")
+include("models/models.jl")
 
 include("hpc/slurm.jl")
 
@@ -274,4 +280,5 @@ include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
 
+include("util/imprecise.jl")
 end
