@@ -75,9 +75,6 @@ apply_parameters(k::Matern72Kernel, _) = k
 extract_parameters(::NeuralNetworkKernel) = nothing
 apply_parameters(k::NeuralNetworkKernel, _) = k
 
-extract_parameters(::ZeroKernel) = nothing
-apply_parameters(k::ZeroKernel, _) = k
-
 extract_parameters(::PiecewisePolynomialKernel) = nothing
 apply_parameters(k::PiecewisePolynomialKernel, _) = k
 
@@ -98,6 +95,11 @@ function extract_parameters(::IndependentMOKernel)
         ArgumentError("IndependentMOKernel not supported for hyper parameter optimization.")
     )
 end
+function apply_parameters(::IndependentMOKernel, _)
+    throw(
+        ArgumentError("IndependentMOKernel not supported for hyper parameter optimization.")
+    )
+end
 function extract_parameters(::IntrinsicCoregionMOKernel)
     throw(
         ArgumentError(
@@ -105,19 +107,50 @@ function extract_parameters(::IntrinsicCoregionMOKernel)
         ),
     )
 end
+function apply_parameters(::IntrinsicCoregionMOKernel, _)
+    throw(
+        ArgumentError(
+            "IntrinsicCoregionMOKernel not supported for hyper parameter optimization."
+        ),
+    )
+end
 function extract_parameters(::LatentFactorMOKernel)
     throw(ArgumentError("LatentFactorMOKernel not supported hyper parameter optimization."))
+end
+function apply_parameters(::LatentFactorMOKernel, _)
+    throw(
+        ArgumentError(
+            "LatentFactorMOKernel not supported for hyper parameter optimization."
+        ),
+    )
 end
 function extract_parameters(::LinearMixingModelKernel)
     throw(
         ArgumentError("LinearMixingModelKernel not supported hyper parameter optimization.")
     )
 end
+function apply_parameters(::LinearMixingModelKernel, _)
+    throw(
+        ArgumentError(
+            "LinearMixingModelKernel not supported for hyper parameter optimization."
+        ),
+    )
+end
 function extract_parameters(::KernelFunctions.NeuralKernelNetwork)
     throw(ArgumentError("NeuralKernelNetwork not supported hyper parameter optimization."))
 end
+function apply_parameters(::KernelFunctions.NeuralKernelNetwork, _)
+    throw(
+        ArgumentError("NeuralKernelNetwork not supported for hyper parameter optimization.")
+    )
+end
 function extract_parameters(::GibbsKernel)
     throw(ArgumentError("GibbsKernel not supported hyper parameter optimization."))
+end
+function apply_parameters(::GibbsKernel, _)
+    throw(
+        ArgumentError("IndependentMOKernel not supported for hyper parameter optimization.")
+    )
 end
 
 extract_parameters(k::ConstantKernel) = ParameterHandling.positive(k.c)
