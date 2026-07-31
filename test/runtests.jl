@@ -10,6 +10,7 @@ using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
 using UncertaintyQuantification
+import UncertaintyQuantification: sample
 
 include("inputs/empiricaldistribution.jl")
 include("dynamics/psd.jl")
@@ -20,7 +21,6 @@ include("inputs/imprecise/interval.jl")
 include("inputs/imprecise/p-box.jl")
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
-include("inputs/jointdistribution.jl");
 include("inputs/inputs.jl")
 include("inputs/transportmaps.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
