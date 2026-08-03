@@ -267,12 +267,7 @@ include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
 
+include("util/imprecise.jl")
+
 include("plotting/plot_recipes.jl")
-
-include("util/fourier-transform.jl")
-include("util/wrap.jl")
-include("util/imprecise.jl")
-include("util/kde.jl")
-
-include("util/imprecise.jl")
 end
