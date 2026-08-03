@@ -17,7 +17,7 @@ plot(inputs)    # Everything together
 samples = sample(inputs, 200)
 
 plot(X1)
-plot!(samples.X1)    # Samples ecdf samples of X1
+plot!(samples.X1, shade=:false)    # Samples ecdf samples of X1
 
 plot(samples.X1[1], samples.X2[1])  # Plots 2D box
 

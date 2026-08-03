@@ -57,24 +57,24 @@ N_levels = maximum(samples_lo.level)
 
 colour = colormap("RdBu", N_levels)
 
-p1 = plot(samples_lo.X1[samples_lo.level .== 1], samples_lo.X2[samples_lo.level .==1], color = colour[1], label ="level1", alpha = 0.2)
+p1 = plot(samples_lo.X1[samples_lo.level .== 1], samples_lo.X2[samples_lo.level .==1], color = colour[1], label = "level 1", alpha = 0.2)
 for i = 2:N_levels
-    plot!(p1, samples_lo.X1[samples_lo.level .==i], samples_lo.X2[samples_lo.level .==i], color = colour[i], label ="level$i", alpha = 0.2)
+    plot!(p1, samples_lo.X1[samples_lo.level .==i], samples_lo.X2[samples_lo.level .==i], color = colour[i], label = "level $i", alpha = 0.2)
 end
-contour!(p1, xs_physical, ys_physical, samples_physical.g .<= 0, color = :red, linewidth = 2, levels = 1, label = true, colorbar =false, title = "lower bound")
+contour!(p1, xs_physical, ys_physical, samples_physical.g .<= 0, color = :red, linewidth = 2, levels = 1, label = "g = 0", colorbar =false, title = "lower bound")
 
-## Lower bound
+## Upper bound
 
-samples_lo = outputs_ss2[2]
-N_levels = maximum(samples_lo.level)
+samples_hi = outputs_ss2[2]
+N_levels = maximum(samples_hi.level)
 
 # colour = colormap("RdBu", N_levels)
 
-p2 = plot(samples_lo.X1[samples_lo.level .== 1], samples_lo.X2[samples_lo.level .==1], color = colour[1], label ="level1", alpha = 0.2)
+p2 = plot(samples_hi.X1[samples_hi.level .== 1], samples_hi.X2[samples_hi.level .==1], color = colour[1], label = "level 1", alpha = 0.2)
 for i = 2:N_levels
-    plot!(p2, samples_lo.X1[samples_lo.level .==i], samples_lo.X2[samples_lo.level .==i], color = colour[i], label ="level$i", alpha = 0.2)
+    plot!(p2, samples_hi.X1[samples_hi.level .==i], samples_hi.X2[samples_hi.level .==i], color = colour[i], label = "level $i", alpha = 0.2)
 end
-contour!(p2, xs_physical, ys_physical, samples_physical.g .<= 0, color = :red, linewidth = 2, levels = 1, label = true, colorbar =false, title = "upper bound")
+contour!(p2, xs_physical, ys_physical, samples_physical.g .<= 0, color = :red, linewidth = 2, levels = 1, label = "g = 0", colorbar =false, title = "upper bound")
 
 # Side by side
-p = plot(p1, p2, layout = (1, 2), size = (1200, 500))
+p = plot(p1, p2, layout = (1, 2), size = (1200, 500), legend = :topright)
