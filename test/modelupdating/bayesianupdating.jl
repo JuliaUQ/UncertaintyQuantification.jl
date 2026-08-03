@@ -1,5 +1,5 @@
 
-@testset "Bayesian Updating" begin
+@testsnippet BayesianUpdating begin
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
 
@@ -163,158 +163,167 @@
 
         return mcmc_samples, analytic_mean, analytic_cov
     end
+end
 
-    @testset "Single Component MH binomal inference analytical" begin
-        proposal = Normal()
-        x0 = (x=0.5,)
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: Single Component MH binomal inference analytical" setup = [
+    BayesianUpdating
+] begin
+    proposal = Normal()
+    x0 = (x=0.5,)
+    n = 4000
+    burnin = 100
 
-        prior = Beta(1, 1)
+    prior = Beta(1, 1)
 
-        mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
+    mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = binomialinferencebenchmark(mh, prior)
+    mc_samples, analytic_mean, analytic_std = binomialinferencebenchmark(mh, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "Single Component MH normal mean analytical" begin
-        proposal = Normal()
-        x0 = (x=2.5,)
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: Single Component MH normal mean analytical" setup = [
+    BayesianUpdating
+] begin
+    proposal = Normal()
+    x0 = (x=2.5,)
+    n = 4000
+    burnin = 100
 
-        prior_mean = 2
-        prior_std = 10
+    prior_mean = 2
+    prior_std = 10
 
-        prior = Normal(prior_mean, prior_std)
+    prior = Normal(prior_mean, prior_std)
 
-        mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
+    mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = normalmeanbenchmark(mh, prior)
+    mc_samples, analytic_mean, analytic_std = normalmeanbenchmark(mh, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "Single Component MH normal var analytical" begin
-        proposal = Normal()
-        x0 = (x=3.0,)
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: Single Component MH normal var analytical" setup = [
+    BayesianUpdating
+] begin
+    proposal = Normal()
+    x0 = (x=3.0,)
+    n = 4000
+    burnin = 100
 
-        prior_shape = 30
-        prior_scale = 100
+    prior_shape = 30
+    prior_scale = 100
 
-        prior = InverseGamma(prior_shape, prior_scale)
+    prior = InverseGamma(prior_shape, prior_scale)
 
-        mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
+    mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = normalvarbenchmark(mh, prior)
+    mc_samples, analytic_mean, analytic_std = normalvarbenchmark(mh, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "Single Component MH proposal" begin
-        proposal = Normal()
-        x0 = (x=3.0, y=1.0)
-        mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
+@testitem "Bayesian Updating: Single Component MH proposal" setup = [BayesianUpdating] begin
+    proposal = Normal()
+    x0 = (x=3.0, y=1.0)
+    mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
 
-        @test isa(mh.proposal, Vector{<:UnivariateDistribution})
-        @test mh.proposal[1] == proposal
-        @test mh.proposal[2] == proposal
+    @test isa(mh.proposal, Vector{<:UnivariateDistribution})
+    @test mh.proposal[1] == proposal
+    @test mh.proposal[2] == proposal
 
-        proposal_vec = [Uniform(-1, 1), Normal(0, 0.1)]
-        mh_vec = SingleComponentMetropolisHastings(proposal_vec, x0, 1000, 100)
-        @test mh_vec.proposal[1] == proposal_vec[1]
-        @test mh_vec.proposal[2] == proposal_vec[2]
+    proposal_vec = [Uniform(-1, 1), Normal(0, 0.1)]
+    mh_vec = SingleComponentMetropolisHastings(proposal_vec, x0, 1000, 100)
+    @test mh_vec.proposal[1] == proposal_vec[1]
+    @test mh_vec.proposal[2] == proposal_vec[2]
 
-        @test_throws AssertionError SingleComponentMetropolisHastings(
-            proposal_vec, (; x=3.0), 1000, 100
-        )
-    end
+    @test_throws AssertionError SingleComponentMetropolisHastings(
+        proposal_vec, (; x=3.0), 1000, 100
+    )
+end
 
-    @testset "Single Component MH bivariategaussian" begin
-        n = 100_000
-        burnin = 20_000
+@testitem "Bayesian Updating: Single Component MH bivariategaussian" setup = [
+    BayesianUpdating
+] begin
+    n = 100_000
+    burnin = 20_000
 
-        x0 = (x=0.0, y=0.0)
+    x0 = (x=0.0, y=0.0)
 
-        proposal = Normal(0, 1)
+    proposal = Normal(0, 1)
 
-        mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
-        mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, Uniform(-10, 10))
+    mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
+    mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, Uniform(-10, 10))
 
-        @test mean(mcmc_samples.x) ≈ analytic_mean[1] rtol = 0.1
-        @test mean(mcmc_samples.y) ≈ analytic_mean[2] rtol = 0.1
+    @test mean(mcmc_samples.x) ≈ analytic_mean[1] rtol = 0.1
+    @test mean(mcmc_samples.y) ≈ analytic_mean[2] rtol = 0.1
 
-        analytic_std_1 = sqrt(analytic_cov[1, 1])
-        analytic_std_2 = sqrt(analytic_cov[2, 2])
-        analytic_cor = analytic_cov[1, 2] / (analytic_std_1 * analytic_std_2)
+    analytic_std_1 = sqrt(analytic_cov[1, 1])
+    analytic_std_2 = sqrt(analytic_cov[2, 2])
+    analytic_cor = analytic_cov[1, 2] / (analytic_std_1 * analytic_std_2)
 
-        @test std(mcmc_samples.x) ≈ analytic_std_1 rtol = 0.1
-        @test std(mcmc_samples.y) ≈ analytic_std_2 rtol = 0.1
-        @test cor(mcmc_samples.x, mcmc_samples.y) ≈ analytic_cor rtol = 0.1
-    end
+    @test std(mcmc_samples.x) ≈ analytic_std_1 rtol = 0.1
+    @test std(mcmc_samples.y) ≈ analytic_std_2 rtol = 0.1
+    @test cor(mcmc_samples.x, mcmc_samples.y) ≈ analytic_cor rtol = 0.1
+end
 
-    @testset "TMCMC binomal inference analytical" begin
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: TMCMC binomal inference analytical" setup = [BayesianUpdating] begin
+    n = 4000
+    burnin = 100
 
-        prior = Beta(1, 1)
+    prior = Beta(1, 1)
 
-        prior_sample_ = RandomVariable(prior, :x)
+    prior_sample_ = RandomVariable(prior, :x)
 
-        tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = binomialinferencebenchmark(tmcmc, prior)
+    mc_samples, analytic_mean, analytic_std = binomialinferencebenchmark(tmcmc, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "TMCMC normal mean analytical" begin
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: TMCMC normal mean analytical" setup = [BayesianUpdating] begin
+    n = 4000
+    burnin = 100
 
-        prior_mean = 2
-        prior_std = 10
+    prior_mean = 2
+    prior_std = 10
 
-        prior = Normal(prior_mean, prior_std)
+    prior = Normal(prior_mean, prior_std)
 
-        prior_sample_ = RandomVariable(prior, :x)
+    prior_sample_ = RandomVariable(prior, :x)
 
-        tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = normalmeanbenchmark(tmcmc, prior)
+    mc_samples, analytic_mean, analytic_std = normalmeanbenchmark(tmcmc, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "TMCMC normal var analytical" begin
-        n = 4000
-        burnin = 100
+@testitem "Bayesian Updating: TMCMC normal var analytical" setup = [BayesianUpdating] begin
+    n = 4000
+    burnin = 100
 
-        prior_shape = 30
-        prior_scale = 100
+    prior_shape = 30
+    prior_scale = 100
 
-        prior = InverseGamma(prior_shape, prior_scale)
+    prior = InverseGamma(prior_shape, prior_scale)
 
-        prior_sample_ = RandomVariable(prior, :x)
+    prior_sample_ = RandomVariable(prior, :x)
 
-        tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
 
-        mc_samples, analytic_mean, analytic_std = normalvarbenchmark(tmcmc, prior)
+    mc_samples, analytic_mean, analytic_std = normalvarbenchmark(tmcmc, prior)
 
-        @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
-        @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
-    end
+    @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
+    @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+end
 
-    @testset "TMCMC bivariategaussian" begin
+@testitem "Bayesian Updating: TMCMC bivariategaussian" setup = [BayesianUpdating] begin
     n = 10_000
     burnin = 5
 
@@ -335,5 +344,4 @@
     @test std(mcmc_samples.x) ≈ analytic_std_1 rtol = 0.1
     @test std(mcmc_samples.y) ≈ analytic_std_2 rtol = 0.1
     @test cor(mcmc_samples.x, mcmc_samples.y) ≈ analytic_cor rtol = 0.1
-end
 end
