@@ -53,13 +53,12 @@
     @testset "Vector of Intervals Plot" begin
         intervals = [Interval(1.0, 2.0), Interval(1.5, 2.5), Interval(2.0, 3.0)]
         plt = plot(intervals)
-        @test typeof(plt) <: Plots.Plot
-        @test length(plt.series_list) == 3
+        @test length(plt.series_list) == 2
         @test plt.series_list[1][:linewidth] == 2
         @test plt.series_list[2][:linewidth] == 2
-        @test plt.series_list[3][:fillrange] !== nothing
 
-        unshaded = plot(intervals; shade=false)
-        @test length(unshaded.series_list) == 2
+        shaded = plot(intervals; shade=true)
+        @test length(shaded.series_list) == 3
+        @test shaded.series_list[3][:fillrange] !== nothing
     end
 end
