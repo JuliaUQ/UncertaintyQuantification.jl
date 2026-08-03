@@ -5,6 +5,7 @@ DEFAULT_LEGEND = true
 DEFAULT_CDF = false
 DEFAULT_FILL_DISTRIBUTION=true
 DEFAULT_FILL_IMPRECISE=true
+DEFAULT_FILL_IMPRECISE_ECDF=false
 DEFAULT_DISTRIBUTION = :pdf
 DEFAULT_FILL = :gray
 DEFAULT_COLOUR_PDF = :blue
@@ -219,7 +220,7 @@ end
     seriesalpha --> DEFAULT_ALPHA
     seriestype := :shape
 
-    label := false
+    label --> false
 
     linecolor --> :black                        # Explicitly set edge color
     linewidth --> DEFAULT_INTERVAL_WIDTH        # Make edges more visible
@@ -236,7 +237,7 @@ end
     seriesalpha --> DEFAULT_ALPHA
     seriestype := :shape
 
-    label := false
+    label --> false
 
     linecolor := :black                         # Explicitly set edge color
     linewidth --> DEFAULT_INTERVAL_WIDTH        # Make edges more visible
@@ -261,32 +262,57 @@ end
 # Plots for samples of data frames
 ###
 
-@recipe function _plot(x::Vector{Interval})
+@recipe function _plot(x::Vector{Interval}; shade=DEFAULT_FILL_IMPRECISE_ECDF)
     if length(unique(x))==1
         return x[1]
     else
         grid --> DEFAULT_GRID
         legend --> DEFAULT_LEGEND
+        seriescolor --> :auto
 
-        # xlabel --> x[1].name
         ylabel --> "cdf"
         N_samples = length(x)
 
         lows = sort(lo.(x))
         his = sort(hi.(x))
 
-        is = range(0, 1, length=N_samples)
+        # Evaluate both empirical CDF bounds on a common grid so that the
+        # region between them can be shaded.
+        x_grid = sort(unique(vcat(lows, his)))
+        width = last(x_grid) - first(x_grid)
+        padding = abs(width * DEFAULT_PLOT_RANGE_EXTEND)
+        x_grid = vcat(first(x_grid) - padding, x_grid, last(x_grid) + padding)
 
-        @series begin
-            seriestype := :steppre
-            color --> DEFAULT_COLOUR_LOWER
-            lows, is
-        end
+        cdf_lo = searchsortedlast.(Ref(his), x_grid) ./ N_samples
+        cdf_hi = searchsortedlast.(Ref(lows), x_grid) ./ N_samples
 
         @series begin
             seriestype := :steppost
-            color --> DEFAULT_COLOUR_UPPER
-            his, is
+            alpha --> 1
+            linewidth --> DEFAULT_DISTRIBUTION_WIDTH
+            x_grid, cdf_hi
+        end
+
+        @series begin
+            primary := false
+            seriestype := :steppost
+            alpha --> 1
+            linewidth --> DEFAULT_DISTRIBUTION_WIDTH
+            label := ""
+            x_grid, cdf_lo
+        end
+
+        if shade
+            @series begin
+                primary := false
+                seriestype := :steppost
+                fillcolor := :match
+                fillrange := cdf_hi
+                fillalpha --> DEFAULT_ALPHA
+                linewidth --> 0
+                label := ""
+                x_grid, cdf_lo
+            end
         end
     end
 end

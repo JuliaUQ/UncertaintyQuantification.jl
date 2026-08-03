@@ -44,14 +44,22 @@
     @testset "Vector of IntervalBoxes Plot" begin
         xs = [Interval(1.0, 2.0), Interval(2.0, 3.0)]
         ys = [Interval(3.0, 4.0), Interval(4.0, 5.0)]
-        plt = plot(xs, ys)
+        plt = plot(xs, ys; label="boxes")
         @test typeof(plt) <: Plots.Plot
         @test plt.series_list[1][:seriestype] == :shape
+        @test plt.series_list[1][:label] == "boxes"
     end
 
     @testset "Vector of Intervals Plot" begin
         intervals = [Interval(1.0, 2.0), Interval(1.5, 2.5), Interval(2.0, 3.0)]
         plt = plot(intervals)
         @test typeof(plt) <: Plots.Plot
+        @test length(plt.series_list) == 3
+        @test plt.series_list[1][:linewidth] == 2
+        @test plt.series_list[2][:linewidth] == 2
+        @test plt.series_list[3][:fillrange] !== nothing
+
+        unshaded = plot(intervals; shade=false)
+        @test length(unshaded.series_list) == 2
     end
 end
