@@ -79,7 +79,11 @@ end
 function getresult(m::ExternalModel, path::String)
     result = map(e -> e.f(path), m.extractors)
     if m.cleanup
-        rm(path; recursive=true)
+        try
+            rm(path; recursive=true)
+        catch e
+            @warn "Error during cleanup: $e"
+        end
     end
     return result
 end

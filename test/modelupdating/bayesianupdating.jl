@@ -144,6 +144,26 @@
         return mcmc_samples, mean(posterior_exact), std(posterior_exact)
     end
 
+    function bivariategaussian(sampler::AbstractBayesianMethod, prior::Uniform)
+        analytic_mean = [-0.5, 0.5]
+        analytic_cov = [1 0.8; 0.8 1]
+
+        function logprior(df)
+            return logpdf.(prior, df.x) .+ logpdf.(prior, df.y)
+        end
+
+        function loglikelihood(df)
+            return [
+                logpdf(MvNormal(analytic_mean, analytic_cov), collect(x)) for
+                x in eachrow(df)
+            ]
+        end
+
+        mcmc_samples, _ = bayesianupdating(logprior, loglikelihood, UQModel[], sampler)
+
+        return mcmc_samples, analytic_mean, analytic_cov
+    end
+
     @testset "Single Component MH binomal inference analytical" begin
         proposal = Normal()
         x0 = (x=0.5,)
@@ -196,6 +216,48 @@
 
         @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
         @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
+    end
+
+    @testset "Single Component MH proposal" begin
+        proposal = Normal()
+        x0 = (x=3.0, y=1.0)
+        mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
+
+        @test isa(mh.proposal, Vector{<:UnivariateDistribution})
+        @test mh.proposal[1] == proposal
+        @test mh.proposal[2] == proposal
+
+        proposal_vec = [Uniform(-1, 1), Normal(0, 0.1)]
+        mh_vec = SingleComponentMetropolisHastings(proposal_vec, x0, 1000, 100)
+        @test mh_vec.proposal[1] == proposal_vec[1]
+        @test mh_vec.proposal[2] == proposal_vec[2]
+
+        @test_throws AssertionError SingleComponentMetropolisHastings(
+            proposal_vec, (; x=3.0), 1000, 100
+        )
+    end
+
+    @testset "Single Component MH bivariategaussian" begin
+        n = 100_000
+        burnin = 20_000
+
+        x0 = (x=0.0, y=0.0)
+
+        proposal = Normal(0, 1)
+
+        mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
+        mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, Uniform(-10, 10))
+
+        @test mean(mcmc_samples.x) ≈ analytic_mean[1] rtol = 0.1
+        @test mean(mcmc_samples.y) ≈ analytic_mean[2] rtol = 0.1
+
+        analytic_std_1 = sqrt(analytic_cov[1, 1])
+        analytic_std_2 = sqrt(analytic_cov[2, 2])
+        analytic_cor = analytic_cov[1, 2] / (analytic_std_1 * analytic_std_2)
+
+        @test std(mcmc_samples.x) ≈ analytic_std_1 rtol = 0.1
+        @test std(mcmc_samples.y) ≈ analytic_std_2 rtol = 0.1
+        @test cor(mcmc_samples.x, mcmc_samples.y) ≈ analytic_cor rtol = 0.1
     end
 
     @testset "TMCMC binomal inference analytical" begin
@@ -251,5 +313,27 @@
         @test mean(mc_samples.x) ≈ analytic_mean rtol = 0.1
         @test std(mc_samples.x) ≈ analytic_std rtol = 0.1
     end
-    
+
+    @testset "TMCMC bivariategaussian" begin
+    n = 10_000
+    burnin = 5
+
+    prior_dist = Uniform(-10, 10)
+
+    prior = RandomVariable.(prior_dist, [:x, :y])
+
+    mh = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
+    mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, prior_dist)
+
+    @test mean(mcmc_samples.x) ≈ analytic_mean[1] rtol = 0.1
+    @test mean(mcmc_samples.y) ≈ analytic_mean[2] rtol = 0.1
+
+    analytic_std_1 = sqrt(analytic_cov[1, 1])
+    analytic_std_2 = sqrt(analytic_cov[2, 2])
+    analytic_cor = analytic_cov[1, 2] / (analytic_std_1 * analytic_std_2)
+
+    @test std(mcmc_samples.x) ≈ analytic_std_1 rtol = 0.1
+    @test std(mcmc_samples.y) ≈ analytic_std_2 rtol = 0.1
+    @test cor(mcmc_samples.x, mcmc_samples.y) ≈ analytic_cor rtol = 0.1
+end
 end

@@ -38,8 +38,8 @@ n = 1000
 x0 = [[1., 1.],[3.,.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
@@ -60,8 +60,8 @@ n = 1000
 x0 = [[1., 1.],[3.,.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, "LBFGS", x0)
-MLE = MaximumLikelihoodBayesian(prior, "LBFGS", x0)
+MAP = MaximumAPosterioriBayesian(prior, x0)
+MLE = MaximumLikelihoodBayesian(prior, x0)
 
 samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
@@ -71,7 +71,7 @@ scatter(samples.θ1, samples.θ2; lim=[0, 4], label="TMCMC", xlabel="θ1", ylabe
 scatter!((MapEstimate.θ1, MapEstimate.θ2), label="MAP")
 scatter!((MLEstimate.θ1, MLEstimate.θ2), label="MLE")
 
-println(exp.(MLEstimate[!,:maxval]))
-println(exp.(MapEstimate[!,:maxval]))
+println(exp.(MLEstimate[!,:logMLE]))
+println(exp.(MapEstimate[!,:logMAP]))
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

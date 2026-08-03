@@ -113,12 +113,20 @@ function to_standard_normal_space!(
     return nothing
 end
 
-function to_standard_normal_space!(jd::JointDistribution{D,M}, _::DataFrame) where {D,M}
-    return error("Cannot map $(typeof(jd.d)) to standard normal space.")
+function to_standard_normal_space!(jd::JointDistribution{D,M}, df::DataFrame) where {D,M}
+    if isa(jd.d, AbstractTransportMap)
+        return to_standard_normal_space!(jd.d, df)
+    else
+        return error("Cannot map $(typeof(jd.d)) to standard normal space.")
+    end
 end
 
-function to_physical_space!(jd::JointDistribution{D,M}, _::DataFrame) where {D,M}
-    return error("Cannot map $(typeof(jd.d)) to physical space.")
+function to_physical_space!(jd::JointDistribution{D,M}, df::DataFrame) where {D,M}
+    if isa(jd.d, AbstractTransportMap)
+        return to_physical_space!(jd.d, df)
+    else
+        return error("Cannot map $(typeof(jd.d)) to physical space.")
+    end
 end
 
 function names(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable})
