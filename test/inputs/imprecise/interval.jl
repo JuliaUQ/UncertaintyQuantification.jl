@@ -1,6 +1,5 @@
-using UncertaintyQuantification: hi, lo
-
-@testset "Interval" begin
+@testitem "Interval" begin
+    using UncertaintyQuantification: lo, hi
     name = :l
     lb = 0.14
     ub = 0.16
@@ -26,7 +25,7 @@ using UncertaintyQuantification: hi, lo
     @test lo(2.0) == 2.0
 end
 
-@testset "IntervalVariable" begin
+@testitem "IntervalVariable" setup = [TestSetup] begin
     name = :l
     lb = 0.14
     ub = 0.16

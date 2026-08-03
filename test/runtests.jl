@@ -8,50 +8,50 @@ using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
 using Plots
+using TestItemRunner
 using UncertaintyQuantification
 
-include("inputs/empiricaldistribution.jl")
-include("dynamics/psd.jl")
-include("inputs/parameter.jl")
-include("inputs/gaussianmixtures.jl")
-include("inputs/jointdistribution.jl")
-include("inputs/imprecise/interval.jl")
-include("inputs/imprecise/p-box.jl")
-include("inputs/randomvariables/randomvariable.jl")
-include("inputs/randomvariables/distributionparameters.jl")
-include("inputs/jointdistribution.jl");
-include("inputs/inputs.jl")
-include("inputs/transportmaps.jl")
-include("inputs/stochasticprocesses/spectralrepresentation.jl")
-include("inputs/stochasticprocesses/models.jl")
+@testsnippet TestSetup begin
+    using Copulas
+    using DataFrames
+    using Distributed
+    using HCubature
+    using HypothesisTests
+    using InteractiveUtils
+    using Random
+    using StatsBase: fit, Histogram, corkendall
+end
 
-include("models/external/solvers.jl")
-include("models/external/externalmodel.jl")
+@testsnippet ReadWriteUtil begin
+    # Function to check if (exact) line exits in file
+    function isline(file, string_check)
+        for (i, line) in enumerate(eachline(file))
+            if (line == string_check)
+                return true
+            end
+        end
+
+        return false
+    end
+
+    # Checks the pattern doesn't exist anywhere
+    function isnotanywhere(file, string_check)
+        for (i, line) in enumerate(eachline(file))
+            if (m = match(Regex(string_check), line); m !== nothing)
+                return false
+            end
+        end
+
+        return true
+    end
+
+end
 include("models/model.jl")
-include("models/polyharmonicspline.jl")
-include("models/pce/pcebases.jl")
-include("models/pce/polynomialchaosexpansion.jl")
-include("models/responsesurface.jl")
-include("models/basisfunctionmodels.jl")
-include("models/ipm.jl")
-include("models/imprecise/propagation.jl")
-
-include("modelupdating/bayesianupdating.jl")
-include("modelupdating/bayesianMAP.jl")
 include("modelupdating/bayesianTM.jl")
+include("inputs/jointdistribution.jl")
+include("inputs/imprecise/p-box.jl")
+@run_package_tests
 
-include("reliability/form.jl")
-include("reliability/probabilityoffailure.jl")
-include("reliability/probabilityoffailure_imprecise.jl")
-
-include("sensitivity/gradient.jl")
-include("sensitivity/sobolindices.jl")
-
-include("simulations/doe.jl")
-include("simulations/montecarlo.jl")
-include("simulations/subset.jl")
-
-include("util/fourier-transform.jl")
 
 include("plotting/plotting.jl")
 

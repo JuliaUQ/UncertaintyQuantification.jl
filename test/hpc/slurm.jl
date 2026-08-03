@@ -161,7 +161,6 @@ include("../test_utilities/read_write_utils.jl")
     )
 
     @testset "Run jobs" begin
-
         @testset "unbatched" begin
             slurm = SlurmInterface(options)
 
