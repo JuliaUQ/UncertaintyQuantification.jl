@@ -4,7 +4,6 @@ using Distributed
 using HCubature
 using HypothesisTests
 using InteractiveUtils
-using QuasiMonteCarlo
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
