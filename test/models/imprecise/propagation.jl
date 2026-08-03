@@ -1,4 +1,4 @@
-@testset "Interval propagation" begin
+@testitem "Interval propagation" begin
     X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1)), :X1)
     X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
     X3 = RandomVariable(Normal(0, 1), :X3)
