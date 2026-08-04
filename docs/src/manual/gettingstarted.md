@@ -47,6 +47,23 @@ to_standard_normal_space!(x, samples)
 to_physical_space!(x, samples)
 ```
 
+Examples of some distributions available from *Distributions.jl* are shown below.
+
+```@example rv
+using Plots #hide
+
+inputs = [    #hide
+    RandomVariable(Normal(0, 1),       :normal),        #hide
+    RandomVariable(Beta(2, 5),         :beta),          #hide
+    RandomVariable(Gamma(2, 1),        :gamma),         #hide
+    RandomVariable(Exponential(1),     :exponential),   #hide
+    RandomVariable(Uniform(0, 0.3),      :uniform),     #hide
+    RandomVariable(LogNormal(0, 1),    :lognormal),     #hide
+]#hide
+
+plot(inputs)#hide
+```
+
 ### Imprecise Probabilities
 
 To represent purely epistemic uncertainty we provide the [`IntervalVariable`](@ref) type.
@@ -73,6 +90,21 @@ Truncated p-boxes can be created by passing optional lower and upper bounds to t
  x = RandomVariable(pbox, :x)
 ```
 
+Examples of some parametric p-boxes are shown below.
+
+```@example rv
+inputs = [     #hide
+    RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2),      :σ => Interval(0.5, 2))),   :normal),      #hide
+    RandomVariable(ProbabilityBox{Beta}(Dict(:α => Interval(1, 3),         :β => Interval(2, 5))),     :beta),        #hide
+    RandomVariable(ProbabilityBox{Gamma}(Dict(:α => Interval(1, 3),        :θ => Interval(0.5, 2))),   :gamma),       #hide
+    RandomVariable(ProbabilityBox{Exponential}(Dict(:θ => Interval(0.5, 2))),                          :exponential), #hide
+    RandomVariable(ProbabilityBox{Uniform}(Dict(:a => Interval(-1, 0),     :b => Interval(1, 2))),     :uniform),     #hide
+    RandomVariable(ProbabilityBox{LogNormal}(Dict(:μ => Interval(-1, 1),   :σ => Interval(0.5, 2))),   :lognormal),   #hide
+]#hide
+
+plot(inputs)#hide
+
+```
 ## Dependencies
 
 Modelling of dependent variables is exposed through the [`JointDistribution`](@ref). In its simplest form this is a wrapper around any implementation of the `MultivariateDistribution` interface defined by *Distributions.jl*. To construct a [`JointDistribution`](@ref) pass the `MultivariateDistribution` and a `vector{`Symbol`}` of matching dimension.

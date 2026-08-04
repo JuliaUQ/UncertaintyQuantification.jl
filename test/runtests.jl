@@ -7,6 +7,7 @@ using InteractiveUtils
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
+using Plots
 using TestItemRunner
 using UncertaintyQuantification
 
@@ -51,6 +52,8 @@ include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")
 @run_package_tests
 
+
+include("plotting/plotting.jl")
 
 if Sys.islinux()
     HPC = false
