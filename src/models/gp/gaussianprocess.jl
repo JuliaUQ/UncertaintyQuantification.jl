@@ -7,6 +7,21 @@ struct GaussianProcess <: UQModel
     training_data::DataFrame
 end
 
+# function to check the inputs to a GaussianProcess constructor
+function check_gp_input(σ²::Float64, learn_noise::Bool)
+    # check if σ² is ≥0, not using @assert because apparently it can be turned off and shouldn't be used for function input checking (https://discourse.julialang.org/t/efficient-use-of-test-or-assert/75895/4)
+    if σ²<0.0
+        throw(DomainError(σ², "σ² < 0"))
+    end
+
+    # σ² should be >0, otherwise the parameterization throws an error
+    if learn_noise && σ²<eps()
+        σ² = 1e-5
+        @warn "learn_noise was set but σ² is too small, setting σ² = $(σ²)"
+    end
+    return σ²
+end
+
 """
     GaussianProcess(
         gp::GP, 
@@ -48,6 +63,8 @@ function GaussianProcess(
     learn_noise::Bool=false,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 ) 
+    σ² = check_gp_input(σ², learn_noise)
+
     input = propertynames(data[:, Not(output)]) # Is this always the case?
 
     # build in- and output transforms
@@ -58,14 +75,9 @@ function GaussianProcess(
     x = transform(data, input_transformer)
     y = transform(data, output_transformer)
 
-    # build gp
-    _gp = AbstractGPs.posterior(gp(x), y)
-
     # optimize hyperparameters
     _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
     posterior_gp = posterior(_gp(x), y)
-
-    println("σ optimized: ", _gp.σ²)
 
     return GaussianProcess(
         posterior_gp,
@@ -127,6 +139,9 @@ function GaussianProcess(
     learn_noise::Bool=false,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
+
+    σ² = check_gp_input(σ², learn_noise)
+
     # build DataFrame
     data = sample(input, experimentaldesign)
     evaluate!(model, data)
@@ -142,6 +157,7 @@ function GaussianProcess(
                            optimizer=optimizer)
 end
 
+# Helper constructor to wrap `input` into a Vector
 function GaussianProcess(
     gp::GP,
     input::UQInput,
@@ -159,6 +175,7 @@ function GaussianProcess(
     )
 end
 
+# Helper constructor to use default GP; or take mean function and/or kernel as inputs instead of GP
 function GaussianProcess(
     input::Union{UQInput, Vector{<:UQInput}},
     model::Union{UQModel, Vector{<:UQModel}},
@@ -184,6 +201,7 @@ function GaussianProcess(
 
 end
 
+# Helper constructor to construct a GP from only data without providing a GP, user can define mean function and kernel
 function GaussianProcess(
     data::DataFrame,
     output::Symbol;

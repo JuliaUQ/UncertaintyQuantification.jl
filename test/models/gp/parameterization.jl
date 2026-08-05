@@ -179,41 +179,5 @@ end
             @test only(gp2.mean.c) ≈ 1.0
             @test gp2.kernel isa SqExponentialKernel
         end
-        @testset "NoisyGP round-trip" begin
-            gp = with_gaussian_noise(GP(ZeroMean(), SqExponentialKernel()), 0.01)
-            θ = UncertaintyQuantification.extract_parameters(gp)
-            gp2 = UncertaintyQuantification.apply_parameters(gp, ParameterHandling.value(θ))
-            @test gp2.σ² ≈ 0.01
-            @test gp2.gp.kernel isa SqExponentialKernel
-        end
-        @testset "NoisyGP noise variance is constrained positive" begin
-            gp = with_gaussian_noise(GP(ZeroMean(), SqExponentialKernel()), 0.01)
-            _, θ = UncertaintyQuantification.parameterize(gp)
-            θ_flat, unflatten = ParameterHandling.flatten(θ)
-            # Constraint should keep σ² > 0
-            θ_flat_negative = fill(-1000.0, length(θ_flat))
-            gp2 = UncertaintyQuantification.apply_parameters(
-                gp, ParameterHandling.value(unflatten(θ_flat_negative))
-            )
-            @test gp2.σ² > 0
-        end
-    end
-
-    @testset "parameterize" begin
-        @testset "model(θ) recovers original object" begin
-            gp = with_gaussian_noise(GP(ConstMean(2.0), SqExponentialKernel()), 0.05)
-            model, θ = UncertaintyQuantification.parameterize(gp)
-            gp2 = model(θ)
-            @test gp2.σ² ≈ gp.σ²
-            @test gp2.gp.mean.c ≈ gp.gp.mean.c
-        end
-        @testset "flatten/unflatten round-trip preserves values" begin
-            gp = with_gaussian_noise(
-                GP(ConstMean(1.5), SqExponentialKernel() ∘ ScaleTransform(2.0)), 0.1
-            )
-            _, θ = UncertaintyQuantification.parameterize(gp)
-            θ_flat, unflatten = ParameterHandling.flatten(θ)
-            @test ParameterHandling.value(unflatten(θ_flat)) == ParameterHandling.value(θ)
-        end
     end
 end
