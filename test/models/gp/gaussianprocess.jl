@@ -46,18 +46,6 @@ end
             )
             #check if σ² was left unchanged in the optimization
             @test gp.σ² == 0.0
-            df_mean = create_test_data(n_input_samples, lower, upper, 1)
-            df_var = create_test_data(n_input_samples, lower, upper, 1)
-            df_mean_var = create_test_data(n_input_samples, lower, upper, 1)
-            evaluate!(gp, df_mean; mode=:mean)
-            evaluate!(gp, df_var; mode=:var)
-            evaluate!(gp, df_mean_var; mode=:mean_and_var)
-            @test :y_mean in propertynames(df_mean)
-            @test !(:y_var in propertynames(df_mean))
-            @test :y_var in propertynames(df_var)
-            @test !(:y_mean in propertynames(df_var))
-            @test :y_mean in propertynames(df_mean_var)
-            @test :y_var in propertynames(df_mean_var)
 
             gp = GaussianProcess(
                 data, :y;
@@ -91,6 +79,24 @@ end
                 learn_noise=true
             )
             @test gp.σ² != σ²
+
+            df_mean = create_test_data(n_input_samples, lower, upper, 1)
+            df_var = create_test_data(n_input_samples, lower, upper, 1)
+            df_mean_var = create_test_data(n_input_samples, lower, upper, 1)
+            df_samples = create_test_data(n_input_samples, lower, upper, 1)
+
+            evaluate!(gp, df_mean; mode=:mean)
+            evaluate!(gp, df_var; mode=:var)
+            evaluate!(gp, df_mean_var; mode=:mean_and_var)
+            evaluate!(gp, df_samples; mode=:sample, n_samples=1)
+            @test :y_mean in propertynames(df_mean)
+            @test !(:y_var in propertynames(df_mean))
+            @test :y_var in propertynames(df_var)
+            @test !(:y_mean in propertynames(df_var))
+            @test :y_mean in propertynames(df_mean_var)
+            @test :y_var in propertynames(df_mean_var)
+            @test :y_sample_1 in propertynames(df_samples)
+            @test_throws ArgumentError evaluate!(gp, df_mean; mode=:error)
 
             @test_throws DomainError gp = GaussianProcess(
                             data, :y;
@@ -104,8 +110,23 @@ end
         end
         @testset "UQInput" begin
             xrv = [Parameter(1.5, :p), RandomVariable(Uniform(lower, upper), :x1)]
+            xrv_single = RandomVariable(Uniform(lower, upper), :x1)
             model = Model(
                 df -> df.p .* sin.(df.x1), :y
+            )
+            model_single = Model(
+                df -> 1.5 .* sin.(df.x1), :y
+            )
+
+            gp = GaussianProcess(
+                xrv_single, model_single, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=0.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
             )
 
             gp = GaussianProcess(
@@ -118,20 +139,7 @@ end
                 kernel=kernel,
                 learn_noise=false
             )
-
             @test gp.σ² == 0.0
-            df_mean = sample(xrv, n_input_samples)
-            df_var = sample(xrv, n_input_samples)
-            df_mean_var = sample(xrv, n_input_samples)
-            evaluate!(gp, df_mean; mode=:mean)
-            evaluate!(gp, df_var; mode=:var)
-            evaluate!(gp, df_mean_var; mode=:mean_and_var)
-            @test :y_mean in propertynames(df_mean)
-            @test !(:y_var in propertynames(df_mean))
-            @test :y_var in propertynames(df_var)
-            @test !(:y_mean in propertynames(df_var))
-            @test :y_mean in propertynames(df_mean_var)
-            @test :y_var in propertynames(df_mean_var)
 
             gp = GaussianProcess(
                 xrv, model, :y;
@@ -168,6 +176,19 @@ end
                 learn_noise=true
             )
             @test gp.σ² != σ²
+
+            df_mean = sample(xrv, n_input_samples)
+            df_var = sample(xrv, n_input_samples)
+            df_mean_var = sample(xrv, n_input_samples)
+            evaluate!(gp, df_mean; mode=:mean)
+            evaluate!(gp, df_var; mode=:var)
+            evaluate!(gp, df_mean_var; mode=:mean_and_var)
+            @test :y_mean in propertynames(df_mean)
+            @test !(:y_var in propertynames(df_mean))
+            @test :y_var in propertynames(df_var)
+            @test !(:y_mean in propertynames(df_var))
+            @test :y_mean in propertynames(df_mean_var)
+            @test :y_var in propertynames(df_mean_var)
 
             @test_throws DomainError gp = GaussianProcess(
                 xrv, model, :y;

@@ -167,11 +167,16 @@ function GaussianProcess(
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
-    learn_noise::Bool=false
+    learn_noise::Bool=false,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
     return GaussianProcess(
         gp, [input], model, output, experimentaldesign; 
-        input_transform=input_transform, output_transform=output_transform, σ²=σ², learn_noise=learn_noise
+        input_transform=input_transform,
+        output_transform=output_transform,
+        σ²=σ²,
+        learn_noise=learn_noise,
+        optimizer=optimizer
     )
 end
 
