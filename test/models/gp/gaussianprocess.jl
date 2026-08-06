@@ -30,6 +30,157 @@ end
         IdentityTransformChoice, UnitRangeTransformChoice, ZScoreTransformChoice
     ]
 
+    @testset "GP Optimization" begin
+        @testset "Dataframe" begin
+            x = collect(range(lower, stop=upper, length=n_input_samples))
+            y = sin.(x)
+            data = DataFrame(:x1 => x, :y => y)
+            gp = GaussianProcess(
+                data, :y;
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=0.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
+            )
+            #check if σ² was left unchanged in the optimization
+            @test gp.σ² == 0.0
+            df_mean = create_test_data(n_input_samples, lower, upper, 1)
+            df_var = create_test_data(n_input_samples, lower, upper, 1)
+            df_mean_var = create_test_data(n_input_samples, lower, upper, 1)
+            evaluate!(gp, df_mean; mode=:mean)
+            evaluate!(gp, df_var; mode=:var)
+            evaluate!(gp, df_mean_var; mode=:mean_and_var)
+            @test :y_mean in propertynames(df_mean)
+            @test !(:y_var in propertynames(df_mean))
+            @test :y_var in propertynames(df_var)
+            @test !(:y_mean in propertynames(df_var))
+            @test :y_mean in propertynames(df_mean_var)
+            @test :y_var in propertynames(df_mean_var)
+
+            gp = GaussianProcess(
+                data, :y;
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=0.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=true
+            )
+            @test gp.σ² > 0.0
+
+            gp = GaussianProcess(
+                data, :y;
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=σ²,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
+            )
+            @test gp.σ² == σ²
+
+            gp = GaussianProcess(
+                data, :y;
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=σ²,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=true
+            )
+            @test gp.σ² != σ²
+
+            @test_throws DomainError gp = GaussianProcess(
+                            data, :y;
+                            input_transform=IdentityTransformChoice(),
+                            output_transform=IdentityTransformChoice(),
+                            σ²=-1.0,
+                            mean_fct=mean_fct,
+                            kernel=kernel,
+                            learn_noise=false
+                        )
+        end
+        @testset "UQInput" begin
+            xrv = [Parameter(1.5, :p), RandomVariable(Uniform(lower, upper), :x1)]
+            model = Model(
+                df -> df.p .* sin.(df.x1), :y
+            )
+
+            gp = GaussianProcess(
+                xrv, model, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=0.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
+            )
+
+            @test gp.σ² == 0.0
+            df_mean = sample(xrv, n_input_samples)
+            df_var = sample(xrv, n_input_samples)
+            df_mean_var = sample(xrv, n_input_samples)
+            evaluate!(gp, df_mean; mode=:mean)
+            evaluate!(gp, df_var; mode=:var)
+            evaluate!(gp, df_mean_var; mode=:mean_and_var)
+            @test :y_mean in propertynames(df_mean)
+            @test !(:y_var in propertynames(df_mean))
+            @test :y_var in propertynames(df_var)
+            @test !(:y_mean in propertynames(df_var))
+            @test :y_mean in propertynames(df_mean_var)
+            @test :y_var in propertynames(df_mean_var)
+
+            gp = GaussianProcess(
+                xrv, model, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=0.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=true
+            )
+            @test gp.σ² > 0.0
+
+            gp = GaussianProcess(
+                xrv, model, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=σ²,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
+            )
+            @test gp.σ² == σ²
+
+            gp = GaussianProcess(
+                xrv, model, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=σ²,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=true
+            )
+            @test gp.σ² != σ²
+
+            @test_throws DomainError gp = GaussianProcess(
+                xrv, model, :y;
+                experimentaldesign=design,
+                input_transform=IdentityTransformChoice(),
+                output_transform=IdentityTransformChoice(),
+                σ²=-1.0,
+                mean_fct=mean_fct,
+                kernel=kernel,
+                learn_noise=false
+            )
+        end
+    end
     @testset "1D Input" begin
         @testset "Dataframe" begin
             x = collect(range(lower, stop=upper, length=n_input_samples))
@@ -42,87 +193,22 @@ end
                             data, :y;
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel
-                        )
-                        @test_throws ArgumentError GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
                             σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel
                         )
                     else
-                        @test_throws DomainError gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=-1.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
                         gp = GaussianProcess(
                             data, :y;
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
+                            σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel,
                             learn_noise=false
                         )
                          #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == 0.0
-                        df = create_test_data(n_input_samples, lower, upper, 1)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #if learn_noise, σ² should be set to >0
-                        @test gp.σ²>0.0
-                        df = create_test_data(n_input_samples, lower, upper, 1)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        #check if σ² was left unchanged in the optimization
                         @test gp.σ² == σ²
-                        df = create_test_data(n_input_samples, lower, upper, 1)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² != σ²
                         df = create_test_data(n_input_samples, lower, upper, 1)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
@@ -144,66 +230,12 @@ end
                             experimentaldesign=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        @test_throws ArgumentError GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
                             σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel,
                             learn_noise=false
                         )
                     else
-                        @test_throws DomainError gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=-1.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == 0.0
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #if learn_noise, σ² should be set to >0
-                        @test gp.σ²>0.0
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
                         gp = GaussianProcess(
                             xrv, model, :y;
                             experimentaldesign=design,
@@ -214,25 +246,6 @@ end
                             kernel=kernel,
                             learn_noise=false
                         )
-                        #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == σ²
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² != σ²
                         df = sample(xrv, n_input_samples)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
@@ -254,62 +267,12 @@ end
                             data, :y;
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        @test_throws ArgumentError GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
                             σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel,
-                            learn_noise=true
+                            learn_noise=false
                         )
                     else
-                        @test_throws DomainError GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=-1.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == 0.0
-                        df = create_test_data(n_input_samples, lower, upper, 2)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² > 0.0
-                        df = create_test_data(n_input_samples, lower, upper, 2)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
                         gp = GaussianProcess(
                             data, :y;
                             input_transform=input_transform(),
@@ -319,24 +282,6 @@ end
                             kernel=kernel,
                             learn_noise=false
                         )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² == σ²
-                        df = create_test_data(n_input_samples, lower, upper, 2)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            data, :y;
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² != σ²
                         df = create_test_data(n_input_samples, lower, upper, 2)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
@@ -358,16 +303,6 @@ end
                             experimentaldesign=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        @test_throws ArgumentError GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
                             σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel,
@@ -379,64 +314,11 @@ end
                             experimentaldesign=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=false
-                        )
-                        #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == 0.0
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=0.0,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #if learn_noise, σ² should be set to >0
-                        @test gp.σ²>0.0
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
                             σ²=σ²,
                             mean_fct=mean_fct,
                             kernel=kernel,
                             learn_noise=false
                         )
-                        #check if σ² was left unchanged in the optimization
-                        @test gp.σ² == σ²
-                        df = sample(xrv, n_input_samples)
-                        evaluate!(gp, df; mode=:mean_and_var)
-                        @test :y_mean in propertynames(df)
-                        @test :y_var in propertynames(df)
-
-                        gp = GaussianProcess(
-                            xrv, model, :y;
-                            experimentaldesign=design,
-                            input_transform=input_transform(),
-                            output_transform=output_transform(),
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_noise=true
-                        )
-                        #check if σ² was changed in the optimization
-                        @test gp.σ² != σ²
                         df = sample(xrv, n_input_samples)
                         evaluate!(gp, df; mode=:mean_and_var)
                         @test :y_mean in propertynames(df)
