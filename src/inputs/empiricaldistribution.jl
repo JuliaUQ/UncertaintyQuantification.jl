@@ -5,30 +5,51 @@
     The kernel used is Gaussian and the bandwidth is obtained through the Sheather-Jones method.
     The support is inferred from the kde using numerical root finding.
     The `cdf` and `quantile` functions are linearly interpolated using `n` data points.
+
+    For large datasets linear binning can be used by passing the keyword `nbins`.
 """
 struct EmpiricalDistribution <: ContinuousUnivariateDistribution
-    data::Vector{<:Real}
+    data::Union{AbstractVector{<:Real},BinnedData}
     lb::Real
     ub::Real
     h::Real
     c::Spline1D
     q::Spline1D
 
-    function EmpiricalDistribution(data::Vector{<:Real}, n::Integer=10000)
-        h = sheather_jones_bandwidth(data)
+    function EmpiricalDistribution(
+        X::AbstractVector{<:Real}, n::Integer=10000; nbins::Integer=0
+    )
+        h, data = sheather_jones_bandwidth(X, nbins)
 
-        lb = find_zero(u -> kde(h, u, data), minimum(data), Order2())
+        f = u -> kde(h, u, data) - eps(eltype(X))
 
-        ub = find_zero(u -> kde(h, u, data), maximum(data), Order2())
+        xmin = minimum(X)
+        xmax = maximum(X)
+
+        lb = if f(xmin - 10 * h) < 0 && f(xmin) > 0
+            find_zero(f, (xmin - 10 * h, xmin); maxevals=10^3)
+        else
+            @warn "EmpiricalDistribution: Unable to compute compute accurate lower bound."
+            xmin - 10 * h # conservative estimate for the lower bound
+        end
+
+        ub = if f(xmax) > 0 && f(xmax + 10 * h) < 0
+            find_zero(f, (xmax, xmax + 10 * h); maxevals=10^3)
+        else
+            @warn "EmpiricalDistribution: Unable to compute compute accurate lower bound."
+            xmax + 10 * h # conservative estimate for the upper bound
+        end
 
         x = collect(range(lb, ub, n))
+
+        f = u -> kde(h, u, data)
 
         y = zeros(eltype(x), size(x))
         for i in eachindex(x)
             y[i] = if i == 1
-                quadgk(x -> kde(h, x, data), lb, x[i])[1]
+                quadgk(f, lb, x[i])[1]
             else
-                y[i - 1] + quadgk(x -> kde(h, x, data), x[i - 1], x[i])[1]
+                y[i - 1] + quadgk(f, x[i - 1], x[i])[1]
             end
         end
 

@@ -23,5 +23,5 @@ JointDistribution
 ```@docs
 sample(rv::RandomVariable, n::Integer=1)
 sample(inputs::Vector{<:UQInput}, n::Integer=1)
-
+GaussianMixtureModel
 ```

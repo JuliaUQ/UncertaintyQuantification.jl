@@ -1,4 +1,4 @@
-const REPO = "FriesischScott/UncertaintyQuantification.jl";
+const REPO = "JuliaUQ/UncertaintyQuantification.jl";
 
 export default {
   async load() {

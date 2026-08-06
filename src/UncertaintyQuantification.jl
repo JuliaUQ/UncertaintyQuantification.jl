@@ -1,10 +1,14 @@
 module UncertaintyQuantification
 
+using ADTypes
 using Bootstrap
+using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
+using DifferentiationInterface
 using Dierckx
+using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -13,6 +17,7 @@ using HCubature
 using LinearAlgebra
 using MeshAdaptiveDirectSearch
 using Monomials
+using Mooncake: Mooncake
 using Mustache
 using Optim
 using Primes
@@ -22,12 +27,17 @@ using Random
 using Reexport
 using Roots
 using StatsBase
+using TransportMaps
 
+@reexport using TransportMaps
 @reexport using Distributions
+@reexport using DifferentiationInterface
 
-import Base: rand, names, copy, run, length
-import Distributions: cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var
-import Statistics: mean, var
+import Base: rand, names, copy, run, length, eltype
+import Distributions:
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
+import Statistics: mean, var, std
+import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -38,16 +48,14 @@ Abstract supertype for all model types
 """
 abstract type UQModel end
 
-abstract type Copula end
-
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
 abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 
 """
-    AbstractBayesianMethod
+	AbstractBayesianMethod
 
-Subtypes are used to dispatch to the differenct MCMC methods in [`bayesianupdating`](@ref).
+Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
 
 Subtypes are:
 
@@ -57,9 +65,9 @@ Subtypes are:
 abstract type AbstractBayesianMethod end
 
 """
-    AbstractBayesianPointEstimate
+	AbstractBayesianPointEstimate
 
-Subtypes are used to dispatch to the differenct point estimation methods in [`bayesianupdating`](@ref).
+Subtypes are used to dispatch to the different point estimation methods in [`bayesianupdating`](@ref).
 
 Subtypes are:
 
@@ -71,6 +79,8 @@ abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
 
+abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
+
 # Types
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
@@ -80,9 +90,9 @@ export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractQuasiMonteCarlo
 export AbstractSimulation
+export AbstractTransportMap
 export Copula
 export DeterministicUQInput
-# export NISS  # TODO not sure if needed
 export RandomUQInput
 export UQInput
 export UQModel
@@ -91,6 +101,7 @@ export UQModel
 export AdvancedLineSampling
 export EmpiricalDistribution
 export BackwardFiniteDifferences
+export BinnedData
 export BoxBehnken
 export CentralComposite
 export CentralFiniteDifferences
@@ -105,7 +116,7 @@ export FORM
 export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
-export GaussianCopula
+export GaussianMixtureModel
 export GaussQuadrature
 export GEMCS_RS_HDMR
 export HaltonSampling
@@ -115,6 +126,7 @@ export Interval
 export IntervalVariable
 export JointDistribution
 export KanaiTajimi
+export LaplaceEstimateBayesian
 export LatinHypercubeSampling
 export LatticeRuleSampling
 export LeastSquares
@@ -147,7 +159,11 @@ export SubSetInfinity
 export SubSetInfinityAdaptive
 export SubSetSimulation
 export TransitionalMarkovChainMonteCarlo
+export TransportMap
+export TransportMapFromSamples
+export TransportMapBayesian
 export TwoLevelFactorial
+export UQTargetDensity
 
 # Methods
 export bayesianupdating
@@ -163,8 +179,13 @@ export gradient
 export gradient_in_standard_normal_space
 export gemcs_rs_hdmr
 export lemcs_cut_hdmr
+export linear_binning
+export logpdf
+export mapfromdensity
+export mapfromsamples
 export mean
 export multivariate_indices
+export pdf
 export periodogram
 export polynomialchaos
 export probability_of_failure
@@ -175,10 +196,16 @@ export quadrature_weights
 export rand
 export sample
 export sobolindices
-export to_copula_space
 export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
+export variancediagnostic
+
+include("util/binning.jl")
+include("util/fourier-transform.jl")
+include("util/wrap.jl")
+include("util/imprecise.jl")
+include("util/kde.jl")
 
 include("inputs/empiricaldistribution.jl")
 include("inputs/inputs.jl")
@@ -189,8 +216,9 @@ include("inputs/imprecise/p-box.jl")
 
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
-include("inputs/copulas/gaussian.jl")
+include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
+include("inputs/transportmaps.jl")
 
 include("dynamics/psd.jl")
 include("inputs/stochasticprocesses/spectralrepresentation.jl")
@@ -212,6 +240,7 @@ include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
 
 include("modelupdating/bayesianMAP.jl")
+include("modelupdating/bayesianTM.jl")
 include("modelupdating/bayesianupdating.jl")
 
 include("sensitivity/finitedifferences.jl")
@@ -229,10 +258,5 @@ include("reliability/probabilityoffailure.jl")
 include("reliability/probabilityoffailure_imprecise.jl")
 include("reliability/niss.jl")
 include("sensitivity/sobolindices.jl")
-
-include("util/fourier-transform.jl")
-include("util/wrap.jl")
-include("util/imprecise.jl")
-include("util/kde.jl")
 
 end

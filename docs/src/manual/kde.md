@@ -41,3 +41,15 @@ Next, we plot the normalized histogram of the data and the resulting PDF.
 ```
 
 ![Kernel Density Plot](kernel-density.svg)
+
+!!! note "Multivariate Density Estimation with Gaussian Mixture Models"
+    Multivariate density estimation can be performed using Gaussian mixture models.
+    For more information see [Gaussian Mixture Models](@ref).
+
+## Large datasets
+
+For large datasets the numerical demand required can be prohibitive. To still estimate a density we can use linear binning [jonesErrorsInvolvedComputing1983](@cite) by passing the `nbins` keyword. This will discretize the data on a linear grid. For each data point, weights are assigned proportionally to the distance to the two bordering grid points. Note, that grid points with a weight of zero are discarded.
+
+```julia
+d = EmpiricalDistribution(x; nbins=1000)
+```

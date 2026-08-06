@@ -82,4 +82,12 @@
             @test all(abs.(SNS_samples[!, :l] .- SNS_samples_before[!, :l]) .<= 10^-10)
         end
     end
+
+    @testset "Type Promotion" begin
+        x = RandomVariable(Normal(), :x)
+        y = RandomVariable(Uniform(), :y)
+
+        @test [x, x] isa Vector{RandomVariable{Normal{Float64}}}
+        @test [x, y] isa Vector{RandomVariable{<:UnivariateDistribution}}
+    end
 end

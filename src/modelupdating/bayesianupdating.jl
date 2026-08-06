@@ -207,13 +207,11 @@ function bayesianupdating(
 
         weights = FrequencyWeights(wⱼ ./ sum(wⱼ))
 
-        idx = StatsBase.sample(
-            collect(1:(tmcmc.n)), FrequencyWeights(wⱼ ./ sum(wⱼ)), tmcmc.n; replace=true
-        )
+        idx = StatsBase.sample(collect(1:(tmcmc.n)), weights, tmcmc.n; replace=true)
 
         θⱼ⁺ = θⱼ[idx, :]
 
-        Σⱼ = tmcmc.β^2 * cov(covariance_method, Matrix(θⱼ[:, rv_names]), weights)
+        Σⱼ = tmcmc.β^2 * cov(covariance_method, Matrix(θⱼ⁺[:, rv_names]))
 
         # Run inner MH algorithm
 
@@ -266,6 +264,10 @@ function bayesianupdating(
         βⱼ = βⱼ⁺
         θⱼ = θⱼ⁺
     end
+
+    model_calls = tmcmc.n * (1 + j * (1 + tmcmc.burnin))
+    @debug "Model Calls" model_calls
+
     return θⱼ, S
 end
 

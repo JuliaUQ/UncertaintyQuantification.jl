@@ -42,14 +42,15 @@
     @test_logs (:warn, r"The frequency of the signal") SpectralRepresentation(sd, t, :ShnzkNySR)
 
     @testset "Reliability" begin
-        ω = collect(range(0, 150, 100))
+        
+        ω = collect(range(0, 50, 100))
 
         cp = CloughPenzien(ω, 0.1, 0.8π, 0.6, 8π, 0.6)
 
-        gm = SpectralRepresentation(cp, collect(range(0, 10, 100)), :gm)
+        gm = SpectralRepresentation(cp, collect(range(0, 10, 200)), :gm)
         gm_model = StochasticProcessModel(gm)
 
-        capacity = Parameter(65, :cap)
+        capacity = Parameter(25, :cap)
 
         function limitstate(df)
             return df.cap - map(sum, df.gm)
@@ -62,8 +63,8 @@
 
         pf_mc, _, _ = probability_of_failure(models, limitstate, inputs, mc)
 
-        # Reference solution obtained with 10^6 samples: 0.004217
-        @test 0.0028 < pf_mc < 0.0069 # 99 percentiles obtained from 5000 independent runs with 10^4 samples
+        # Reference solution obtained with 10^6 samples: 0.003529
+        @test 0.001 < pf_mc < 0.0064 # 99 percentiles obtained from 5000 independent runs with 10^4 samples
 
         # We use subset to confirm that the mappings to sns are done correctly
 
@@ -71,6 +72,6 @@
 
         pf_ss, _, _ = probability_of_failure(models, limitstate, inputs, ss)
 
-        @test 0.0028 < pf_ss < 0.0069
+        @test 0.001 < pf_ss < 0.0064
     end
 end
