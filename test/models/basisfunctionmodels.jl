@@ -1,4 +1,6 @@
 @testitem "LinearBasisFunctionModel: MonomialBasis" setup = [TestSetup] begin
+    using QuasiMonteCarlo
+
     x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
     himmelblau = Model(
         df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y

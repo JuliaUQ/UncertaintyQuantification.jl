@@ -1,4 +1,6 @@
 @testsnippet sobolindices begin
+    using QuasiMonteCarlo
+
     x = RandomVariable.(Uniform(-π, π), [:x1, :x2, :x3])
 
     ishigami1 = Model(
@@ -26,7 +28,7 @@ end
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
 end
 
-@testitem "Sobol Indices: Sobol" setup = [sobolindices, TestSetup] begin
+@testitem "Sobol Indices: Sobol" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QMC(n_qmc, QuasiMonteCarlo.SobolSample()))
 
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
@@ -34,7 +36,7 @@ end
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
 end
 
-@testitem "Sobol Indices: Halton" setup = [sobolindices, TestSetup] begin
+@testitem "Sobol Indices: Halton" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QMC(n_qmc, QuasiMonteCarlo.HaltonSample()))
 
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
@@ -50,7 +52,7 @@ end
 #     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
 # end
 
-@testitem "Sobol Indices: Multiple Outputs" setup = [sobolindices, TestSetup] begin
+@testitem "Sobol Indices: Multiple Outputs" setup = [sobolindices] begin
     si = sobolindices(
         [ishigami1, ishigami2], x, [:f1, :f2], QMC(n_qmc, QuasiMonteCarlo.SobolSample())
     )
@@ -64,7 +66,7 @@ end
     @test si[:f2].TotalEffect ≈ totaleffect_analytical2 rtol = 0.1
 end
 
-@testitem "Sobol Indices: Convenience Functions" setup = [sobolindices, TestSetup] begin
+@testitem "Sobol Indices: Convenience Functions" setup = [sobolindices] begin
     x1 = RandomVariable(Uniform(-π, +π), :x1)
     x2 = RandomVariable(Uniform(0, +π), :x2)
     t1 = Model(df -> sin.(df.x1), :t1)

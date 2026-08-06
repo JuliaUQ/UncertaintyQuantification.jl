@@ -1,4 +1,6 @@
 @testitem "ResponseSurface" setup = [TestSetup] begin
+    using QuasiMonteCarlo
+
     x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 
     himmelblau = Model(
