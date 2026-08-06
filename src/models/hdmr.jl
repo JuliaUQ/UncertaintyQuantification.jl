@@ -158,8 +158,23 @@ end
 
 function _combinations(arr, k)
     n = length(arr)
-    k < 0 || k > n ? Vector{Vector{eltype(arr)}}() :
-    k == 0 ? [eltype(arr)[]] :
-    k == n ? [collect(arr)] :
-    reduce(vcat, [[arr[i]; combo] for combo in _combinations(arr[i+1:end], k-1)] for i in 1:n-k+1)
+    T = eltype(arr)
+    k < 0 || k > n && return Vector{Vector{T}}()
+    k == 0 && return [T[]]
+    k == n && return [collect(arr)]
+
+    result = Vector{Vector{T}}()
+    combo = Vector{T}(undef, k)
+    function _comb(start, depth)
+        if depth > k
+            push!(result, copy(combo))
+            return
+        end
+        for i in start:(n - k + depth)
+            combo[depth] = arr[i]
+            _comb(i + 1, depth + 1)
+        end
+    end
+    _comb(1, 1)
+    return result
 end

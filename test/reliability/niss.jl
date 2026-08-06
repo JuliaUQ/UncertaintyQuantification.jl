@@ -1,9 +1,6 @@
 using Test
-using Pkg
-Pkg.activate(".")
 using UncertaintyQuantification
 using DataFrames
-using Distributions
 
 # Delete these dependencies later TODO
 
@@ -213,5 +210,5 @@ using Distributions
 		@test sens[:x1_μ] == (0.5, 0.3)
 		@test sens[:x1_σ] == (0.5, 0.7)
 	end
-	# Possible extension: lemcs with 500 samples and second order - takes additional ~4 seconds
+	# Possible extension: lemcs with 500 samples and second order - takes about 4 seconds
 end
