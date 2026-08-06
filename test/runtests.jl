@@ -46,6 +46,12 @@ end
     end
 
 end
+
+@testitem "Aqua" begin
+    using Aqua
+    Aqua.test_all(UncertaintyQuantification)
+end
+
 include("models/model.jl")
 include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
