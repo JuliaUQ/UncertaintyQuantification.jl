@@ -1,4 +1,4 @@
-@testset "RandomVariable" begin
+@testitem "RandomVariable" begin
     dist = Normal(0, 1)
     name = :x
     x = RandomVariable(dist, name)
@@ -36,58 +36,53 @@
     @test insupport(x, -1) == insupport(x.dist, -1)
     @test insupport(x, 0) == insupport(x.dist, 0)
     @test insupport(x, 1) == insupport(x.dist, 1)
+end
+@testitem "RandomVariable: SNS Mappings" begin
+    rvs = [
+        RandomVariable(Normal(), :x),
+        RandomVariable(Normal(3, 0.5), :x),
+        RandomVariable(LogNormal(), :x),
+        RandomVariable(Uniform(-2, 3), :x),
+        RandomVariable(Exponential(0.5), :x),
+    ]
 
-    @testset "SNS Mappings" begin
-        rvs = [
-            RandomVariable(Normal(), :x),
-            RandomVariable(Normal(3, 0.5), :x),
-            RandomVariable(LogNormal(), :x),
-            RandomVariable(Uniform(-2, 3), :x),
-            RandomVariable(Exponential(0.5), :x),
-        ]
+    n = 10^5
 
-        n = 10^5
+    for rv in rvs
+        samples = sample(rv, n)
+        mapped = copy(samples)
 
-        for rv in rvs
-            samples = sample(rv, n)
-            mapped = copy(samples)
+        to_standard_normal_space!(rv, mapped)
 
-            to_standard_normal_space!(rv, mapped)
+        @test mean(mapped.x) ≈ 0 atol = 0.05
+        @test median(mapped.x) ≈ 0 atol = 0.05
+        @test std(mapped.x) ≈ 1 atol = 0.05
 
-            @test mean(mapped.x) ≈ 0 atol = 0.05
-            @test median(mapped.x) ≈ 0 atol = 0.05
-            @test std(mapped.x) ≈ 1 atol = 0.05
+        to_physical_space!(rv, mapped)
 
-            to_physical_space!(rv, mapped)
-
-            @test samples.x ≈ mapped.x
-        end
-
-        @testset "ProbabilityBox" begin
-            p_box = RandomVariable(
-                ProbabilityBox{Uniform}(
-                    Dict(:a => Interval(0, 0.2), :b => Interval(0.5, 1))
-                ),
-                :l,
-            )
-
-            SNS_distribution = RandomVariable(Normal(0, 1), :l)
-            SNS_samples = sample(SNS_distribution, 1000)
-
-            SNS_samples_before = deepcopy(SNS_samples)
-
-            to_physical_space!(p_box, SNS_samples)
-            to_standard_normal_space!(p_box, SNS_samples)
-
-            @test all(abs.(SNS_samples[!, :l] .- SNS_samples_before[!, :l]) .<= 10^-10)
-        end
+        @test samples.x ≈ mapped.x
     end
+end
+@testitem "RandomVariable: ProbabilityBox" begin
+    p_box = RandomVariable(
+        ProbabilityBox{Uniform}(Dict(:a => Interval(0, 0.2), :b => Interval(0.5, 1))), :l
+    )
 
-    @testset "Type Promotion" begin
-        x = RandomVariable(Normal(), :x)
-        y = RandomVariable(Uniform(), :y)
+    SNS_distribution = RandomVariable(Normal(0, 1), :l)
+    SNS_samples = sample(SNS_distribution, 1000)
 
-        @test [x, x] isa Vector{RandomVariable{Normal{Float64}}}
-        @test [x, y] isa Vector{RandomVariable{<:UnivariateDistribution}}
-    end
+    SNS_samples_before = deepcopy(SNS_samples)
+
+    to_physical_space!(p_box, SNS_samples)
+    to_standard_normal_space!(p_box, SNS_samples)
+
+    @test all(abs.(SNS_samples[!, :l] .- SNS_samples_before[!, :l]) .<= 10^-10)
+end
+
+@testitem "RandomVariable: Type Promotion" begin
+    x = RandomVariable(Normal(), :x)
+    y = RandomVariable(Uniform(), :y)
+
+    @test [x, x] isa Vector{RandomVariable{Normal{Float64}}}
+    @test [x, y] isa Vector{RandomVariable{<:UnivariateDistribution}}
 end

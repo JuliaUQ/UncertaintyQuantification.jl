@@ -1,4 +1,4 @@
-@testset "SubSetSimulation" begin
+@testitem "SubSetSimulation" begin
     proposal = Normal()
     subset = SubSetSimulation(2000, 0.2, 10, proposal)
 
@@ -9,7 +9,7 @@
     @test subset.proposal == proposal
 
     @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetSimulation(
-        2000, -0.2, 10, Uniform(-1,1)
+        2000, -0.2, 10, Uniform(-1, 1)
     )
     @test_throws ErrorException("proposal must be a symmetric distribution") SubSetSimulation(
         2000, 0.2, 10, Exponential()
@@ -20,57 +20,57 @@
     @test_logs (:warn, "A proposal pdf with large variance (≥ 2) can be inefficient.") SubSetSimulation(
         2000, 0.2, 10, Uniform(-4, 4)
     )
-  
-    @test_logs (
-        :warn,
-        "Number of levels restricted to 15",
-    ) SubSetSimulation(1000,0.1,25,Uniform(-.5,.5))
-    @testset "nextlevelsamples" begin
-        x = RandomVariable(Uniform(0.0, 1.0), :x)
-        y = RandomVariable(Uniform(0.0, 1.0), :y)
-        model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
-        inputs = [x, y]
-        performancefunction = df -> df.z
-        sim = SubSetSimulation(10, 0.1, 10, Uniform(-0.2, 0.2))
-        threshold = 0.1
 
-        samples = sample(inputs, 10)
-        evaluate!(model, samples)
-        performance = samples[:, :z]
-
-        next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
-            samples, performance, threshold, model, performancefunction, inputs, sim
-        )
-
-        @test all(isfinite.(next_level_samples[:, :x]))
-        @test all(isfinite.(next_level_samples[:, :y]))
-        @test all(isfinite.(next_level_performance))
-
-        ## test for only 1 sample for the mcmc
-        x = RandomVariable(Normal(), :x)
-        function dummy_model(x)
-            if x > 3
-                return x
-            else
-                return 1
-            end
-        end
-        inputs = [x]
-        models = Model(df -> dummy_model.(df.x), :z)
-
-        samples = sample(inputs, 1)
-        evaluate!(models, samples)
-
-        next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
-            samples, performance, threshold, models, performancefunction, inputs, sim
-        )
-
-        @test all(isfinite.(next_level_samples[:, :x]))
-        @test all(isfinite.(next_level_performance))
-    end
+    @test_logs (:warn, "Number of levels restricted to 15") SubSetSimulation(
+        1000, 0.1, 25, Uniform(-0.5, 0.5)
+    )
 end
 
-@testset "SubSetInfinity" begin
+@testitem "SubSetSimulation: nextlevelsamples" begin
+    x = RandomVariable(Uniform(0.0, 1.0), :x)
+    y = RandomVariable(Uniform(0.0, 1.0), :y)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    inputs = [x, y]
+    performancefunction = df -> df.z
+    sim = SubSetSimulation(10, 0.1, 10, Uniform(-0.2, 0.2))
+    threshold = 0.1
+
+    samples = sample(inputs, 10)
+    evaluate!(model, samples)
+    performance = samples[:, :z]
+
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, model, performancefunction, inputs, sim
+    )
+
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_samples[:, :y]))
+    @test all(isfinite.(next_level_performance))
+
+    ## test for only 1 sample for the mcmc
+    x = RandomVariable(Normal(), :x)
+    function dummy_model(x)
+        if x > 3
+            return x
+        else
+            return 1
+        end
+    end
+    inputs = [x]
+    models = Model(df -> dummy_model.(df.x), :z)
+
+    samples = sample(inputs, 1)
+    evaluate!(models, samples)
+
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, models, performancefunction, inputs, sim
+    )
+
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_performance))
+end
+
+@testitem "SubSetInfinity" begin
     subset = SubSetInfinity(2000, 0.2, 10, 0.5)
 
     @test isa(subset, SubSetInfinity)
@@ -88,34 +88,33 @@ end
     @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinity(
         2000, -0.2, 10, 0.5
     )
-    @test_logs (
-        :warn,
-        "Number of levels restricted to 15",
-    ) SubSetInfinity(1000,0.1,25,0.5)
-    @testset "nextlevelsamples" begin
-        x = RandomVariable(Uniform(0.0, 1.0), :x)
-        y = RandomVariable(Uniform(0.0, 1.0), :y)
-        model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
-        inputs = [x, y]
-        performancefunction = df -> df.z
-        sim = SubSetInfinity(400, 0.1, 10, 0.5)
-        threshold = 0.1
+    @test_logs (:warn, "Number of levels restricted to 15") SubSetInfinity(
+        1000, 0.1, 25, 0.5
+    )
+end
+@testitem "SubSetInfinity: nextlevelsamples" begin
+    x = RandomVariable(Uniform(0.0, 1.0), :x)
+    y = RandomVariable(Uniform(0.0, 1.0), :y)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    inputs = [x, y]
+    performancefunction = df -> df.z
+    sim = SubSetInfinity(400, 0.1, 10, 0.5)
+    threshold = 0.1
 
-        samples = sample(inputs, 10)
-        evaluate!(model, samples)
-        performance = samples[:, :z]
+    samples = sample(inputs, 10)
+    evaluate!(model, samples)
+    performance = samples[:, :z]
 
-        next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
-            samples, performance, threshold, model, performancefunction, inputs, sim
-        )
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, model, performancefunction, inputs, sim
+    )
 
-        @test all(isfinite.(next_level_samples[:, :x]))
-        @test all(isfinite.(next_level_samples[:, :y]))
-        @test all(isfinite.(next_level_performance))
-    end
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_samples[:, :y]))
+    @test all(isfinite.(next_level_performance))
 end
 
-@testset "SubSetInfinityAdaptive" begin
+@testitem "SubSetInfinityAdaptive" begin
     subset = SubSetInfinityAdaptive(2000, 0.2, 10, 4, 1, 0.5)
 
     @test isa(subset, SubSetInfinityAdaptive)
@@ -147,7 +146,7 @@ end
     @test subset.s == 1
 
     @test_throws ErrorException("target must be between 0.0 and 1.0 (exclusive)") SubSetInfinityAdaptive(
-        2000, -0.2,  10, 2, 1, 3
+        2000, -0.2, 10, 2, 1, 3
     )
     @test_throws ErrorException("standard deviation must be between 0.0 and 1.0") SubSetInfinityAdaptive(
         2000, 0.1, 10, 2, 1, 3
@@ -168,30 +167,29 @@ end
     @test_throws ErrorException("Number of partitions Na must be less than `n` * `target`") SubSetInfinityAdaptive(
         2000, 0.1, 10, 400, 1
     )
-          
-    @test_logs (
-        :warn,
-        "Number of levels restricted to 15",
-    ) SubSetInfinityAdaptive(1000, 0.1, 25, 100, 0.1, 0.5)
-    @testset "nextlevelsamples" begin
-        x = RandomVariable(Uniform(0.0, 1.0), :x)
-        y = RandomVariable(Uniform(0.0, 1.0), :y)
-        model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
-        inputs = [x, y]
-        performancefunction = df -> df.z
-        sim = SubSetInfinityAdaptive(400, 0.1, 10, 2)
-        threshold = 0.1
 
-        samples = sample(inputs, 10)
-        evaluate!(model, samples)
-        performance = samples[:, :z]
+    @test_logs (:warn, "Number of levels restricted to 15") SubSetInfinityAdaptive(
+        1000, 0.1, 25, 100, 0.1, 0.5
+    )
+end
+@testitem "SubSetInfinityAdaptive: nextlevelsamples" begin
+    x = RandomVariable(Uniform(0.0, 1.0), :x)
+    y = RandomVariable(Uniform(0.0, 1.0), :y)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    inputs = [x, y]
+    performancefunction = df -> df.z
+    sim = SubSetInfinityAdaptive(400, 0.1, 10, 2)
+    threshold = 0.1
 
-        next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
-            samples, performance, threshold, model, performancefunction, inputs, sim
-        )
+    samples = sample(inputs, 10)
+    evaluate!(model, samples)
+    performance = samples[:, :z]
 
-        @test all(isfinite.(next_level_samples[:, :x]))
-        @test all(isfinite.(next_level_samples[:, :y]))
-        @test all(isfinite.(next_level_performance))
-    end
+    next_level_samples, next_level_performance = UncertaintyQuantification.nextlevelsamples(
+        samples, performance, threshold, model, performancefunction, inputs, sim
+    )
+
+    @test all(isfinite.(next_level_samples[:, :x]))
+    @test all(isfinite.(next_level_samples[:, :y]))
+    @test all(isfinite.(next_level_performance))
 end

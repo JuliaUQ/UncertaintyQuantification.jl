@@ -30,6 +30,7 @@ using Reexport
 using Roots
 using StatsBase
 using TransportMaps
+using RecipesBase
 
 @reexport using AbstractGPs
 @reexport using TransportMaps
@@ -281,4 +282,6 @@ include("reliability/probabilityoffailure_imprecise.jl")
 include("sensitivity/sobolindices.jl")
 
 include("util/imprecise.jl")
+
+include("plotting/plot_recipes.jl")
 end
