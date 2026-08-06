@@ -9,7 +9,11 @@ struct QMC <: AbstractQuasiMonteCarlo
     QMC(n, m) = n > 0 ? new(n, m) : error("n must be greater than zero")
 end
 
-function sample(inputs::Vector{<:UQInput}, sim::QMC, T=Float64)
+function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
+    return sample(inputs, sim.n)
+end
+
+function sample(inputs::Vector{<:UQInput}, sim::QMC, T::Type=Float64)
     random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
     deterministic_inputs = filter(i -> isa(i, Parameter) || isa(i, Interval), inputs)
 

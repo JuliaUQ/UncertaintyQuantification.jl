@@ -1,16 +1,18 @@
-@testitem "ResponseSurface" begin
+@testitem "ResponseSurface" setup = [TestSetup] begin
     x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 
     himmelblau = Model(
         df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y
     )
 
-    data = sample(x, FullFactorial([5, 5]))
+    data = UncertaintyQuantification.sample(x, FullFactorial([5, 5]))
     evaluate!(himmelblau, data)
 
     rs = ResponseSurface(data, :y, 4)
 
-    test_data = sample(x, SobolSampling(1024))
+    test_data = UncertaintyQuantification.sample(
+        x, QMC(1024, QuasiMonteCarlo.SobolSample())
+    )
     validate_data = copy(test_data)
 
     evaluate!(himmelblau, test_data)
