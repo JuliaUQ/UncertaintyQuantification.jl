@@ -20,6 +20,7 @@ using UncertaintyQuantification
     using InteractiveUtils
     using Random
     using StatsBase: fit, Histogram, corkendall
+    using QuasiMonteCarlo
 end
 
 @testsnippet ReadWriteUtil begin
