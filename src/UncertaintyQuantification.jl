@@ -9,7 +9,6 @@ using DataFrames
 using Dates
 using DifferentiationInterface
 using Dierckx
-using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -95,7 +94,6 @@ export AbstractStochasticProcess
 export AbstractQuasiMonteCarlo
 export AbstractSimulation
 export AbstractTransportMap
-export Copula
 export DeterministicUQInput
 export RandomUQInput
 export UQInput
@@ -170,15 +168,11 @@ export TransportMap
 export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
-export UQTargetDensity
 
 # Methods
 export bayesianupdating
-export calc
-export count_rvs
 export dimensions
 export distribution_parameters
-export doe_samples
 export evaluate
 export evaluate!
 export gradient
