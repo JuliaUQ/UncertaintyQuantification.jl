@@ -12,7 +12,7 @@ mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
 σ² = 1e-5
 
-gp_prior = with_gaussian_noise(GP(mean_f, kernel), σ²)
+gp_prior = GP(mean_f, kernel)
 
 using Optim
 
@@ -24,15 +24,14 @@ gp_model = GaussianProcess(
     gp_prior,
     x,
     himmelblau,
-    :y,
-    design;
-    input_transform=input_transform
+    :y;
+    experimental_design=design,
+    input_transform=input_transform,
+    optimizer=optimizer
 )
 
-optimized_gp_model = optimize_hyperparameters(gp_model, optimizer)
-
 test_data = sample(x, 1000)
-evaluate!(optimized_gp_model, test_data; mode=:mean_and_var)
+evaluate!(gp_model, test_data; mode=:mean_and_var)
 
 test_data = sample(x, 1000)
 evaluate!(gp_model, test_data)
