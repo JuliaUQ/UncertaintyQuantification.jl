@@ -9,13 +9,12 @@
         σ² = 0.0
         kernel = SqExponentialKernel() ∘ ScaleTransform(10.0)
         prior_gp = GP(ConstMean(0.0), kernel)
-        posterior_gp = posterior(prior_gp(x), y)
-        gp = GaussianProcess(prior_gp, data, :y; σ²=σ²)
-
+        gp_opt = GaussianProcess(prior_gp, data, :y; σ²=σ²)
+        gp_nonopt = GaussianProcess(prior_gp, data, :y; σ²=σ², learn_hyperparameters=false)
         x_test = collect(range(0, stop=10, length=50))
         y_test = fct(x_test)
-        likelihood_no_opt = logpdf(posterior_gp(x_test), y_test)
-        likelihood_opt = logpdf(gp.posterior(x_test), y_test)
+        likelihood_no_opt = logpdf(gp_nonopt.posterior(x_test), y_test)
+        likelihood_opt = logpdf(gp_opt.posterior(x_test), y_test)
         
         @test likelihood_opt > likelihood_no_opt
     end
@@ -28,13 +27,13 @@
         σ² = 0.0
         kernel = Matern52Kernel() ∘ ARDTransform([5.0, 5.0])
         prior_gp = GP(ConstMean(0.0), kernel)
-        posterior_gp = posterior(prior_gp(RowVecs(x)), y)
-        gp = GaussianProcess(prior_gp, data, :y; σ²=σ²)
+        gp_opt = GaussianProcess(prior_gp, data, :y; σ²=σ²)
+        gp_nonopt = GaussianProcess(prior_gp, data, :y; σ²=σ², learn_hyperparameters=false)
 
         x_test = [collect(range(0, stop=5, length=50)) collect(range(0, stop=5, length=50))]
         y_test = sin.(x_test[:, 1]) + cos.(x_test[:, 2])
-        likelihood_no_opt = logpdf(posterior_gp(RowVecs(x_test)), y_test)
-        likelihood_opt = logpdf(gp.posterior(RowVecs(x_test)), y_test)
+        likelihood_no_opt = logpdf(gp_nonopt.posterior(RowVecs(x_test)), y_test)
+        likelihood_opt = logpdf(gp_opt.posterior(RowVecs(x_test)), y_test)
         @test likelihood_opt > likelihood_no_opt
     end
 end

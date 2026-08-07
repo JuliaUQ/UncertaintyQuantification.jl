@@ -120,7 +120,7 @@ end
 
             gp = GaussianProcess(
                 xrv_single, model_single, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=0.0,
@@ -131,7 +131,7 @@ end
 
             gp = GaussianProcess(
                 xrv, model, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=0.0,
@@ -143,7 +143,7 @@ end
 
             gp = GaussianProcess(
                 xrv, model, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=0.0,
@@ -155,7 +155,7 @@ end
 
             gp = GaussianProcess(
                 xrv, model, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=σ²,
@@ -167,7 +167,7 @@ end
 
             gp = GaussianProcess(
                 xrv, model, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=σ²,
@@ -192,7 +192,7 @@ end
 
             @test_throws DomainError gp = GaussianProcess(
                 xrv, model, :y;
-                experimentaldesign=design,
+                experimental_design=design,
                 input_transform=IdentityTransformChoice(),
                 output_transform=IdentityTransformChoice(),
                 σ²=-1.0,
@@ -248,7 +248,7 @@ end
                     if input_transform==StandardNormalTransformChoice
                         @test_throws ArgumentError GaussianProcess(
                             xrv, model, :y;
-                            experimentaldesign=design,
+                            experimental_design=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
                             σ²=σ²,
@@ -259,7 +259,7 @@ end
                     else
                         gp = GaussianProcess(
                             xrv, model, :y;
-                            experimentaldesign=design,
+                            experimental_design=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
                             σ²=σ²,
@@ -321,7 +321,7 @@ end
                     if input_transform==StandardNormalTransformChoice
                         @test_throws ArgumentError GaussianProcess(
                             xrv, model, :y;
-                            experimentaldesign=design,
+                            experimental_design=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
                             σ²=σ²,
@@ -332,7 +332,7 @@ end
                     else
                         gp = GaussianProcess(
                             xrv, model, :y;
-                            experimentaldesign=design,
+                            experimental_design=design,
                             input_transform=input_transform(),
                             output_transform=output_transform(),
                             σ²=σ²,

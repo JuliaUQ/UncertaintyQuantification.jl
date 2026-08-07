@@ -46,7 +46,7 @@ Constructs a Gaussian process model for the given data and output variable.
 
 # Examples
 ```jldoctest
-julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+julia> gp = GP(0.0, SqExponentialKernel());
 
 julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
 
@@ -61,10 +61,9 @@ function GaussianProcess(
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
     learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 ) 
-    σ² = check_gp_input(σ², learn_noise)
-
     input = propertynames(data[:, Not(output)]) # Is this always the case?
 
     # build in- and output transforms
@@ -75,14 +74,21 @@ function GaussianProcess(
     x = transform(data, input_transformer)
     y = transform(data, output_transformer)
 
+    posterior_gp = nothing
+
     # optimize hyperparameters
-    _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
-    posterior_gp = posterior(_gp(x), y)
+    if learn_hyperparameters
+        _gp = optimize_hyperparameters(PriorGP(gp, check_gp_input(σ², learn_noise), learn_noise), x, y, optimizer)
+        σ² = _gp.σ²
+        posterior_gp = posterior(_gp(x), y)
+    else
+        posterior_gp = posterior(gp(x), y)
+    end
 
     return GaussianProcess(
         posterior_gp,
         output,
-        _gp.σ²,
+        σ²,
         input_transformer,
         output_transformer,
         data
@@ -95,7 +101,7 @@ end
         input::Union{UQInput, Vector{<:UQInput}},
         model::Union{UQModel, Vector{<:UQModel}},
         output::Symbol,
-        experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}; 
+        experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}; 
         input_transform::AbstractTransformChoice=IdentityTransformChoice(),
         output_transform::AbstractTransformChoice=IdentityTransformChoice()
     )
@@ -107,7 +113,7 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 - `input`: Single input or vector of inputs. The Gaussian process will only consider inputs of type [`RandomVariable`](@ref) as input features.
 - `model`: Single model or vector of models of supertype [`UQModel`](@ref) that the Gaussian process is supposed to model.
 - `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
-- `experimentaldesign`: The strategy utilized for sampling the input variables.
+- `experimental_design`: The strategy utilized for sampling the input variables.
 
 # Keyword Arguments
 - `input_transform`: Choice of transformation that is applied to input features before fitting.
@@ -118,7 +124,7 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 # Examples
 ```jldoctest
 julia> begin # hide
-           gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+           gp = GP(0.0, SqExponentialKernel());
            x = RandomVariable(Uniform(0, 5), :x);
            model = Model(df -> sin.(df.x), :y);
            design = LatinHypercubeSampling(10);
@@ -131,19 +137,18 @@ function GaussianProcess(
     gp::GP,
     input::Vector{<:UQInput},
     model::Union{UQModel, Vector{<:UQModel}},
-    output::Symbol,
-    experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
+    output::Symbol;
+    n_design_points::Int=10,
+    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSample(n_design_points),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
     learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
-
-    σ² = check_gp_input(σ², learn_noise)
-
     # build DataFrame
-    data = sample(input, experimentaldesign)
+    data = sample(input, experimental_design)
     evaluate!(model, data)
 
     # Repeated deterministic input will break the GP kernel
@@ -154,6 +159,7 @@ function GaussianProcess(
                            output_transform=output_transform,
                            σ²=σ²,
                            learn_noise=learn_noise,
+                           learn_hyperparameters=learn_hyperparameters,
                            optimizer=optimizer)
 end
 
@@ -162,20 +168,24 @@ function GaussianProcess(
     gp::GP,
     input::UQInput,
     model::Union{UQModel, Vector{<:UQModel}},
-    output::Symbol,
-    experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments};
+    output::Symbol;
+    n_design_points::Int=10,
+    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSample(n_design_points),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
     learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
     return GaussianProcess(
-        gp, [input], model, output, experimentaldesign; 
+        gp, [input], model, output;
+        experimental_design=experimental_design, 
         input_transform=input_transform,
         output_transform=output_transform,
         σ²=σ²,
         learn_noise=learn_noise,
+        learn_hyperparameters=learn_hyperparameters,
         optimizer=optimizer
     )
 end
@@ -186,22 +196,25 @@ function GaussianProcess(
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol;
     n_design_points::Int=10,
-    experimentaldesign::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
+    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
     mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
     kernel::Kernel=SqExponentialKernel(),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
     learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
 
     gp = GP(mean_fct, kernel)
-    return GaussianProcess(gp, input, model, output, experimentaldesign;
+    return GaussianProcess(gp, input, model, output;
+                           experimental_design=experimental_design,
                            input_transform=input_transform,
                            output_transform=output_transform,
                            σ²=σ²,
                            learn_noise=learn_noise,
+                           learn_hyperparameters=learn_hyperparameters,
                            optimizer=optimizer)
 
 end
@@ -216,6 +229,7 @@ function GaussianProcess(
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
     learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 )
 
@@ -226,6 +240,7 @@ function GaussianProcess(
                            output_transform=output_transform,
                            σ²=σ²,
                            learn_noise=learn_noise,
+                           learn_hyperparameters=learn_hyperparameters,
                            optimizer=optimizer)
 end
 
@@ -250,31 +265,15 @@ Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locati
 
 # Examples
 ```jldoctest
-julia> gp = with_gaussian_noise(GP(0.0, SqExponentialKernel()), 1e-3);
+julia> gp = GP(0.0, SqExponentialKernel());
 
 julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
 
-julia> gp_model = GaussianProcess(gp, data, :y);
+julia> gp_model = GaussianProcess(gp, data, :y; σ²=1e-3);
 
 julia> df = DataFrame(x = [0.5, 1.5, 2.5, 5.5, 8.5]);
 
 julia> evaluate!(gp_model, df; mode=:mean_and_var);
-
-julia> df.y_mean |> DisplayAs.withcontext(:compact => true)
-5-element Vector{Float64}:
-  0.616222
-  1.98099
-  6.93425
- 30.5658
- 68.1663
-
-julia> df.y_var |> DisplayAs.withcontext(:compact => true)
-5-element Vector{Float64}:
- 0.125804
- 0.0143887
- 0.0080906
- 0.00622953
- 0.0080906
 ```
 """
 function evaluate!(
