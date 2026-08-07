@@ -39,7 +39,7 @@ mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
 σ² = 1e-5
 
-gp_prior = with_gaussian_noise(GP(mean_f, kernel), σ²)
+gp_prior = GP(mean_f, kernel)
 
 #===
 Next, we set up an optimizer used in the log marginal likelihood maximization to find the optimal hyperparameters of our GP model. Here we use the Adam optimizer from the `Optim.jl` package with a learning rate of 0.005 and run it for 10 iterations.:
@@ -67,17 +67,16 @@ gp_model = GaussianProcess(
     gp_prior, 
     x, 
     himmelblau, 
-    :y, 
-    design; 
-    input_transform=input_transform
+    :y;
+    experimental_design=design, 
+    input_transform=input_transform,
+    optimizer=optimizer
 )
 
 #===
 The GP regression model uses finite projections of the fitted posterior GP to make predictions. As of now, the hyperparameters of the GP might not be optimal. 
 We can find optimal hyperparameters through maximizing the log marginal likelihood of observing the training data under the posterior GP.
 ===#
-
-optimized_gp_model = optimize_hyperparameters(gp_model, optimizer)
 
 #===
 To evaluate the `GaussianProcess`, use `evaluate!(gp::GaussianProcess, data::DataFrame)` with the `DataFrame` containing the points you want to evaluate. 
@@ -91,7 +90,7 @@ We can specify the evaluation mode via the `mode` keyword argument. Supported op
 ===#
 
 test_data = sample(x, 1000)
-evaluate!(optimized_gp_model, test_data; mode=:mean_and_var)
+evaluate!(gp_model, test_data; mode=:mean_and_var)
 
 #===
 The mean prediction of our model in this case has an mse of about 65 and looks like this in comparison to the original:

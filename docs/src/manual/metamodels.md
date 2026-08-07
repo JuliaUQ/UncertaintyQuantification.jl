@@ -257,6 +257,8 @@ kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
 gp = GP(0.0, kernel); nothing # hide
 ```
 
+Note that the definition of a prior GP is handled by `UncertaintyQuantification` if no prior GP is specified. The construction of a `GaussianProcess` is flexible. Mean functions, kernels and many other parameters can be specified later directly in the constructor of the `GaussianProcess`.
+
 #### Posterior Gaussian Process
 
 The posterior GP represents the distribution of functions after incorporating observed data. We denote the observation data as:
@@ -304,7 +306,11 @@ K(\hat{X}, \hat{X}) \rightarrow K(\hat{X}, \hat{X}) + \sigma^2_{e}I.
 
 The computation of the posterior predictive distribution generalizes straightforwardly to multiple input locations, providing both the posterior mean, which can serve as a regression estimate of the unknown function, and the posterior variances, which quantify the uncertainty at each point. Because the posterior is multivariate Gaussian, one can also sample function realizations at specified locations to visualize possible functions consistent with the observed data.
 
-To construct a posterior GP from our previously defined prior GP, we need to define training data in form of a `DataFrame`. Constructing a `GaussianProcess` model will then automatically compute the posterior GP to predict requested the modeled output $y$. In this example, we equip the prior GP with a small Gaussian observation noise with zero mean and variance $\sigma^2_{e}=\sigma^2$, which improves the numerical stability of the covariance matrix.
+To construct a posterior GP, we need to define training data in form of a `DataFrame`. Constructing a `GaussianProcess` model will then automatically compute the posterior GP to predict requested the modeled output $y$ and by default it will also optimize the hyperparameters. If this is not desired, the input `learn_hyperparameters=false` can be set.
+
+The following creates a standard GP with mean function `ZeroMean()`, kernel `SqExponentialKernel()` and no observation noise with and without hyperparameter optimization.
+We can also equip the GP with observation noise $\sigma^2$, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization. The noise parameter is not optimized by default.
+To specify different mean functions and/or kernels, either construct a GP manually beforehand, or use them as inputs.
 
 ```@example gaussianprocess
 using DataFrames # hide
@@ -312,9 +318,16 @@ x = collect(range(0, 10, 10))
 y = sin.(x) + 0.3 * cos.(2 .* x)
 df = DataFrame(x = x, y = y)
 
+mean_fct = ConstMean(0.0)
+kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
+
+gp_prior = GP(mean_fct, kernel)
+
 σ² = 1e-5
-gp = with_gaussian_noise(gp, σ²)
-gp_model = GaussianProcess(gp, df, :y); nothing # hide
+
+gp_model = GaussianProcess(gp_prior, df, :y; σ²=σ²)
+gp_model = GaussianProcess(df, :y, σ²=σ², mean_fct=mean_fct, kernel=kernel)
+gp_model = GaussianProcess(df, :y; mean_fct=mean_fct, kernel=kernel, σ²=σ², learn_noise=true); nothing # hide
 ```
 
 Now we can use our GP model to predict at new input locations `x_test`:
@@ -359,16 +372,31 @@ where $\mu_{\theta_m}(\hat{X})$ and $K_{\theta_k}(\hat{X}, \hat{X})$ denote the 
 
 For numerical reasons, the logarithm of the marginal likelihood is typically used. Maximizing the log marginal likelihood with respect to the hyperparameters then yields the parameters that best explain the observed data. After obtaining the optimal hyperparamters, the posterior GP can be constructed as described above.
 
-To optimize the hyperparameters of a GP model, we can pass a gradient-based optimizer provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/) to the [`MaximumLikelihoodEstimation`](@ref) constructor, essentially defining the MLE optimization routine. The [`optimize_hyperparameters`](@ref) function then optimizes the hyperparameters of the GP model according to the optimization routine:
+`UncertaintyQuantification.jl` provides a default optimizer for the hyperparameters based on the [`MaximumLikelihoodEstimation`](@ref) constructor.
+
+```
+optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
+```
+
+If other options are desired, a different optimizer can be constructed based on [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/).
 
 ```@example gaussianprocess
-optimization = MaximumLikelihoodEstimation()
+using Optim
 
-gp_model = GaussianProcess(gp, df, :y)
-optimized_gp_model = optimize_hyperparameters(gp_model, optimization)
+optimization = MaximumLikelihoodEstimation(
+                Optim.LBFGS(),
+                Optim.Options(; iterations=10, show_trace=false)
+            )
+
+gp_model = GaussianProcess(df, :y;
+                           σ²=σ²,
+                           mean_fct=mean_fct,
+                           kernel=kernel,
+                           optimizer=optimization
+                           )
 
 prediction = DataFrame(:x => x_test)
-evaluate!(optimized_gp_model, prediction; mode=:mean_and_var)
+evaluate!(gp_model, prediction; mode=:mean_and_var)
 
 prediction_mean = prediction[!, :y_mean] # hide
 prediction_std = sqrt.(prediction[!, :y_var]) # hide
@@ -385,7 +413,7 @@ savefig(p, "posterior-gp-opt.svg"); nothing # hide
 
 ![Optimized Gaussian process](posterior-gp-opt.svg)
 
-Internally, `MaximumLikelihoodEstimation()` defaults to using [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer that performs 10 optimization steps with standard optimization hyperparameters as defined [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
+Internally, `MaximumLikelihoodEstimation()` defaults to using [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer that performs 100 optimization steps with standard optimization hyperparameters as defined [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
 
 During optimization, GP hyperparameters $\theta_m, \theta_k$ and $\sigma^2_{e}$ are automatically extracted and updated.
 

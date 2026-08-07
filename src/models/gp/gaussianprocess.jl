@@ -128,7 +128,7 @@ julia> begin # hide
            x = RandomVariable(Uniform(0, 5), :x);
            model = Model(df -> sin.(df.x), :y);
            design = LatinHypercubeSampling(10);
-           gp_model = GaussianProcess(gp, x, model, :y, design);
+           gp_model = GaussianProcess(gp, x, model, :y; experimental_design=design);
            nothing # hide
        end # hide
 ```

@@ -238,9 +238,8 @@ function apply_parameters(f::GP, θ)
     GP(apply_parameters(f.mean, θ[1]), apply_parameters(f.kernel, θ[2]))
 end
 
-"""
-Internal struct for hyperparameter optimization. The struct saves the GP that is to be optimized and the noise.
-"""
+
+#Internal struct for hyperparameter optimization. The struct saves the GP that is to be optimized and the noise.
 struct PriorGP{T<:GP,Tn<:Real}
     gp::T
     σ²::Tn
@@ -248,21 +247,6 @@ struct PriorGP{T<:GP,Tn<:Real}
 end
 
 (gp::PriorGP)(x) = gp.gp(x, gp.σ²)
-"""
-    with_gaussian_noise(gp::AbstractGPs.GP, σ²::Real)
-
-Wraps a Gaussian process `gp` with additive Gaussian observation noise of variance `σ²`.
-
-This creates a Gaussian process object, which adds `σ²` to the diagonal of the covariance
-matrix when evaluating the finite-dimensional projection of `gp`.
-
-# Examples
-```jldoctest
-julia> gp = GP(SqExponentialKernel());
-
-julia> noisy_gp = with_gaussian_noise(gp, 0.1);
-```
-"""
 
 extract_parameters(f::PriorGP) = begin 
    f.learn_noise ? (
