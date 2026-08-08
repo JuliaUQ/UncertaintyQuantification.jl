@@ -308,8 +308,8 @@ The computation of the posterior predictive distribution generalizes straightfor
 
 To construct a posterior GP, we need to define training data in form of a `DataFrame`. Constructing a `GaussianProcess` model will then automatically compute the posterior GP to predict requested the modeled output $y$ and by default it will also optimize the hyperparameters. If this is not desired, the input `learn_hyperparameters=false` can be set.
 
-The following creates a standard GP with mean function `ZeroMean()`, kernel `SqExponentialKernel()` and no observation noise with and without hyperparameter optimization.
-We can also equip the GP with observation noise $\sigma^2$, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization. The noise parameter is not optimized by default.
+The following creates a standard GP with mean function `ConstMean()`, kernel `SqExponentialKernel()`, and directly optimizes the hyperparameters. Note that while `ConstMean(0.0)` and `ZeroMean()` provide the same zero-mean prior GP, using `ConstMean()` also allows for optimization of the mean.
+We also equip the GP with small observation noise $\sigma^2$, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization, but it is not optimized by default.
 To specify different mean functions and/or kernels, either construct a GP manually beforehand, or use them as inputs.
 
 ```@example gaussianprocess
@@ -325,9 +325,11 @@ gp_prior = GP(mean_fct, kernel)
 
 σ² = 1e-5
 
+# these are equivalent
 gp_model = GaussianProcess(gp_prior, df, :y; σ²=σ²)
 gp_model = GaussianProcess(df, :y, σ²=σ², mean_fct=mean_fct, kernel=kernel)
-gp_model = GaussianProcess(df, :y; mean_fct=mean_fct, kernel=kernel, σ²=σ², learn_noise=true); nothing # hide
+# providing the input learn_noise=true also optimizes the data noise
+gp_model = GaussianProcess(df, :y; σ²=σ², mean_fct=mean_fct, kernel=kernel, learn_noise=true); nothing # hide
 ```
 
 Now we can use our GP model to predict at new input locations `x_test`:
@@ -378,7 +380,7 @@ For numerical reasons, the logarithm of the marginal likelihood is typically use
 optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 ```
 
-If other options are desired, a different optimizer can be constructed based on [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/).
+If other options are desired, a different optimizer can be constructed based on [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). The script below shows the difference between an optimized and unoptimized GP.
 
 ```@example gaussianprocess
 using Optim
@@ -395,17 +397,27 @@ gp_model = GaussianProcess(df, :y;
                            optimizer=optimization
                            )
 
+gp_model_unoptimized = GaussianProcess(df, :y;
+                            σ²=σ²,
+                            mean_fct=mean_fct,
+                            kernel=kernel,
+                            learn_hyperparameters=false
+                           )
+
 prediction = DataFrame(:x => x_test)
+prediction_unopt = DataFrame(:x => x_test)
 evaluate!(gp_model, prediction; mode=:mean_and_var)
+evaluate!(gp_model_unoptimized, prediction_unopt; mode=:mean_and_var)
 
 prediction_mean = prediction[!, :y_mean] # hide
 prediction_std = sqrt.(prediction[!, :y_var]) # hide
 
-p = plot(x_test, prediction_mean, color=:blue, label="Mean prediction") # hide
-plot!(
-    x_test, prediction_mean, ribbon=2 .* prediction_std,
-    color=:grey, alpha=0.5, label="Confidence band"
-) # hide
+prediction_mean_unopt = prediction_unopt[!, :y_mean] #hide
+prediction_std_unopt = sqrt.(prediction_unopt[!, :y_var]) # hide
+
+p = plot(x_test, prediction_mean, ribbon=2 .* prediction_std, color=:blue, alpha=0.5, label="Optimized") # hide
+plot!(x_test, prediction_mean_unopt, ribbon=2 .* prediction_std_unopt, color=:grey, alpha=0.5, label="Not Optimized") # hide
+
 plot!(x_test, y_true, color=:red, label="True function") # hide
 
 savefig(p, "posterior-gp-opt.svg"); nothing # hide

@@ -23,15 +23,68 @@ function check_gp_input(σ²::Float64, learn_noise::Bool)
 end
 
 """
-    GaussianProcess(
-        gp::GP, 
-        data::DataFrame, 
-        output::Symbol; 
-        input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice=IdentityTransformChoice()
-    )
+    GaussianProcess(data::DataFrame, output::Symbol; kwargs...)
 
-Constructs a Gaussian process model for the given data and output variable.
+Constructs a `GaussianProcess` model with the specified data and output variable.
+
+# Arguments
+- `data`: A `DataFrame` containing the input and output data.
+- `output`: The output variable for the Gaussian process.
+
+# Keyword Arguments
+- `mean_fct`: The mean function for the Gaussian process. Defaults to `ZeroMean`.
+- `kernel`: The kernel for the Gaussian process. Defaults to `SqExponentialKernel`.
+- `input_transform`: The transformation to apply to the input variables. Defaults to `IdentityTransformChoice`.
+- `output_transform`: The transformation to apply to the output variables. Defaults to `IdentityTransformChoice`.
+- `σ²`: The noise variance. Defaults to 0.0.
+- `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
+- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
+- `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
+
+# Examples
+```jldoctest
+julia> mean_fct = ConstMean(0.0);
+
+julia> kernel = SqExponentialKernel();
+
+julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
+
+julia> gp_model = GaussianProcess(data, :y; mean_fct=mean_fct, kernel=kernel, σ²=1e-3);
+```
+"""
+function GaussianProcess(
+    data::DataFrame,
+    output::Symbol;
+    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
+    kernel::Kernel=SqExponentialKernel(),
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
+)
+
+    gp = GP(mean_fct, kernel)
+    
+    return GaussianProcess(gp, data, output;
+                           input_transform=input_transform,
+                           output_transform=output_transform,
+                           σ²=σ²,
+                           learn_noise=learn_noise,
+                           learn_hyperparameters=learn_hyperparameters,
+                           optimizer=optimizer)
+end
+
+"""
+    GaussianProcess(
+        gp::GP,
+        data::DataFrame,
+        output::Symbol;
+        kwargs...
+    ) 
+
+Constructs a Gaussian process model for the given data and output variable using a pre-defined Gaussian process.
 
 # Arguments
 - `gp`: A Gaussian process object, typically from `AbstractGPs`, defining the kernel and mean.
@@ -43,6 +96,10 @@ Constructs a Gaussian process model for the given data and output variable.
   Defaults to [`IdentityTransformChoice()`](@ref).
 - `output_transform`: Choice of transformation that is applied to output data before fitting.
   Defaults to [`IdentityTransformChoice()`](@ref).
+- `σ²`: The noise variance. Defaults to 0.0.
+- `learn_noise`: Whether to learn the noise variance. Defaults to false.
+- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to true.
+- `optimizer`: The optimizer for hyperparameter optimization. Defaults to `MaximumLikelihoodEstimation` with `Optim.LBFGS()` and `Optim.Options(; iterations=100, show_trace=false)`.
 
 # Examples
 ```jldoctest
@@ -96,14 +153,75 @@ function GaussianProcess(
 end
 
 """
+    GaussianProcess(input::Union{UQInput, Vector{<:UQInput}}, model::Union{UQModel, Vector{<:UQModel}}, output::Symbol; kwargs...)
+
+Constructs a `GaussianProcess` model with the specified input, model, and output.
+
+# Arguments
+- `input`: The input variable(s) for the Gaussian process.
+- `model`: The model(s) to be used for the Gaussian process.
+- `output`: The output variable for the Gaussian process.
+
+# Keyword Arguments
+- `n_design_points`: Number of design points to sample from the input space. Defaults to 10.
+- `experimental_design`: The strategy utilized for sampling the input variables. Defaults to `LatinHypercubeSampling`.
+- `mean_fct`: The mean function for the Gaussian process. Defaults to `ZeroMean`.
+- `kernel`: The kernel for the Gaussian process. Defaults to `SqExponentialKernel`.
+- `input_transform`: The transformation to apply to the input variables. Defaults to `IdentityTransformChoice`.
+- `output_transform`: The transformation to apply to the output variables. Defaults to `IdentityTransformChoice`.
+- `σ²`: The noise variance. Defaults to 0.0.
+- `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
+- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
+- `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
+
+# Examples
+```jldoctest
+julia> begin # hide
+            mean_fct = ConstMean(0.0);
+            kernel = SqExponentialKernel();
+            x = RandomVariable(Uniform(0, 5), :x);
+            model = Model(df -> sin.(df.x), :y);
+            design = LatinHypercubeSampling(10);
+            gp_model = GaussianProcess(x, model, :y; experimental_design=design, mean_fct=mean_fct, kernel=kernel);
+            nothing # hide
+        end # hide
+```
+"""
+function GaussianProcess(
+    input::Union{UQInput, Vector{<:UQInput}},
+    model::Union{UQModel, Vector{<:UQModel}},
+    output::Symbol;
+    n_design_points::Int=10,
+    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
+    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
+    kernel::Kernel=SqExponentialKernel(),
+    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
+    σ²::Float64=0.0,
+    learn_noise::Bool=false,
+    learn_hyperparameters::Bool=true,
+    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
+)
+
+    gp = GP(mean_fct, kernel)
+    return GaussianProcess(gp, input, model, output;
+                           experimental_design=experimental_design,
+                           input_transform=input_transform,
+                           output_transform=output_transform,
+                           σ²=σ²,
+                           learn_noise=learn_noise,
+                           learn_hyperparameters=learn_hyperparameters,
+                           optimizer=optimizer)
+
+end
+
+"""
     GaussianProcess(
-        gp::GP, 
-        input::Union{UQInput, Vector{<:UQInput}},
+        gp::GP,
+        input::Vector{<:UQInput},
         model::Union{UQModel, Vector{<:UQModel}},
-        output::Symbol,
-        experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}; 
-        input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice=IdentityTransformChoice()
+        output::Symbol;
+        kwargs...
     )
 
 Constructs a Gaussian process model for the given input and model. Evaluates the model using specified experimental design.
@@ -113,13 +231,18 @@ Constructs a Gaussian process model for the given input and model. Evaluates the
 - `input`: Single input or vector of inputs. The Gaussian process will only consider inputs of type [`RandomVariable`](@ref) as input features.
 - `model`: Single model or vector of models of supertype [`UQModel`](@ref) that the Gaussian process is supposed to model.
 - `output`: The name of the output (as a `Symbol`) to be modeled as the response variable.
-- `experimental_design`: The strategy utilized for sampling the input variables.
 
 # Keyword Arguments
+- `n_design_points`: Number of design points to sample from the input space. Defaults to 10.
+- `experimental_design`: The strategy utilized for sampling the input variables.
 - `input_transform`: Choice of transformation that is applied to input features before fitting.
   Defaults to [`IdentityTransformChoice()`](@ref).
 - `output_transform`: Choice of transformation that is applied to output data before fitting.
   Defaults to [`IdentityTransformChoice()`](@ref).
+- `σ²`: The noise variance. Defaults to 0.0.
+- `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
+- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
+- `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
 
 # Examples
 ```jldoctest
@@ -188,60 +311,6 @@ function GaussianProcess(
         learn_hyperparameters=learn_hyperparameters,
         optimizer=optimizer
     )
-end
-
-# Helper constructor to use default GP; or take mean function and/or kernel as inputs instead of GP
-function GaussianProcess(
-    input::Union{UQInput, Vector{<:UQInput}},
-    model::Union{UQModel, Vector{<:UQModel}},
-    output::Symbol;
-    n_design_points::Int=10,
-    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
-    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
-    kernel::Kernel=SqExponentialKernel(),
-    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
-    learn_noise::Bool=false,
-    learn_hyperparameters::Bool=true,
-    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
-)
-
-    gp = GP(mean_fct, kernel)
-    return GaussianProcess(gp, input, model, output;
-                           experimental_design=experimental_design,
-                           input_transform=input_transform,
-                           output_transform=output_transform,
-                           σ²=σ²,
-                           learn_noise=learn_noise,
-                           learn_hyperparameters=learn_hyperparameters,
-                           optimizer=optimizer)
-
-end
-
-# Helper constructor to construct a GP from only data without providing a GP, user can define mean function and kernel
-function GaussianProcess(
-    data::DataFrame,
-    output::Symbol;
-    mean_fct::AbstractGPs.MeanFunction=ZeroMean(),
-    kernel::Kernel=SqExponentialKernel(),
-    input_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
-    learn_noise::Bool=false,
-    learn_hyperparameters::Bool=true,
-    optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
-)
-
-    gp = GP(mean_fct, kernel)
-    
-    return GaussianProcess(gp, data, output;
-                           input_transform=input_transform,
-                           output_transform=output_transform,
-                           σ²=σ²,
-                           learn_noise=learn_noise,
-                           learn_hyperparameters=learn_hyperparameters,
-                           optimizer=optimizer)
 end
 
 """
