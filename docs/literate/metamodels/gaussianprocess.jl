@@ -13,7 +13,7 @@ f(x1, x2) = (x1^2 + x2 - 11)^2 + (x1 + x2^2 - 7)^2.
 ===#
 # ![](himmelblau.svg)
 #===
-Aanalogue to the response surface example, we create an array of random variables, that will be used when evaluating the points that our experimental design produces.
+Analogue to the response surface example, we create an array of random variables, that will be used when evaluating the points that our experimental design produces.
 ===#
 
 using UncertaintyQuantification
