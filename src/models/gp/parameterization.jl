@@ -103,7 +103,7 @@ end
 function extract_parameters(::IntrinsicCoregionMOKernel)
     throw(
         ArgumentError(
-            "IntrinsicCoregionMOKernel not supported hyper parameter optimization."
+            "IntrinsicCoregionMOKernel not supported for hyper parameter optimization."
         ),
     )
 end
