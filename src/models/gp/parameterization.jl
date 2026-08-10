@@ -149,7 +149,7 @@ function extract_parameters(::GibbsKernel)
 end
 function apply_parameters(::GibbsKernel, _)
     throw(
-        ArgumentError("IndependentMOKernel not supported for hyper parameter optimization.")
+        ArgumentError("GibbsKernel not supported for hyper parameter optimization.")
     )
 end
 
