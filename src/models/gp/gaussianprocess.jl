@@ -262,7 +262,7 @@ function GaussianProcess(
     model::Union{UQModel, Vector{<:UQModel}},
     output::Symbol;
     n_design_points::Int=10,
-    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSample(n_design_points),
+    experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
     σ²::Float64=0.0,
