@@ -327,7 +327,7 @@ gp_prior = GP(mean_fct, kernel)
 
 # these are equivalent
 gp_model = GaussianProcess(gp_prior, df, :y; σ²=σ²)
-gp_model = GaussianProcess(df, :y, σ²=σ², mean_fct=mean_fct, kernel=kernel)
+gp_model = GaussianProcess(df, :y; σ²=σ², mean_fct=mean_fct, kernel=kernel)
 # providing the input learn_noise=true also optimizes the data noise
 gp_model = GaussianProcess(df, :y; σ²=σ², mean_fct=mean_fct, kernel=kernel, learn_noise=true); nothing # hide
 ```

@@ -121,6 +121,13 @@ function GaussianProcess(
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
 ) 
+    # force learn_noise to false if learn_hyperparameters is false
+    if !learn_hyperparameters && learn_noise
+        @warn "learn_hyperparameters is false, setting learn_noise to false"
+        learn_noise = false
+    end
+    σ² = check_gp_input(σ², learn_noise)
+
     input = propertynames(data[:, Not(output)]) # Is this always the case?
 
     # build in- and output transforms
@@ -135,11 +142,13 @@ function GaussianProcess(
 
     # optimize hyperparameters
     if learn_hyperparameters
-        _gp = optimize_hyperparameters(PriorGP(gp, check_gp_input(σ², learn_noise), learn_noise), x, y, optimizer)
+        _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
         σ² = _gp.σ²
+        # _gp is a PriorGP object, callig it directly involves the noise, so no need to add σ² again
         posterior_gp = posterior(_gp(x), y)
     else
-        posterior_gp = posterior(gp(x), y)
+        # gp has to be called with noise since it is an AbstrctGPs.GP object, not a PriorGP object
+        posterior_gp = posterior(gp(x, σ²), y)
     end
 
     return GaussianProcess(
