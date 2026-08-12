@@ -1,49 +1,6 @@
-```@raw html
----
-authors:
-  - name: Jasper Behrensdorf
-    platform: github
-    link: https://github.com/FriesischScott
-  - name: Matteo Broggi
-    platform: github
-    link: https://github.com/teobros
-  - name: Lukas Fritsch
-    platform: github
-    link: https://github.com/lukasfritsch
-  - name: Ander Gray
-    platform: github
-    link: https://github.com/AnderGray
-  - name: Jan Grashorn
-    platform: github
-    link: https://github.com/jgrashorn
-  - name: Laurenz Knipper
-    platform: github
-    link: https://github.com/sitoryu
-  - name: Max Luttmann
-    platform: github
-    link: https://github.com/mlsuh
-  - name: Felix Mett
-    platform: github
-    link: https://github.com/Cr0gan
-  - name: Andrea Perin
-    platform: github
-    link: https://github.com/andreaperin
-  - name: Thomas Potthast
-    platform: github
-    link: https://github.com/potthastT
----
-```
-
 # UncertaintyQuantification.jl
 
 A Julia package for uncertainty quantification.
-
-## Authors
-
-```@raw html
-
-<Authors />
-```
 
 ## Features
 
