@@ -99,12 +99,12 @@ models = [gm_model, ext]
 # Plotting of single time history
 
 #md # ```julia
-#md # plot(t, samples.gm[1]./(maximum(abs.(samples.gm[1]))); label="Stochastic ground motion acceleration", xlabel="time in s", ylabel="Normalized acceleration and displacement")
-#md # plot!(samples.sim_time[1], samples.disp[1]./(maximum(abs.(samples.disp[1]))); label="Displacement at top node", linewidth=2)
+#md # plot(t, samples.gm[1] ./ (maximum(abs.(samples.gm[1]))); label = "Stochastic ground motion acceleration", xlabel = "time in s", ylabel = "Normalized acceleration and displacement")
+#md # plot!(samples.sim_time[1], samples.disp[1] ./ (maximum(abs.(samples.disp[1]))); label = "Displacement at top node", linewidth = 2)
 #md # ```
 
-#jl plot(t, samples.gm[1]./(maximum(abs.(samples.gm[1]))); label="Stochastic ground motion acceleration", xlabel="time in s", ylabel="Normalized acceleration and displacement")
-#jl plot!(samples.sim_time[1], samples.disp[1]./(maximum(abs.(samples.disp[1]))); label="Displacement at top node", linewidth=2)
+#jl plot(t, samples.gm[1] ./ (maximum(abs.(samples.gm[1]))); label = "Stochastic ground motion acceleration", xlabel = "time in s", ylabel = "Normalized acceleration and displacement")
+#jl plot!(samples.sim_time[1], samples.disp[1] ./ (maximum(abs.(samples.disp[1]))); label = "Displacement at top node", linewidth = 2)
 
 #md # ![Resulting time history](../assets/time-history.svg)
 #md # A plot to visualize the stochastic input ground motion acceleration singal and the resulting displacement time series at the top node of the cantilever column.
