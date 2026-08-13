@@ -58,7 +58,7 @@ If you'd like to **actually** test the Slurm interface your HPC machine:
 
 ```julia
 using Pkg
-Pkg.test("UncertaintyQuantification"; test_args=["HPC", "YOUR_ACCOUNT", "YOUR_PARTITION"])
+Pkg.test("UncertaintyQuantification"; test_args = ["HPC", "YOUR_ACCOUNT", "YOUR_PARTITION"])
 ```
 
 or if you have a local clone, from the top directory:

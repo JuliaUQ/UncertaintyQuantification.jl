@@ -51,7 +51,7 @@ f = Model(
 Next, the `pf_target` and corresponding limit state are defined.
 
 ```julia
-pf_target = 1e-9
+pf_target = 1.0e-9
 
 fail_limit = quantile(Normal(0, sqrt(N)), 1 - pf_target)
 
