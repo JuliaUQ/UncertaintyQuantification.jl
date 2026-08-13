@@ -33,14 +33,14 @@ julia> ProbabilityBox{Normal}([:μ => Interval(0, 1), :σ => Interval(0.1, 1)])
 ProbabilityBox{Normal}(Dict{Symbol, Union{Real, Interval}}(:μ => [0, 1], :σ => [0.1, 1]), -Inf, Inf)
 ```
 """
-struct ProbabilityBox{T<:UnivariateDistribution}
-    parameters::Dict{Symbol,Union{Real,Interval}}
+struct ProbabilityBox{T <: UnivariateDistribution}
+    parameters::Dict{Symbol, Union{Real, Interval}}
     lb::Real
     ub::Real
 
     function ProbabilityBox{T}(
-        p::Dict{Symbol,<:Any}, lb::Real, ub::Real
-    ) where {T<:UnivariateDistribution}
+            p::Dict{Symbol, <:Any}, lb::Real, ub::Real
+        ) where {T <: UnivariateDistribution}
         # Make sure all required parameters for the distribution are present
         if !issetequal(keys(p), fieldnames(T))
             error(
@@ -68,16 +68,16 @@ struct ProbabilityBox{T<:UnivariateDistribution}
             end
         end
 
-        return new(convert(Dict{Symbol,Union{Real,Interval}}, p), lb, ub)
+        return new(convert(Dict{Symbol, Union{Real, Interval}}, p), lb, ub)
     end
 end
 
-function ProbabilityBox{T}(p::Dict{Symbol,<:Any}) where {T<:UnivariateDistribution}
+function ProbabilityBox{T}(p::Dict{Symbol, <:Any}) where {T <: UnivariateDistribution}
     domain = support(T())
     return ProbabilityBox{T}(p, domain.lb, domain.ub)
 end
 
-function ProbabilityBox{T}(p::Dict{Symbol,<:Any}) where {T<:Uniform}
+function ProbabilityBox{T}(p::Dict{Symbol, <:Any}) where {T <: Uniform}
     if !issetequal(keys(p), fieldnames(T))
         error("Parameter mismatch for ProbabilityBox $(keys(p)) != $([fieldnames(T)...]).")
     end
@@ -86,34 +86,34 @@ function ProbabilityBox{T}(p::Dict{Symbol,<:Any}) where {T<:Uniform}
     values = vcat(
         [
             isa(p, Interval) ? collect(UncertaintyQuantification.bounds(p)) : p for
-            p in parameters
+                p in parameters
         ]...,
     )
     return ProbabilityBox{T}(p, minimum(values), maximum(values))
 end
 
-function ProbabilityBox{T}(parameter::Interval) where {T<:UnivariateDistribution}
+function ProbabilityBox{T}(parameter::Interval) where {T <: UnivariateDistribution}
     @assert length(fieldnames(T)) == 1
     return ProbabilityBox{T}(
-        Dict{Symbol,Union{Real,Interval}}(fieldnames(T)[1] => parameter)
+        Dict{Symbol, Union{Real, Interval}}(fieldnames(T)[1] => parameter)
     )
 end
 
 function ProbabilityBox{T}(
-    parameters::Vector{<:Pair{Symbol,<:Any}}
-) where {T<:UnivariateDistribution}
+        parameters::Vector{<:Pair{Symbol, <:Any}}
+    ) where {T <: UnivariateDistribution}
     return ProbabilityBox{T}(Dict(parameters))
 end
 
 function ProbabilityBox{T}(
-    parameters::Vector{<:Pair{Symbol,<:Any}}, lb::Real, ub::Real
-) where {T<:UnivariateDistribution}
+        parameters::Vector{<:Pair{Symbol, <:Any}}, lb::Real, ub::Real
+    ) where {T <: UnivariateDistribution}
     return ProbabilityBox{T}(Dict(parameters), lb, ub)
 end
 
 function map_to_precise(
-    x::AbstractVector{<:Real}, pbox::ProbabilityBox{T}
-) where {T<:UnivariateDistribution}
+        x::AbstractVector{<:Real}, pbox::ProbabilityBox{T}
+    ) where {T <: UnivariateDistribution}
     parameters = collect(getindex.(Ref(pbox.parameters), fieldnames(T)))
     intervals = filter(x -> isa(x, Interval), parameters)
     if !all(in.(x, intervals))
@@ -124,9 +124,9 @@ function map_to_precise(
 
     p = [
         if isa(par, Interval)
-            popfirst!(_x)
+                popfirst!(_x)
         else
-            par
+                par
         end for par in parameters
     ]
 
@@ -139,7 +139,7 @@ function map_to_precise(
     return truncated(T(p...), pbox.lb, pbox.ub)
 end
 
-function quantile(pbox::ProbabilityBox{T}, u::Real) where {T<:UnivariateDistribution}
+function quantile(pbox::ProbabilityBox{T}, u::Real) where {T <: UnivariateDistribution}
     quantiles = map(
         par -> quantile(map_to_precise([par...], pbox), u),
         Iterators.product([[a, b] for (a, b) in zip(bounds(pbox)...)]...),
@@ -148,9 +148,9 @@ function quantile(pbox::ProbabilityBox{T}, u::Real) where {T<:UnivariateDistribu
     return Interval(minimum(quantiles), maximum(quantiles))
 end
 
-rand(pbox::ProbabilityBox, n::Integer=1) = quantile.(Ref(pbox), rand(n))
+rand(pbox::ProbabilityBox, n::Integer = 1) = quantile.(Ref(pbox), rand(n))
 
-function bounds(pbox::ProbabilityBox{T}) where {T<:UnivariateDistribution}
+function bounds(pbox::ProbabilityBox{T}) where {T <: UnivariateDistribution}
     intervals = filter(
         x -> isa(x, Interval), collect(getindex.(Ref(pbox.parameters), fieldnames(T)))
     )
@@ -160,7 +160,7 @@ function bounds(pbox::ProbabilityBox{T}) where {T<:UnivariateDistribution}
     return lb, ub
 end
 
-function cdf(pbox::ProbabilityBox{T}, x::Real) where {T<:UnivariateDistribution}
+function cdf(pbox::ProbabilityBox{T}, x::Real) where {T <: UnivariateDistribution}
     cdfs = map(
         par -> cdf(map_to_precise([par...], pbox), x),
         Iterators.product([[a, b] for (a, b) in zip(bounds(pbox)...)]...),
@@ -171,8 +171,8 @@ end
 
 # Does the inverse of quantile, not cdf, which would return an interval
 function reverse_quantile(
-    pbox::ProbabilityBox{T}, x::Interval
-) where {T<:UnivariateDistribution}
+        pbox::ProbabilityBox{T}, x::Interval
+    ) where {T <: UnivariateDistribution}
     lb, ub = bounds(pbox)
 
     cdfs_lo = map(

@@ -13,10 +13,10 @@ struct FORM <: AbstractSimulation
     fdm::FiniteDifferencesMethod
 
     function FORM(
-        n::Integer=10,
-        tol::Real=1e-3;
-        fdm::FiniteDifferencesMethod=CentralFiniteDifferences(3),
-    )
+            n::Integer = 10,
+            tol::Real = 1.0e-3;
+            fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+        )
         return new(n, tol, fdm)
     end
 end
@@ -33,11 +33,11 @@ pf, β, dp = probability_of_failure(model, performance, inputs, sim)
 ```
 """
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::FORM,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::FORM,
+    )
     models, inputs = wrap.([models, inputs])
 
     if isimprecise(inputs, models)
@@ -60,7 +60,7 @@ function probability_of_failure(
     for it in 1:(sim.n)
         sns[1, random_names] .= y
 
-        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; fdm=sim.fdm)
+        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; fdm = sim.fdm)
 
         H = map(n -> H[n], random_names)
 

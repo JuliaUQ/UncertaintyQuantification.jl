@@ -34,8 +34,8 @@ dim: 2
 ```
 """
 struct JointDistribution{
-    D<:Union{<:Copulas.Copula,MultivariateDistribution},M<:Union{RandomVariable,Symbol}
-} <: RandomUQInput
+        D <: Union{<:Copulas.Copula, MultivariateDistribution}, M <: Union{RandomVariable, Symbol},
+    } <: RandomUQInput
     d::D
     m::Vector{<:M}
 
@@ -47,7 +47,7 @@ struct JointDistribution{
         if unique(names(m)) != names(m)
             throw(ArgumentError("Marginal names must be unique."))
         end
-        return new{typeof(c),RandomVariable}(c, m)
+        return new{typeof(c), RandomVariable}(c, m)
     end
 
     # MultivariateDistribution + Symbol
@@ -58,11 +58,11 @@ struct JointDistribution{
         if unique(m) != m
             throw(ArgumentError("Marginal names must be unique."))
         end
-        return new{MultivariateDistribution,Symbol}(d, m)
+        return new{MultivariateDistribution, Symbol}(d, m)
     end
 end
 
-function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, n::Integer=1)
+function sample(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, n::Integer = 1)
     u = rand(jd.d, n)
     # ensure that u is a Matrix
     if n == 1
@@ -78,13 +78,13 @@ function sample(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, n::Int
     return samples
 end
 
-function sample(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, n::Integer=1)
+function sample(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}, n::Integer = 1)
     return DataFrame(permutedims(rand(jd.d, n)), jd.m)
 end
 
 function to_physical_space!(
-    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::DataFrame
-)
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::DataFrame
+    )
     # correlated cdf space
     U = inverse_rosenblatt(
         jd.d, permutedims(cdf.(Normal(), Matrix{Float64}(x[:, names(jd)])))
@@ -97,8 +97,8 @@ function to_physical_space!(
 end
 
 function to_standard_normal_space!(
-    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::DataFrame
-)
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::DataFrame
+    )
     for rv in jd.m
         if isa(rv.dist, ProbabilityBox)
             x[!, rv.name] = reverse_quantile.(rv.dist, x[:, rv.name])
@@ -113,7 +113,7 @@ function to_standard_normal_space!(
     return nothing
 end
 
-function to_standard_normal_space!(jd::JointDistribution{D,M}, df::DataFrame) where {D,M}
+function to_standard_normal_space!(jd::JointDistribution{D, M}, df::DataFrame) where {D, M}
     if isa(jd.d, AbstractTransportMap)
         return to_standard_normal_space!(jd.d, df)
     else
@@ -121,7 +121,7 @@ function to_standard_normal_space!(jd::JointDistribution{D,M}, df::DataFrame) wh
     end
 end
 
-function to_physical_space!(jd::JointDistribution{D,M}, df::DataFrame) where {D,M}
+function to_physical_space!(jd::JointDistribution{D, M}, df::DataFrame) where {D, M}
     if isa(jd.d, AbstractTransportMap)
         return to_physical_space!(jd.d, df)
     else
@@ -129,67 +129,67 @@ function to_physical_space!(jd::JointDistribution{D,M}, df::DataFrame) where {D,
     end
 end
 
-function names(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable})
+function names(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable})
     return vec(map(x -> x.name, jd.m))
 end
 
-function names(jd::JointDistribution{<:MultivariateDistribution,<:Symbol})
+function names(jd::JointDistribution{<:MultivariateDistribution, <:Symbol})
     return jd.m
 end
 
-mean(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}) = mean.(jd.m)
+mean(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}) = mean.(jd.m)
 
-function mean(jd::JointDistribution{<:MultivariateDistribution,<:Symbol})
+function mean(jd::JointDistribution{<:MultivariateDistribution, <:Symbol})
     return mean(jd.d)
 end
 
-dimensions(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}) = length(jd.d)
+dimensions(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}) = length(jd.d)
 
-dimensions(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = length(jd.d)
+dimensions(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = length(jd.d)
 
 function bounds(
-    jd::JointDistribution{
-        <:Copulas.Copula,<:RandomVariable{<:Union{UnivariateDistribution,ProbabilityBox}}
-    },
-)
+        jd::JointDistribution{
+            <:Copulas.Copula, <:RandomVariable{<:Union{UnivariateDistribution, ProbabilityBox}},
+        },
+    )
     b = map(bounds, filter(isimprecise, jd.m))
 
     return vcat(getindex.(b, 1)...), vcat(getindex.(b, 2)...)
 end
 
-var(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = var(jd.d)
+var(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = var(jd.d)
 
 function pdf(
-    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::AbstractVector{<:Real}
-)
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::AbstractVector{<:Real}
+    )
     return pdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)]) * prod([pdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
 end
 
 function cdf(
-    jd::JointDistribution{<:Copulas.Copula,<:RandomVariable}, x::AbstractVector{<:Real}
-)
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::AbstractVector{<:Real}
+    )
     return cdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
 end
 
 function pdf(
-    jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::AbstractVector{<:Real}
-)
+        jd::JointDistribution{<:MultivariateDistribution, <:Symbol}, x::AbstractVector{<:Real}
+    )
     return pdf(jd.d, x)
 end
 
 function logpdf(
-    jd::JointDistribution{<:MultivariateDistribution,<:Symbol}, x::AbstractVector{<:Real}
-)
+        jd::JointDistribution{<:MultivariateDistribution, <:Symbol}, x::AbstractVector{<:Real}
+    )
     return logpdf(jd.d, x)
 end
 
-minimum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = minimum(jd.d)
+minimum(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = minimum(jd.d)
 
-maximum(jd::JointDistribution{<:MultivariateDistribution,<:Symbol}) = maximum(jd.d)
+maximum(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = maximum(jd.d)
 
 function insupport(
-    jd::JointDistribution{<:MultivariateDistribution,<:Symbol},
-    x::Union{Vector{<:Real},<:Real},
-)
+        jd::JointDistribution{<:MultivariateDistribution, <:Symbol},
+        x::Union{Vector{<:Real}, <:Real},
+    )
     return insupport(jd.d, x)
 end

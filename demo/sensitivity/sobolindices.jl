@@ -8,7 +8,7 @@ X = RandomVariable.(Normal.(0, σx), [:X1, :X2, :X3, :X4, :X5])
 
 B = Model(
     df ->
-        df.X1 .* df.ω1 + df.X2 .* df.ω2 + df.X3 .* df.ω3 + df.X4 .* df.ω4 + df.X5 .* df.ω5,
+    df.X1 .* df.ω1 + df.X2 .* df.ω2 + df.X3 .* df.ω3 + df.X4 .* df.ω4 + df.X5 .* df.ω5,
     :B,
 )
 
@@ -21,6 +21,6 @@ VB = sum(σx .^ 2 .* σω .^ 2)
 analytical = (σx .^ 2 .* σω .^ 2) / VB
 
 # Monte Carlo
-@assert all(isapprox.(s_mc.FirstOrder, 0.0, atol=0.1))
-@assert all(isapprox.(s_mc.TotalEffect[1:5], analytical, rtol=0.1))
-@assert all(isapprox.(s_mc.TotalEffect[6:end], analytical, rtol=0.1))
+@assert all(isapprox.(s_mc.FirstOrder, 0.0, atol = 0.1))
+@assert all(isapprox.(s_mc.TotalEffect[1:5], analytical, rtol = 0.1))
+@assert all(isapprox.(s_mc.TotalEffect[6:end], analytical, rtol = 0.1))

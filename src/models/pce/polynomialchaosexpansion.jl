@@ -21,7 +21,7 @@ struct WeightedApproximateFetekePoints
     sim::AbstractMonteCarlo
     fadd::Integer
     fmult::Integer
-    function WeightedApproximateFetekePoints(sim::AbstractMonteCarlo; fadd=10, fmult=2)
+    function WeightedApproximateFetekePoints(sim::AbstractMonteCarlo; fadd = 10, fmult = 2)
         return new(sim, fadd, fmult)
     end
 end
@@ -29,12 +29,12 @@ end
 struct GaussQuadrature end
 
 function polynomialchaos(
-    inputs::Union{<:UQInput,Vector{<:UQInput}},
-    model::Union{<:UQModel,Vector{<:UQModel}},
-    Ψ::PolynomialChaosBasis,
-    outputs::Union{Symbol,<:AbstractVector{Symbol}},
-    ls::LeastSquares,
-)
+        inputs::Union{<:UQInput, Vector{<:UQInput}},
+        model::Union{<:UQModel, Vector{<:UQModel}},
+        Ψ::PolynomialChaosBasis,
+        outputs::Union{Symbol, <:AbstractVector{Symbol}},
+        ls::LeastSquares,
+    )
     inputs = wrap(inputs)
     outputs = wrap(outputs)
 
@@ -51,7 +51,7 @@ function polynomialchaos(
     n = ls.sim.n
     A = Matrix{Float64}(undef, n, Np)
     for i in 1:n
-        A[i,:] .= evaluate(Ψ, view(x,i,:))
+        A[i, :] .= evaluate(Ψ, view(x, i, :))
     end
 
     pces = PolynomialChaosExpansion[]
@@ -77,12 +77,12 @@ function polynomialchaos(
 end
 
 function polynomialchaos(
-    inputs::Union{<:UQInput,Vector{<:UQInput}},
-    model::Union{<:UQModel,Vector{<:UQModel}},
-    Ψ::PolynomialChaosBasis,
-    outputs::Union{Symbol,<:AbstractVector{Symbol}},
-    wafp::WeightedApproximateFetekePoints
-)
+        inputs::Union{<:UQInput, Vector{<:UQInput}},
+        model::Union{<:UQModel, Vector{<:UQModel}},
+        Ψ::PolynomialChaosBasis,
+        outputs::Union{Symbol, <:AbstractVector{Symbol}},
+        wafp::WeightedApproximateFetekePoints
+    )
     inputs = wrap(inputs)
     outputs = wrap(outputs)
 
@@ -97,34 +97,34 @@ function polynomialchaos(
 
     Np = length(Ψ.α)
     n = wafp.sim.n
-    rest = min((Np-1) * wafp.fmult, wafp.fadd, n - Np)
+    rest = min((Np - 1) * wafp.fmult, wafp.fadd, n - Np)
     rest = max(rest, 0)
-    
+
     A = Matrix{Float64}(undef, n, Np)
     for i in 1:n
-        A[i,:] .= evaluate(Ψ, x[i,:])
+        A[i, :] .= evaluate(Ψ, x[i, :])
     end
     w = norm.(eachrow(A)) .^ (-2.0)
-    B = A' .* reshape(w .^ (1/2), 1, :)
+    B = A' .* reshape(w .^ (1 / 2), 1, :)
     _, _, p = qr(B, ColumnNorm())
     pout = zeros(Int, Np + rest)
     pout[1:Np] .= p[1:Np]
-    Ginv = inv(B[:,p] * B[:,p]')
+    Ginv = inv(B[:, p] * B[:, p]')
     for i in 1:rest
-        val, j = findmax(j -> B[:,p[j]]' * Ginv * B[:,p[j]], Np+i:n)
-        pout[Np+i] = p[j]
-        Ginv .-= ((Ginv * B[:,p[j]]) * (B[:,p[j]]' * Ginv)) ./ (1 + val)
+        val, j = findmax(j -> B[:, p[j]]' * Ginv * B[:, p[j]], (Np + i):n)
+        pout[Np + i] = p[j]
+        Ginv .-= ((Ginv * B[:, p[j]]) * (B[:, p[j]]' * Ginv)) ./ (1 + val)
     end
-    
-    samples = samples[pout,:]
+
+    samples = samples[pout, :]
     to_physical_space!(random_inputs, samples)
     w = w[pout]
     evaluate!(model, samples)
 
-    A = A[pout,:]
+    A = A[pout, :]
     W = Diagonal(w)
     AtWA = factorize(A' * W * A)
-    
+
     pces = PolynomialChaosExpansion[]
     mses = Float64[]
 
@@ -145,12 +145,12 @@ function polynomialchaos(
 end
 
 function polynomialchaos(
-    inputs::Union{<:UQInput,Vector{<:UQInput}},
-    model::Union{<:UQModel,Vector{<:UQModel}},
-    Ψ::PolynomialChaosBasis,
-    outputs::Union{Symbol,<:AbstractVector{Symbol}},
-    _::GaussQuadrature,
-)
+        inputs::Union{<:UQInput, Vector{<:UQInput}},
+        model::Union{<:UQModel, Vector{<:UQModel}},
+        Ψ::PolynomialChaosBasis,
+        outputs::Union{Symbol, <:AbstractVector{Symbol}},
+        _::GaussQuadrature,
+    )
     inputs = wrap(inputs)
     outputs = wrap(outputs)
 

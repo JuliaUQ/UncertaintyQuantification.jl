@@ -34,8 +34,8 @@ function distribution_parameters(mean::Real, std::Real, _::Type{Distributions.Lo
 end
 
 function distribution_parameters(
-    val::Real, d::Type{Distributions.Rayleigh}; std::Bool=false
-)
+        val::Real, d::Type{Distributions.Rayleigh}; std::Bool = false
+    )
     if !std
         σ = val / sqrt(π / 2)
     else

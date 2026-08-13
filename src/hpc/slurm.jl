@@ -23,17 +23,17 @@ SlurmInterface(Dict("account" => "HPC_account_1", "partition" => "CPU_partition"
 
 """
 Base.@kwdef struct SlurmInterface <: AbstractHPCScheduler
-    options::Dict{String,String}
+    options::Dict{String, String}
     throttle::Integer = 0
     batchsize::Integer = 0
     extras::Vector{String} = String[]
 
     function SlurmInterface(
-        options::Dict{String,String};
-        throttle::Integer=0,
-        batchsize::Integer=0,
-        extras::Vector{String}=String[],
-    )
+            options::Dict{String, String};
+            throttle::Integer = 0,
+            batchsize::Integer = 0,
+            extras::Vector{String} = String[],
+        )
         if haskey(options, "array")
             error("Do not pass array as an option.")
         end
@@ -47,7 +47,7 @@ Base.@kwdef struct SlurmInterface <: AbstractHPCScheduler
 end
 
 function setup_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, datetime::String)
-    if si.batchsize == 0
+    return if si.batchsize == 0
         setup_slurm_array(si, m::ExternalModel, n::Integer, datetime::String)
     else
         for batch in 1:ceil(Integer, n / si.batchsize)
@@ -57,7 +57,7 @@ function setup_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, dateti
 end
 
 function run_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, datetime::String)
-    if si.batchsize == 0
+    return if si.batchsize == 0
         run_slurm_array(si, m::ExternalModel, datetime::String)
     else
         for batch in 1:ceil(Integer, n / si.batchsize)
@@ -67,8 +67,8 @@ function run_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, datetime
 end
 
 function setup_slurm_array(
-    si::SlurmInterface, m::ExternalModel, n::Integer, path::String, batch::Integer=0
-)
+        si::SlurmInterface, m::ExternalModel, n::Integer, path::String, batch::Integer = 0
+    )
     binary = m.solver.path
     source = m.solver.source
     args = m.solver.args
@@ -162,8 +162,8 @@ end
 
 # Slurm interface is passed to dispatch function for slurm. Perhaps there is a more elegant solution using parametric typing.
 function run_slurm_array(
-    si::SlurmInterface, m::ExternalModel, path::String, batch::Integer=0
-)
+        si::SlurmInterface, m::ExternalModel, path::String, batch::Integer = 0
+    )
     dirpath = joinpath(m.workdir, path)
 
     p = if iszero(batch)

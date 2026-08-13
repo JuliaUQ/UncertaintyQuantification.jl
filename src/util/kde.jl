@@ -85,7 +85,7 @@ end
 #=
 S. J. Sheather, M. C. Jones, A Reliable Data-Based Bandwidth Selection Method for Kernel Density Estimation, Journal of the Royal Statistical Society: Series B (Methodological), Volume 53, Issue 3, July 1991, Pages 683–690, https://doi.org/10.1111/j.2517-6161.1991.tb01857.x
 =#
-function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
+function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer = 0)
     λ = iqr(x)
     n = length(x)
 
@@ -95,7 +95,7 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
         x
     end
 
-    a = 0.920λ * n^(-1 / 7)
+    a = 0.92λ * n^(-1 / 7)
     b = 0.912λ * n^(-1 / 9)
 
     α₂ = 1.357 * (SD(a, data) / TD(b, data))^(1 / 7)
@@ -106,7 +106,7 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
         return ((1 / (2 * sqrt(π))) / (3 * SD(α₂_h, data)))^(1 / 5) * n^(-1 / 5) - h
     end
 
-    return newtonraphson(1.0, f, 1e-3, 1e-10, 10^3), data
+    return newtonraphson(1.0, f, 1.0e-3, 1.0e-10, 10^3), data
 end
 
 function kde(h::Real, x::Real, X::AbstractVector{<:Real})
@@ -115,5 +115,5 @@ end
 
 function kde(h::Real, x::Real, X::BinnedData)
     return sum(X.weights)^(-1) *
-           sum([h^(-1) * wⱼ * ϕ(h^(-1) * (x - xⱼ)) for (xⱼ, wⱼ) in zip(X.grid, X.weights)])
+        sum([h^(-1) * wⱼ * ϕ(h^(-1) * (x - xⱼ)) for (xⱼ, wⱼ) in zip(X.grid, X.weights)])
 end

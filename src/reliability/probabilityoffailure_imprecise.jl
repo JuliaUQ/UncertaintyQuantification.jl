@@ -1,4 +1,3 @@
-
 """
     DoubleLoop(lb::AbstractSimulation, ub::AbstractSimulation)
 
@@ -81,11 +80,11 @@ If the lower and upper bounds are equal, returns only the scalar probability of 
 See [`DoubleLoop`](@ref) for details of the random slicing configuration.
 """
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    dl::DoubleLoop,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        dl::DoubleLoop,
+    )
     inputs, models = wrap.([inputs, models])
     @assert isimprecise(inputs, models)
 
@@ -142,18 +141,18 @@ function probability_of_failure(
         isa(dl.lb, FORM) ? OrthoMADS(length(x0)) : RobustOrthoMADS(length(x0)),
         x -> pf_low(x),
         x0;
-        lowerbound=lb,
-        upperbound=ub,
-        min_mesh_size=1e-13,
+        lowerbound = lb,
+        upperbound = ub,
+        min_mesh_size = 1.0e-13,
     )
 
     result_ub = minimize(
         isa(dl.ub, FORM) ? OrthoMADS(length(x0)) : RobustOrthoMADS(length(x0)),
         x -> -pf_high(x),
         x0;
-        lowerbound=lb,
-        upperbound=ub,
-        min_mesh_size=1e-13,
+        lowerbound = lb,
+        upperbound = ub,
+        min_mesh_size = 1.0e-13,
     )
 
     pf = Interval(result_lb.f, -result_ub.f)
@@ -228,6 +227,7 @@ function order_models!(names::AbstractVector{Symbol}, models::AbstractVector{<:U
             models[i], models[j] = models[j], models[i]
         end
     end
+    return
 end
 
 """
@@ -250,11 +250,11 @@ The inputs must include at least one imprecise variable.
 See [`RandomSlicing`](@ref) for details of the random slicing configuration.
 """
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    rs::RandomSlicing,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        rs::RandomSlicing,
+    )
     inputs, models = wrap.([inputs, models])
     @assert isimprecise(inputs, models)
 

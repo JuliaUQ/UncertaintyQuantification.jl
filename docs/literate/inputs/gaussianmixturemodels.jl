@@ -28,11 +28,11 @@ df = DataFrame(X, [:x1, :x2])
 gmm = GaussianMixtureModel(df, 2)
 
 # To visually validate the fit, we can plot the data and the fitted GMM. We create a grid of points to evaluate the GMM's PDF and plot the contours.
-x_range = range(-2, 10, length=100)
-y_range = range(-2, 10, length=100)
+x_range = range(-2, 10, length = 100)
+y_range = range(-2, 10, length = 100)
 
-scatter(df.x1, df.x2, alpha=0.3, label="Data")
-contour!(x_range, y_range, (x,y) -> pdf(gmm, [x, y]), levels=10, linewidth=2, c=2, label="GMM")
+scatter(df.x1, df.x2, alpha = 0.3, label = "Data")
+contour!(x_range, y_range, (x, y) -> pdf(gmm, [x, y]), levels = 10, linewidth = 2, c = 2, label = "GMM")
 #md savefig("data-gmm.svg"); nothing # hide
 
 # ![Data and fitted GMM](data-gmm.svg)
@@ -40,7 +40,7 @@ contour!(x_range, y_range, (x,y) -> pdf(gmm, [x, y]), levels=10, linewidth=2, c=
 # From the fitted GMM, we can also draw samples and compare them to the original data.
 # We generate 500 samples from the GMM and plot them.
 samples = sample(gmm, 500)
-scatter!(samples.x1, samples.x2, alpha=0.3, c=2, label="Samples")
+scatter!(samples.x1, samples.x2, alpha = 0.3, c = 2, label = "Samples")
 #md savefig("samples-gmm.svg"); nothing # hide
 
 # ![Data and fitted GMM, and samples from the GMM](samples-gmm.svg)

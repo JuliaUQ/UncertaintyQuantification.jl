@@ -19,28 +19,28 @@ struct MaximumAPosterioriBayesian <: AbstractBayesianPointEstimate
     upperbounds::Vector{Float64}
 
     function MaximumAPosterioriBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Float64};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Float64};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return MaximumAPosterioriBayesian(
             prior,
             [x0];
-            islog=islog,
-            lowerbounds=lowerbounds,
-            upperbounds=upperbounds,
+            islog = islog,
+            lowerbounds = lowerbounds,
+            upperbounds = upperbounds,
         )
     end
 
     function MaximumAPosterioriBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Vector{Float64}};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Vector{Float64}};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return new(prior, x0, islog, lowerbounds, upperbounds)
     end
 end
@@ -75,28 +75,28 @@ struct MaximumLikelihoodBayesian <: AbstractBayesianPointEstimate
     upperbounds::Vector{Float64}
 
     function MaximumLikelihoodBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Float64};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Float64};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return MaximumLikelihoodBayesian(
             prior,
             [x0];
-            islog=islog,
-            lowerbounds=lowerbounds,
-            upperbounds=upperbounds,
+            islog = islog,
+            lowerbounds = lowerbounds,
+            upperbounds = upperbounds,
         )
     end
 
     function MaximumLikelihoodBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Vector{Float64}};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Vector{Float64}};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return new(prior, x0, islog, lowerbounds, upperbounds)
     end
 end
@@ -129,14 +129,14 @@ If a model evaluation is required to evaluate the likelihood, a vector of `UQMod
 For a general overview of the function, see [`bayesianupdating `](@ref).
 """
 function bayesianupdating(
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    pointestimate::AbstractBayesianPointEstimate;
-    prior::Union{Function,Nothing}=nothing,
-    filtertolerance::Real=1e-6,
-    optimizer::Optim.AbstractOptimizer=Optim.LBFGS(),
-    optimoptions::Optim.Options=Optim.Options(),
-)
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        pointestimate::AbstractBayesianPointEstimate;
+        prior::Union{Function, Nothing} = nothing,
+        filtertolerance::Real = 1.0e-6,
+        optimizer::Optim.AbstractOptimizer = Optim.LBFGS(),
+        optimoptions::Optim.Options = Optim.Options(),
+    )
     optimTarget = setupoptimizationproblem(prior, likelihood, models, pointestimate)
     result = optimize_pointestimate(optimTarget, pointestimate, optimizer, optimoptions)
 
@@ -159,11 +159,11 @@ end
 
 # function to set up the optimization problem for MAP estimate and to generate a prior function if none is given.
 function setupoptimizationproblem(
-    prior::Union{Function,Nothing},
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    mapestimate::MaximumAPosterioriBayesian,
-)
+        prior::Union{Function, Nothing},
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        mapestimate::MaximumAPosterioriBayesian,
+    )
 
     # if no prior is given, generate prior function from mapestimate.prior
     if isnothing(prior)
@@ -171,14 +171,14 @@ function setupoptimizationproblem(
             df -> vec(
                 sum(
                     hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), mapestimate.prior)...);
-                    dims=2,
+                    dims = 2,
                 ),
             )
         else
             df -> vec(
                 prod(
                     hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), mapestimate.prior)...);
-                    dims=2,
+                    dims = 2,
                 ),
             )
         end
@@ -204,11 +204,11 @@ end
 
 # function to generate the optimization problem for MLE. Note that the prior is not used, but for reasons of multiple dispatch it needs to be included
 function setupoptimizationproblem(
-    prior::Union{Function,Nothing},
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    mlestimate::MaximumLikelihoodBayesian,
-)
+        prior::Union{Function, Nothing},
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        mlestimate::MaximumLikelihoodBayesian,
+    )
     target = if mlestimate.islog
         df -> likelihood(df)
     else
@@ -229,10 +229,10 @@ end
 
 # actual optimization procedure based on the point estimation method and given parameters
 function optimize_pointestimate(
-    optimTarget::Function, pointestimate::AbstractBayesianPointEstimate, optimizer::Optim.AbstractOptimizer, optimoptions::Optim.Options
-)
+        optimTarget::Function, pointestimate::AbstractBayesianPointEstimate, optimizer::Optim.AbstractOptimizer, optimoptions::Optim.Options
+    )
 
-    if all(isinf, pointestimate.upperbounds) && all(isinf, pointestimate.lowerbounds)
+    return if all(isinf, pointestimate.upperbounds) && all(isinf, pointestimate.lowerbounds)
         optvalues = map(x -> optimize(optimTarget, x, optimizer, optimoptions), pointestimate.x0)
     else
         optvalues = map(
@@ -274,28 +274,28 @@ struct LaplaceEstimateBayesian <: AbstractBayesianPointEstimate
     upperbounds::Vector{Float64}
 
     function LaplaceEstimateBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Float64};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Float64};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return LaplaceEstimateBayesian(
             prior,
             [x0];
-            islog=islog,
-            lowerbounds=lowerbounds,
-            upperbounds=upperbounds,
+            islog = islog,
+            lowerbounds = lowerbounds,
+            upperbounds = upperbounds,
         )
     end
 
     function LaplaceEstimateBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        x0::Vector{Vector{Float64}};
-        islog::Bool=true,
-        lowerbounds::Vector{Float64}=[-Inf],
-        upperbounds::Vector{Float64}=[Inf],
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            x0::Vector{Vector{Float64}};
+            islog::Bool = true,
+            lowerbounds::Vector{Float64} = [-Inf],
+            upperbounds::Vector{Float64} = [Inf],
+        )
         return new(prior, x0, islog, lowerbounds, upperbounds)
     end
 end
@@ -329,21 +329,21 @@ If a model evaluation is required to evaluate the likelihood, a vector of `UQMod
 For a general overview of the function, see [`bayesianupdating`](@ref).
 """
 function bayesianupdating(
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    lpestimate::LaplaceEstimateBayesian;
-    prior::Union{Function,Nothing}=nothing,
-    filtertolerance::Real=1e-6,
-    optimizer::Optim.AbstractOptimizer=Optim.LBFGS(),
-    optimoptions::Optim.Options=Optim.Options(),
-    adbackend::ADTypes.AbstractADType=AutoFiniteDiff()
-)
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        lpestimate::LaplaceEstimateBayesian;
+        prior::Union{Function, Nothing} = nothing,
+        filtertolerance::Real = 1.0e-6,
+        optimizer::Optim.AbstractOptimizer = Optim.LBFGS(),
+        optimoptions::Optim.Options = Optim.Options(),
+        adbackend::ADTypes.AbstractADType = AutoFiniteDiff()
+    )
     mapestimate = MaximumAPosterioriBayesian(
         lpestimate.prior,
         lpestimate.x0;
-        islog=lpestimate.islog,
-        lowerbounds=lpestimate.lowerbounds,
-        upperbounds=lpestimate.upperbounds,
+        islog = lpestimate.islog,
+        lowerbounds = lpestimate.lowerbounds,
+        upperbounds = lpestimate.upperbounds,
     )
 
     optimTarget = setupoptimizationproblem(prior, likelihood, models, mapestimate)
@@ -352,21 +352,21 @@ function bayesianupdating(
         likelihood,
         models,
         mapestimate;
-        prior=prior,
-        filtertolerance=filtertolerance,
-        optimizer=optimizer,
-        optimoptions=optimoptions,
+        prior = prior,
+        filtertolerance = filtertolerance,
+        optimizer = optimizer,
+        optimoptions = optimoptions,
     )
 
-    vars = Matrix(results[:,names(lpestimate.prior)])
-    
+    vars = Matrix(results[:, names(lpestimate.prior)])
+
     # `hessian` from DifferentiationInterface.jl
     hess = [inv(hessian(optimTarget, adbackend, var)) for var in eachrow(vars)]
     # the call to Hermitian is needed to tell Julia that the matrix is Hermitian. Otherwise MvNormal will complain if the (co-)variances are small.
     Σ = Hermitian.(hess)
 
-    postvalues = lpestimate.islog ? exp.(results[:,name(mapestimate)]) : results[:,name(mapestimate)]
-    weights =  postvalues ./ sum(postvalues)
+    postvalues = lpestimate.islog ? exp.(results[:, name(mapestimate)]) : results[:, name(mapestimate)]
+    weights = postvalues ./ sum(postvalues)
 
     μ = Matrix(results[:, names(lpestimate.prior)])
 
@@ -376,24 +376,24 @@ function bayesianupdating(
 end
 
 # filter the DataFrame to only include the variables specified in `variables`
-function filterresults!(df::DataFrame, variables::Vector{Symbol}, tolerance::Real=1e-6)
-    
+function filterresults!(df::DataFrame, variables::Vector{Symbol}, tolerance::Real = 1.0e-6)
+
     filtered_df = Matrix(select(df, variables))
     n_points = size(filtered_df, 1)
 
     rem = falses(n_points, n_points)
 
-    for i=1:n_points, j=1:i
+    for i in 1:n_points, j in 1:i
         if i == j
             rem[i, j] = false
         else
-            rem[i, j] = norm(filtered_df[i,:] - filtered_df[j,:]) < tolerance
+            rem[i, j] = norm(filtered_df[i, :] - filtered_df[j, :]) < tolerance
         end
     end
-    mask = vec(any(rem, dims=2))
-    deleteat!(df, mask)
-    
+    mask = vec(any(rem, dims = 2))
+    return deleteat!(df, mask)
+
 end
 
-name(pe::MaximumAPosterioriBayesian) = pe.islog ? :logMAP : :MAP  
+name(pe::MaximumAPosterioriBayesian) = pe.islog ? :logMAP : :MAP
 name(pe::MaximumLikelihoodBayesian) = pe.islog ? :logMLE : :MLE  

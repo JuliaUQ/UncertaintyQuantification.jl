@@ -1,4 +1,3 @@
-
 # Function to check if (exact) line exits in file
 function isline(file, string_check)
     for (i, line) in enumerate(eachline(file))

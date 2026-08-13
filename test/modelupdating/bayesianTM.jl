@@ -11,7 +11,7 @@ end
 
 @testitem "TM BMU - Transformations: With density transform" setup = [TMBMU1, TestSetup] begin
     tm_log = TransportMapBayesian(
-        prior, deepcopy(map), quadrature; islog=true, transformprior=true
+        prior, deepcopy(map), quadrature; islog = true, transformprior = true
     )
 
     tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
@@ -27,7 +27,7 @@ end
 
 @testitem "TM BMU - Transformations: No density transform" setup = [TMBMU1] begin
     tm_log = TransportMapBayesian(
-        prior, deepcopy(map), quadrature; islog=true, transformprior=false
+        prior, deepcopy(map), quadrature; islog = true, transformprior = false
     )
 
     tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
@@ -46,7 +46,7 @@ end
     quadrature = GaussHermiteWeights(3, 2)
 
     # begin
-    tm_log = TransportMapBayesian(prior, map, quadrature; islog=true, transformprior=true)
+    tm_log = TransportMapBayesian(prior, map, quadrature; islog = true, transformprior = true)
     @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
         df -> df.x1, df -> df.L, [logL], tm_log
     )
@@ -68,7 +68,7 @@ end
     binary = joinpath(Sys.BINDIR, "julia")
     solver = Solver(binary, "radius.jl")
 
-    ext = ExternalModel(sourcedir, sourcefile, radius, solver;)
+    ext = ExternalModel(sourcedir, sourcefile, radius, solver)
     tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
     @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
 end
@@ -143,8 +143,8 @@ end
     ] # μ = 4, σ = 5
 
     function binomialinferencebenchmark(
-        transportmap::TransportMapBayesian, prior::Beta{Float64}
-    )
+            transportmap::TransportMapBayesian, prior::Beta{Float64}
+        )
         alpha0 = prior.α
         beta0 = prior.β
 
@@ -159,7 +159,7 @@ end
         function loglikelihood(df)
             return [
                 sum(logpdf.(Binomial.(N_binom, df_i.x), sum(data_binom))) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
@@ -183,7 +183,7 @@ end
         function loglikelihood(df)
             return [
                 sum(logpdf.(Normal.(df_i.x, std_fixed), data_normal_mean)) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
@@ -206,7 +206,7 @@ end
         function loglikelihood(df)
             return [
                 sum(logpdf.(Normal.(mean_fixed, sqrt(df_i.x)), data_normal_var)) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 

@@ -6,25 +6,27 @@ using DocumenterVitepress
 using UncertaintyQuantification
 
 format = MarkdownVitepress(;
-    repo="github.com/JuliaUQ/UncertaintyQuantification.jl", devbranch="master", devurl="dev"
+    repo = "github.com/JuliaUQ/UncertaintyQuantification.jl", devbranch = "master", devurl = "dev"
 )
 
 DocMeta.setdocmeta!(
     UncertaintyQuantification,
     :DocTestSetup,
-    :(using UncertaintyQuantification, Copulas, DataFrames, DisplayAs, Random;
-    Random.seed!(8128)),
+    :(
+        using UncertaintyQuantification, Copulas, DataFrames, DisplayAs, Random;
+        Random.seed!(8128)
+    ),
 )
 
 bib = CitationBibliography(joinpath(@__DIR__, "references.bib"))
 
 makedocs(;
-    modules=[UncertaintyQuantification],
-    plugins=[bib],
-    format=format,
-    sitename="UncertaintyQuantification.jl",
-    authors="Jasper Behrensdorf and Ander Gray",
-    pages=[
+    modules = [UncertaintyQuantification],
+    plugins = [bib],
+    format = format,
+    sitename = "UncertaintyQuantification.jl",
+    authors = "Jasper Behrensdorf and Ander Gray",
+    pages = [
         "Home" => "index.md",
         "Manual" => [
             "Introduction" => "manual/introduction.md",
@@ -67,16 +69,16 @@ makedocs(;
         ],
         "References" => "references.md",
     ],
-    warnonly=false,
-    draft=false,
-    source="src",
-    build="build",
+    warnonly = false,
+    draft = false,
+    source = "src",
+    build = "build",
 )
 
 DocumenterVitepress.deploydocs(;
-    repo="github.com/JuliaUQ/UncertaintyQuantification.jl",
-    target=joinpath(@__DIR__, "build"),
-    branch="gh-pages",
-    devbranch="master",
-    push_preview=true,
+    repo = "github.com/JuliaUQ/UncertaintyQuantification.jl",
+    target = joinpath(@__DIR__, "build"),
+    branch = "gh-pages",
+    devbranch = "master",
+    push_preview = true,
 )

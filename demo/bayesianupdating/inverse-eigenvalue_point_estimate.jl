@@ -30,12 +30,12 @@ function likelihood(df)
     return log.(exp.([-0.5 * sum(((Y .- λ[n, :]') ./ σ) .^ 2) for n in axes(λ, 1)]))
 end
 
-prior = RandomVariable.(Uniform(.1, 10), [:θ1, :θ2])
+prior = RandomVariable.(Uniform(0.1, 10), [:θ1, :θ2])
 
 burnin = 0
 n = 1000
 
-x0 = [[1., 1.],[3.,.5]]
+x0 = [[1.0, 1.0], [3.0, 0.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
 MAP = MaximumAPosterioriBayesian(prior, x0)
@@ -45,19 +45,19 @@ samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
 MLEstimate = bayesianupdating(likelihood, [λ1, λ2], MLE)
 
-scatter(samples.θ1, samples.θ2; lim=[0, 4], label="TMCMC", xlabel="θ1", ylabel="θ2")
-scatter!((MapEstimate.θ1, MapEstimate.θ2), label="MAP")
-scatter!((MLEstimate.θ1, MLEstimate.θ2), label="MLE")
+scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
+scatter!((MapEstimate.θ1, MapEstimate.θ2), label = "MAP")
+scatter!((MLEstimate.θ1, MLEstimate.θ2), label = "MLE")
 
-priorθ1 = RandomVariable(Normal(.5, .5), :θ1)
-priorθ2 = RandomVariable(Normal(1.5, .5), :θ2)
+priorθ1 = RandomVariable(Normal(0.5, 0.5), :θ1)
+priorθ2 = RandomVariable(Normal(1.5, 0.5), :θ2)
 
 prior = [priorθ1, priorθ2]
 
 burnin = 0
 n = 1000
 
-x0 = [[1., 1.],[3.,.5]]
+x0 = [[1.0, 1.0], [3.0, 0.5]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
 MAP = MaximumAPosterioriBayesian(prior, x0)
@@ -67,11 +67,11 @@ samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
 MLEstimate = bayesianupdating(likelihood, [λ1, λ2], MLE)
 
-scatter(samples.θ1, samples.θ2; lim=[0, 4], label="TMCMC", xlabel="θ1", ylabel="θ2")
-scatter!((MapEstimate.θ1, MapEstimate.θ2), label="MAP")
-scatter!((MLEstimate.θ1, MLEstimate.θ2), label="MLE")
+scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
+scatter!((MapEstimate.θ1, MapEstimate.θ2), label = "MAP")
+scatter!((MLEstimate.θ1, MLEstimate.θ2), label = "MLE")
 
-println(exp.(MLEstimate[!,:logMLE]))
-println(exp.(MapEstimate[!,:logMAP]))
+println(exp.(MLEstimate[!, :logMLE]))
+println(exp.(MapEstimate[!, :logMAP]))
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

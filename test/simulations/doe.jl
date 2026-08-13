@@ -275,9 +275,11 @@ end
     @test g == ["ab"]
     @test gi == [3]
 
-    v, i, g, gi = UncertaintyQuantification.variables_and_generators([
-        "a", "b", "ab", "c", "ac"
-    ])
+    v, i, g, gi = UncertaintyQuantification.variables_and_generators(
+        [
+            "a", "b", "ab", "c", "ac",
+        ]
+    )
     @test v == "abc"
     @test i == [1, 2, 4]
     @test g == ["ab", "ac"]
@@ -289,9 +291,11 @@ end
     @test g == ["abc"]
     @test gi == [2]
 
-    @test_throws ErrorException("Each String in columns must hold at least one character") UncertaintyQuantification.variables_and_generators([
-        "a", "", "b", "ab"
-    ])
+    @test_throws ErrorException("Each String in columns must hold at least one character") UncertaintyQuantification.variables_and_generators(
+        [
+            "a", "", "b", "ab",
+        ]
+    )
 
     @test_throws ErrorException(
         "All combinations of columns must also be individual columns."
@@ -302,7 +306,7 @@ end
     x = RandomVariable(Uniform(-1, 1), :x)
     y = RandomVariable(Uniform(0, 1), :y)
 
-    ff = FullFactorial([3, 3], 1.0 - 1e-12)
+    ff = FullFactorial([3, 3], 1.0 - 1.0e-12)
 
     samples = sample([x, y], ff)
 
@@ -312,7 +316,7 @@ end
     x = RandomVariable(Normal(1, 1), :x)
     y = RandomVariable(Exponential(2), :y)
 
-    ff = FullFactorial([5, 5], 1.0 - 1e-12)
+    ff = FullFactorial([5, 5], 1.0 - 1.0e-12)
 
     samples = sample([x, y], ff)
 

@@ -1,4 +1,3 @@
-
 @testsnippet BayesianUpdating begin
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
@@ -61,8 +60,8 @@
     ] # μ = 4, σ = 5
 
     function binomialinferencebenchmark(
-        sampler::AbstractBayesianMethod, prior::Beta{Float64}
-    )
+            sampler::AbstractBayesianMethod, prior::Beta{Float64}
+        )
         alpha0 = prior.α
         beta0 = prior.β
 
@@ -77,7 +76,7 @@
         function loglikelihood(df)
             return [
                 sum(logpdf.(Binomial.(N_binom, df_i.x), sum(data_binom))) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
@@ -101,7 +100,7 @@
         function loglikelihood(df)
             return [
                 sum(logpdf.(Normal.(df_i.x, std_fixed), data_normal_mean)) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
@@ -126,7 +125,7 @@
         function loglikelihood(df)
             return [
                 sum(logpdf.(Normal.(mean_fixed, sqrt(df_i.x)), data_normal_var)) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
@@ -155,7 +154,7 @@
         function loglikelihood(df)
             return [
                 logpdf(MvNormal(analytic_mean, analytic_cov), collect(x)) for
-                x in eachrow(df)
+                    x in eachrow(df)
             ]
         end
 
@@ -166,10 +165,10 @@
 end
 
 @testitem "Bayesian Updating: Single Component MH binomal inference analytical" setup = [
-    BayesianUpdating
+    BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x=0.5,)
+    x0 = (x = 0.5,)
     n = 4000
     burnin = 100
 
@@ -184,10 +183,10 @@ end
 end
 
 @testitem "Bayesian Updating: Single Component MH normal mean analytical" setup = [
-    BayesianUpdating
+    BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x=2.5,)
+    x0 = (x = 2.5,)
     n = 4000
     burnin = 100
 
@@ -205,10 +204,10 @@ end
 end
 
 @testitem "Bayesian Updating: Single Component MH normal var analytical" setup = [
-    BayesianUpdating
+    BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x=3.0,)
+    x0 = (x = 3.0,)
     n = 4000
     burnin = 100
 
@@ -227,7 +226,7 @@ end
 
 @testitem "Bayesian Updating: Single Component MH proposal" setup = [BayesianUpdating] begin
     proposal = Normal()
-    x0 = (x=3.0, y=1.0)
+    x0 = (x = 3.0, y = 1.0)
     mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
 
     @test isa(mh.proposal, Vector{<:UnivariateDistribution})
@@ -240,17 +239,17 @@ end
     @test mh_vec.proposal[2] == proposal_vec[2]
 
     @test_throws AssertionError SingleComponentMetropolisHastings(
-        proposal_vec, (; x=3.0), 1000, 100
+        proposal_vec, (; x = 3.0), 1000, 100
     )
 end
 
 @testitem "Bayesian Updating: Single Component MH bivariategaussian" setup = [
-    BayesianUpdating
+    BayesianUpdating,
 ] begin
     n = 100_000
     burnin = 20_000
 
-    x0 = (x=0.0, y=0.0)
+    x0 = (x = 0.0, y = 0.0)
 
     proposal = Normal(0, 1)
 

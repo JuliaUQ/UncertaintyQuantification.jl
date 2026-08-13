@@ -19,36 +19,42 @@ numberformats = Dict(:dt => ".8e", :gm => ".8e")
 
 workdir = joinpath(pwd(), "workdir-cantilever-column")
 
-max_abs_disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+max_abs_disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return maximum(abs.(data[:, 2]))
-end, :max_abs_disp)
+        return maximum(abs.(data[:, 2]))
+    end, :max_abs_disp
+)
 
-disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 2]
-end, :disp)
+        return data[:, 2]
+    end, :disp
+)
 
-sim_time = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+sim_time = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 1]
-end, :sim_time)
+        return data[:, 1]
+    end, :sim_time
+)
 
 
 opensees = Solver(
     "OpenSees", # path to OpenSees binary
     "cantilever-column.tcl";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 ext = ExternalModel(
-    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir=workdir, formats=numberformats
+    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir = workdir, formats = numberformats
 )
 
 models = [gm_model, ext]
@@ -56,7 +62,7 @@ models = [gm_model, ext]
 pf, mc_std, samples = probability_of_failure(models, df -> 200 .- df.max_abs_disp, [Δt, timeSteps, gm], MonteCarlo(100))
 println("Probability of failure: $pf")
 
-plot(t, samples.gm[1]./(maximum(abs.(samples.gm[1]))); label="Stochastic ground motion acceleration", xlabel="time in s", ylabel="Normalized acceleration and displacement")
-plot!(samples.sim_time[1], samples.disp[1]./(maximum(abs.(samples.disp[1]))); label="Displacement at top node", linewidth=2)
+plot(t, samples.gm[1] ./ (maximum(abs.(samples.gm[1]))); label = "Stochastic ground motion acceleration", xlabel = "time in s", ylabel = "Normalized acceleration and displacement")
+plot!(samples.sim_time[1], samples.disp[1] ./ (maximum(abs.(samples.disp[1]))); label = "Displacement at top node", linewidth = 2)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

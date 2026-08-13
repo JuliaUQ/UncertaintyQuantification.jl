@@ -2,13 +2,17 @@
     using DataFrames
     x = RandomVariable.([Uniform(-2, 0), Normal(-1, 0.5), Uniform(0, 1)], [:x1, :x2, :x3])
 
-    model1 = Model(df -> begin
-        return df.x1 .+ df.x2 .* df.x3
-    end, :y1)
+    model1 = Model(
+        df -> begin
+            return df.x1 .+ df.x2 .* df.x3
+        end, :y1
+    )
 
-    model2 = Model(df -> begin
-        return df.y1
-    end, :y)
+    model2 = Model(
+        df -> begin
+            return df.y1
+        end, :y
+    )
 
     model = [model1, model2]
 
@@ -24,8 +28,8 @@ end
     evaluate!(pce, new_samples)
     ϵ = mean((new_samples.y .- samples.y) .^ 2)
 
-    @test mean(pce) ≈ -1.5 rtol = 1e-10
-    @test var(pce) ≈ 0.5 rtol = 1e-10
+    @test mean(pce) ≈ -1.5 rtol = 1.0e-10
+    @test var(pce) ≈ 0.5 rtol = 1.0e-10
     @test mse ≈ ϵ atol = eps()
 end
 
@@ -37,8 +41,8 @@ end
     evaluate!(pce, new_samples)
     ϵ = mean((new_samples.y .- samples.y) .^ 2)
 
-    @test mean(pce) ≈ -1.5 rtol = 1e-10
-    @test var(pce) ≈ 0.5 rtol = 1e-10
+    @test mean(pce) ≈ -1.5 rtol = 1.0e-10
+    @test var(pce) ≈ 0.5 rtol = 1.0e-10
     @test mse ≈ ϵ atol = eps()
 end
 
@@ -46,21 +50,25 @@ end
     gq = GaussQuadrature()
     pce, _ = polynomialchaos(x, model, Ψ, :y, gq)
 
-    @test mean(pce) ≈ -1.5 rtol = 1e-10
-    @test var(pce) ≈ 0.5 rtol = 1e-10
+    @test mean(pce) ≈ -1.5 rtol = 1.0e-10
+    @test var(pce) ≈ 0.5 rtol = 1.0e-10
 end
 
 @testitem "PolynomialChaosExpansion: MultipleOutputs" setup = [PCE] begin
     x1 = RandomVariable(Uniform(-2, 0), :x1)
     x2 = RandomVariable(Uniform(-2, 0), :x2)
 
-    model_a = Model(df -> begin
-        return df.x1 .^ 2
-    end, :ya)
+    model_a = Model(
+        df -> begin
+            return df.x1 .^ 2
+        end, :ya
+    )
 
-    model_b = Model(df -> begin
-        return df.ya .* 2
-    end, :yb)
+    model_b = Model(
+        df -> begin
+            return df.ya .* 2
+        end, :yb
+    )
 
     Ψ0 = PolynomialChaosBasis([LegendreBasis()], p)
 
@@ -78,25 +86,29 @@ end
     @test isa(mses_wafp, Vector{<:Real})
     @test isa(pces_gq, Vector{PolynomialChaosExpansion})
 
-    @test mean(pces_ls[1]) ≈ 4 / 3 rtol = 1e-10
-    @test mean(pces_ls[2]) ≈ 8 / 3 rtol = 1e-10
-    @test mean(pces_wafp[1]) ≈ 4 / 3 rtol = 1e-10
-    @test mean(pces_wafp[2]) ≈ 8 / 3 rtol = 1e-10
-    @test mean(pces_gq[1]) ≈ 4 / 3 rtol = 1e-10
-    @test mean(pces_ls[2]) ≈ 8 / 3 rtol = 1e-10
+    @test mean(pces_ls[1]) ≈ 4 / 3 rtol = 1.0e-10
+    @test mean(pces_ls[2]) ≈ 8 / 3 rtol = 1.0e-10
+    @test mean(pces_wafp[1]) ≈ 4 / 3 rtol = 1.0e-10
+    @test mean(pces_wafp[2]) ≈ 8 / 3 rtol = 1.0e-10
+    @test mean(pces_gq[1]) ≈ 4 / 3 rtol = 1.0e-10
+    @test mean(pces_ls[2]) ≈ 8 / 3 rtol = 1.0e-10
 end
 
 @testitem "PolynomialChaosExpansion: Convenience Functions" setup = [PCE] begin
     x1 = RandomVariable(Uniform(-2, 0), :x1)
     x2 = RandomVariable(Uniform(-2, 0), :x2)
 
-    model_a = Model(df -> begin
-        return df.x1 .^ 2
-    end, :ya)
+    model_a = Model(
+        df -> begin
+            return df.x1 .^ 2
+        end, :ya
+    )
 
-    model_b = Model(df -> begin
-        return df.ya .* 2
-    end, :yb)
+    model_b = Model(
+        df -> begin
+            return df.ya .* 2
+        end, :yb
+    )
 
     Ψ1 = PolynomialChaosBasis([LegendreBasis()], p)
     Ψ2 = PolynomialChaosBasis([LegendreBasis(), LegendreBasis()], p)

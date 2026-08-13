@@ -7,7 +7,7 @@ struct SobolSampling <: AbstractQuasiMonteCarlo
     n::Integer
     randomization::Symbol
 
-    function SobolSampling(n::Integer, randomization::Symbol=:matousek)
+    function SobolSampling(n::Integer, randomization::Symbol = :matousek)
         randomization ∉ [:matousek, :owen, :none] &&
             error("type must be :matousek :owen or :none")
         if n > 0
@@ -26,7 +26,7 @@ struct FaureSampling <: AbstractQuasiMonteCarlo
     n::Integer
     randomization::Symbol
 
-    function FaureSampling(n::Integer, randomization::Symbol=:matousek)
+    function FaureSampling(n::Integer, randomization::Symbol = :matousek)
         randomization ∉ [:matousek, :owen, :none] &&
             error("type must be :matousek, :owen or :none")
         if n > 0
@@ -48,7 +48,7 @@ struct HaltonSampling <: AbstractQuasiMonteCarlo
     n::Integer
     randomization::Symbol
 
-    function HaltonSampling(n::Integer, randomization::Symbol=:none)
+    function HaltonSampling(n::Integer, randomization::Symbol = :none)
         randomization ∉ [:none] && error("type must be :none")
         if n > 0
             return new(n, randomization)
@@ -67,7 +67,7 @@ struct LatticeRuleSampling <: AbstractQuasiMonteCarlo
     n::Integer
     randomization::Symbol
 
-    function LatticeRuleSampling(n::Integer, randomization::Symbol=:shift)
+    function LatticeRuleSampling(n::Integer, randomization::Symbol = :shift)
         randomization ∉ [:shift, :none] && error("type must be :shift or :none")
         if n > 0
             return new(n, randomization)
@@ -132,11 +132,11 @@ function qmc_samples(sim::LatticeRuleSampling, rvs::Integer)
     return randomize(sim, QuasiMonteCarlo.sample(sim.n, rvs, LatticeRuleSample()))
 end
 
-function randomize(sim::AbstractQuasiMonteCarlo, u::Matrix, b=2)
+function randomize(sim::AbstractQuasiMonteCarlo, u::Matrix, b = 2)
     if sim.randomization == :matousek
-        u = QuasiMonteCarlo.randomize(u, MatousekScramble(; base=b))
+        u = QuasiMonteCarlo.randomize(u, MatousekScramble(; base = b))
     elseif sim.randomization == :owen
-        u = QuasiMonteCarlo.randomize(u, OwenScramble(; base=b))
+        u = QuasiMonteCarlo.randomize(u, OwenScramble(; base = b))
     elseif sim.randomization == :shift
         u = QuasiMonteCarlo.randomize(u, Shift())
     end

@@ -34,12 +34,12 @@ prior = RandomVariable.(Uniform(0.01, 4), [:θ1, :θ2])
 n = 1000
 burnin = 0
 
-x0 = [[1., 1.],[3.,.5],[2.,2.]]
+x0 = [[1.0, 1.0], [3.0, 0.5], [2.0, 2.0]]
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
 
 samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
 
-scatter(samples.θ1, samples.θ2; lim=[0, 4], label="TMCMC", xlabel="θ1", ylabel="θ2")
+scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

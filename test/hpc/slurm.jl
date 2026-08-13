@@ -90,10 +90,10 @@ include("../test_utilities/read_write_utils.jl")
                 sourcefile,
                 radius,
                 solver;
-                workdir=tempname(),
-                formats=numberformats,
-                extras="extra.txt",
-                scheduler=slurm,
+                workdir = tempname(),
+                formats = numberformats,
+                extras = "extra.txt",
+                scheduler = slurm,
             )
 
             UncertaintyQuantification.setup_hpc_jobs(slurm, ext, 100, workdir)
@@ -113,9 +113,9 @@ include("../test_utilities/read_write_utils.jl")
         @testset "batched" begin
             slurm = SlurmInterface(
                 options;
-                throttle=2,
-                batchsize=10,
-                extras=["load something", "load something else"],
+                throttle = 2,
+                batchsize = 10,
+                extras = ["load something", "load something else"],
             )
 
             ext = ExternalModel(
@@ -123,10 +123,10 @@ include("../test_utilities/read_write_utils.jl")
                 sourcefile,
                 radius,
                 solver;
-                workdir=tempname(),
-                formats=numberformats,
-                extras="extra.txt",
-                scheduler=slurm,
+                workdir = tempname(),
+                formats = numberformats,
+                extras = "extra.txt",
+                scheduler = slurm,
             )
 
             UncertaintyQuantification.setup_hpc_jobs(slurm, ext, 100, workdir)
@@ -169,10 +169,10 @@ include("../test_utilities/read_write_utils.jl")
                 sourcefile,
                 radius,
                 solver;
-                workdir="hpc/test_dir",
-                formats=numberformats,
-                extras="extra.txt",
-                scheduler=slurm,
+                workdir = "hpc/test_dir",
+                formats = numberformats,
+                extras = "extra.txt",
+                scheduler = slurm,
             )
 
             x = RandomVariable(Uniform(0, 1), :x)
@@ -186,17 +186,17 @@ include("../test_utilities/read_write_utils.jl")
         end
 
         @testset "batched" begin
-            slurm = SlurmInterface(options; batchsize=4)
+            slurm = SlurmInterface(options; batchsize = 4)
 
             ext = ExternalModel(
                 sourcedir,
                 sourcefile,
                 radius,
                 solver;
-                workdir="hpc/test_dir",
-                formats=numberformats,
-                extras="extra.txt",
-                scheduler=slurm,
+                workdir = "hpc/test_dir",
+                formats = numberformats,
+                extras = "extra.txt",
+                scheduler = slurm,
             )
 
             x = RandomVariable(Uniform(0, 1), :x)
