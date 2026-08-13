@@ -2,8 +2,8 @@
     GaussianMixtureModel(
         data::DataFrame,
         number_components::Integer;
-        maximum_iterations::Integer=100,
-        tolerance::Number=1e-4,
+        maximum_iterations::Integer = 100,
+        tolerance::Number = 1.0e-4,
     )
 
 Fits a Gaussian mixture model to the given data using the Expectation-Maximization (EM) algorithm.

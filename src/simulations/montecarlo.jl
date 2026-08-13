@@ -38,7 +38,7 @@ struct FaureSampling <: AbstractQuasiMonteCarlo
 end
 
 """
-    HaltonSampling(n::Integer, randomization::Symbol=:none)
+    HaltonSampling(n::Integer, randomization::Symbol = :none)
 
 This object is used to generate `n` samples from the deterministic *low discrepancy* Halton sequence.
 The quasi-Monte Carlo samples can be optionally randomized by passing `randomization=:randomizedhalton`.

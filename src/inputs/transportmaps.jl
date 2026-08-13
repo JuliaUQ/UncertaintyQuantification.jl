@@ -102,7 +102,7 @@ function median(tm::TransportMap)
 end
 
 """
-    mean(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    mean(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the mean value of the density approximated by the transport map.
 The mean value is computed using numerically in the reference space. The scheme can be set
@@ -116,7 +116,7 @@ function mean(
 end
 
 """
-    var(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    var(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the variance of the density approximated by the transport map.
 The variance is computed numerically in the reference space. The scheme can be set
@@ -130,7 +130,7 @@ function var(
 end
 
 """
-    std(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    std(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the standard deviation of the density approximated by the transport map.
 The standard deviation is computed numerically in the reference space. The scheme can be set
@@ -312,7 +312,7 @@ function to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
 end
 
 """
-    sample(tm::AbstractTransportMap, n::Integer=1)
+    sample(tm::AbstractTransportMap, n::Integer = 1)
 
 Generate `n` samples in the physical space `X` using the transport map `tm`.
 """
@@ -340,7 +340,7 @@ function median(tm::TransportMapFromSamples)
 end
 
 """
-    mean(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    mean(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the mean value of the density approximated by the transport map.
 The mean value is computed using numerically in the reference space. The scheme can be set
@@ -354,7 +354,7 @@ function mean(
 end
 
 """
-    var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the variance of the density approximated by the transport map.
 The variance is computed numerically in the reference space. The scheme can be set
@@ -369,7 +369,7 @@ function var(
 end
 
 """
-    std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the standard deviation of the density approximated by the transport map.
 The standard deviation is computed numerically in the reference space. The scheme can be set

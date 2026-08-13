@@ -23,7 +23,7 @@ isimprecise(_::UQModel) = false
 isimprecise(ipm::IntervalPredictorModel) = true
 
 """
-    isimprecise(inputs::AbstractVector{<:UQInput},models::AbstractVector{<:UQModel})
+    isimprecise(inputs::AbstractVector{<:UQInput}, models::AbstractVector{<:UQModel})
 
 Returns `true` if any of the `inputs` or `models` is imprecise.
 """

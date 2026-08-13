@@ -7,7 +7,7 @@ Alternative constructors
 
 ```julia
     MaximumAPosterioriBayesian(prior, optimmethod, x0; islog) # `lowerbounds` = [-Inf], # `upperbounds` = [Inf]
-    MaximumAPosterioriBayesian(prior, optimmethod, x0)  # `islog` = true
+MaximumAPosterioriBayesian(prior, optimmethod, x0)  # `islog` = true
 ```
 See also [`MaximumLikelihoodBayesian`](@ref), [`bayesianupdating `](@ref),  [`TransitionalMarkovChainMonteCarlo`](@ref).
 """
@@ -54,13 +54,13 @@ Alternative constructors
 
 ```julia
     MaximumLikelihoodBayesian(prior, x0; islog) # `lowerbounds` = [-Inf], # `upperbounds` = [Inf]
-    MaximumLikelihoodBayesian(prior, x0)  # `islog` = true
+MaximumLikelihoodBayesian(prior, x0)  # `islog` = true
 ```
 ### Notes
 The method uses `prior` only as information on which parameters are supposed to be optimized. The prior itself does not influence the result of the maximum likelihood estimate and can be given as a dummy distribution. For example, if two parameters `a` and `b` are supposed to be optimized, the prior could look like this
 
 ```julia
-    prior = RandomVariable.(Uniform(0,1), [:a, :b])
+    prior = RandomVariable.(Uniform(0, 1), [:a, :b])
 ```
 See also [`MaximumAPosterioriBayesian`](@ref), [`bayesianupdating `](@ref),  [`TransitionalMarkovChainMonteCarlo`](@ref).
 """
@@ -258,7 +258,7 @@ Alternative constructors
 
 ```julia
     LaplaceEstimateBayesian(prior, optimmethod, x0; islog) # `lowerbounds` = [-Inf], # `upperbounds` = [Inf]
-    LaplaceEstimateBayesian(prior, optimmethod, x0)  # `islog` = true
+LaplaceEstimateBayesian(prior, optimmethod, x0)  # `islog` = true
 ```
 ### Notes
 The method makes use of the [`MaximumAPosterioriBayesian`](@ref) method to estimate the maximum a posteriori (MAP) estimate, and then calculates the Hessian of the posterior at the MAP estimate to construct a Gaussian approximation of the posterior distribution.
@@ -396,4 +396,4 @@ function filterresults!(df::DataFrame, variables::Vector{Symbol}, tolerance::Rea
 end
 
 name(pe::MaximumAPosterioriBayesian) = pe.islog ? :logMAP : :MAP
-name(pe::MaximumLikelihoodBayesian) = pe.islog ? :logMLE : :MLE  
+name(pe::MaximumLikelihoodBayesian) = pe.islog ? :logMLE : :MLE

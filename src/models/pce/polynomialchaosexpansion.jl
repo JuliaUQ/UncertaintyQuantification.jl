@@ -10,7 +10,7 @@ struct LeastSquares
 end
 
 """
-    WeightedApproximateFetekePoints(sim::AbstractMonteCarlo; fadd=10, fmult=2)
+    WeightedApproximateFetekePoints(sim::AbstractMonteCarlo; fadd = 10, fmult = 2)
 
 Struct for performing weighted approximate Feteke points (wafp) subsampling of a Monte-Carlo sampler for use in generating a 
 `PolynomialChaosExpansion`. Given a `PolynomialChaosBasis` of dimension `N`, and a Monte-Carlo sampler with `M` samples, generates
