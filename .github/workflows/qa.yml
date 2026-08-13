@@ -1,6 +1,8 @@
 name: QA
 on:
   push:
+    branches:
+     - 'master'
   pull_request:
 jobs:
   runic:
