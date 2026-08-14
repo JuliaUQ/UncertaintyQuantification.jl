@@ -9,7 +9,7 @@ isimprecise(rv::RandomVariable{<:ProbabilityBox}) = true
 
 isimprecise(i::IntervalVariable) = true
 
-function isimprecise(jd::JointDistribution{<:Copulas.Copula,<:RandomVariable})
+function isimprecise(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable})
     return any(isimprecise.(jd.m))
 end
 
@@ -23,7 +23,7 @@ isimprecise(_::UQModel) = false
 isimprecise(ipm::IntervalPredictorModel) = true
 
 """
-    isimprecise(inputs::AbstractVector{<:UQInput},models::AbstractVector{<:UQModel})
+    isimprecise(inputs::AbstractVector{<:UQInput}, models::AbstractVector{<:UQModel})
 
 Returns `true` if any of the `inputs` or `models` is imprecise.
 """

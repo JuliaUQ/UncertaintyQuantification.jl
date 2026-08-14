@@ -1,6 +1,6 @@
 @testitem "EmpiricalDistribution" setup = [TestSetup] begin
     data = [
-        21.370,
+        21.37,
         19.435,
         20.363,
         20.632,
@@ -28,7 +28,7 @@
         39.569,
         39.742,
         38.236,
-        40.460,
+        40.46,
         39.36,
         50.455,
         50.704,
@@ -57,8 +57,8 @@
     @test all(insupport.(ed, samples))
     @test all(pdf.(ed, samples) .>= 0)
 
-    @test pdf(ed, minimum(ed)) ≈ 0.0 atol = 1e-10
-    @test pdf(ed, maximum(ed)) ≈ 0.0 atol = 1e-10
+    @test pdf(ed, minimum(ed)) ≈ 0.0 atol = 1.0e-10
+    @test pdf(ed, maximum(ed)) ≈ 0.0 atol = 1.0e-10
 
     pdf_area, _ = hquadrature(x -> pdf(ed, x), minimum(ed), maximum(ed))
 
@@ -71,7 +71,7 @@ end
 @testitem "EmpiricalDiistribution: Linear binning" setup = [TestSetup] begin
     x = [randn(10_000)..., (5 .+ randn(10_000))...]
 
-    ed = EmpiricalDistribution(x; nbins=2^12)
+    ed = EmpiricalDistribution(x; nbins = 2^12)
 
     @test mean(ed) ≈ 2.5 atol = 0.1
 
@@ -83,8 +83,8 @@ end
     @test all(insupport.(ed, samples))
     @test all(pdf.(ed, samples) .>= 0)
 
-    @test pdf(ed, minimum(ed)) ≈ 0.0 atol = 1e-10
-    @test pdf(ed, maximum(ed)) ≈ 0.0 atol = 1e-10
+    @test pdf(ed, minimum(ed)) ≈ 0.0 atol = 1.0e-10
+    @test pdf(ed, maximum(ed)) ≈ 0.0 atol = 1.0e-10
 
     pdf_area, _ = hquadrature(x -> pdf(ed, x), minimum(ed), maximum(ed))
 

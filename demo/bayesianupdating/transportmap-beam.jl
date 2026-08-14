@@ -3,8 +3,8 @@ using Plots
 
 b = 0.2
 h = 0.1
-L = 10.
-E = 210e9
+L = 10.0
+E = 210.0e9
 
 A = b * h
 I = b * h^3 / 12
@@ -44,8 +44,8 @@ transportmap = TransportMapBayesian(prior, T, quadrature)
 tm = bayesianupdating(Like, [M], transportmap)
 
 df = sample(tm, 1000)
-scatter(df.a, df.F, alpha=0.5, label="TM Samples")
-scatter!(samples.a, samples.F, alpha=0.5, label="TMCMC Samples")
+scatter(df.a, df.F, alpha = 0.5, label = "TM Samples")
+scatter!(samples.a, samples.F, alpha = 0.5, label = "TMCMC Samples")
 xlabel!("a [-]")
 ylabel!("F [N]")
 title!("Comparison of TM and TMCMC samples")
@@ -54,7 +54,7 @@ x1_grid = range(0.3, 1, 100)
 x2_grid = range(0, 2500, 100)
 
 post = [pdf(tm, [x1, x2]) for x2 in x2_grid, x1 in x1_grid]
-scatter(samples.a, samples.F, alpha=0.5, label="TMCMC Samples")
+scatter(samples.a, samples.F, alpha = 0.5, label = "TMCMC Samples")
 contour!(x1_grid, x2_grid, post)
 xlabel!("a [-]")
 ylabel!("F [N]")

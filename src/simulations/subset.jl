@@ -28,8 +28,8 @@ struct SubSetSimulation <: AbstractSubSetSimulation
     proposal::UnivariateDistribution
 
     function SubSetSimulation(
-        n::Integer, target::Float64, levels::Integer, proposal::UnivariateDistribution
-    )
+            n::Integer, target::Float64, levels::Integer, proposal::UnivariateDistribution
+        )
         if skewness(proposal) != 0.0
             error("proposal must be a symmetric distribution")
         elseif mean(proposal) != median(proposal)
@@ -45,7 +45,7 @@ struct SubSetSimulation <: AbstractSubSetSimulation
             levels = max_levels
             @warn "Number of levels restricted to $levels"
         end
-            
+
         return new(n, target, levels, proposal)
     end
 end
@@ -160,8 +160,8 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
     s::Real
 
     function SubSetInfinityAdaptive(
-        n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real, s::Real
-    )
+            n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real, s::Real
+        )
         number_of_seeds = Int64(max(1, ceil(n * target)))
         (0 < target < 1) || error("target must be between 0.0 and 1.0 (exclusive)")
         (Na <= number_of_seeds) ||
@@ -182,8 +182,8 @@ mutable struct SubSetInfinityAdaptive <: AbstractSubSetSimulation
 end
 
 function SubSetInfinityAdaptive(
-    n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real
-)
+        n::Integer, target::Float64, levels::Integer, Na::Integer, λ::Real
+    )
     return SubSetInfinityAdaptive(n, target, levels, Na, λ, λ)
 end
 function SubSetInfinityAdaptive(n::Integer, target::Float64, levels::Integer, Na::Integer)
@@ -191,11 +191,11 @@ function SubSetInfinityAdaptive(n::Integer, target::Float64, levels::Integer, Na
 end
 
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performancefunction::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::AbstractSubSetSimulation,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performancefunction::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::AbstractSubSetSimulation,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -272,14 +272,14 @@ function probability_of_failure(
 end
 
 function nextlevelsamples(
-    samples::DataFrame,
-    performance::Vector{<:Real},
-    threshold::Real,
-    models::Union{Vector{<:UQModel},UQModel},
-    performancefunction::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::SubSetSimulation,
-)
+        samples::DataFrame,
+        performance::Vector{<:Real},
+        threshold::Real,
+        models::Union{Vector{<:UQModel}, UQModel},
+        performancefunction::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::SubSetSimulation,
+    )
     nextlevelsamples = [samples]
     nextlevelperformance = [performance]
 
@@ -314,7 +314,7 @@ function nextlevelsamples(
 
         α_MCMC[i] = mean(α_accept_per_dim)
 
-        α_accept = any(α_accept_per_dim; dims=2)[:]
+        α_accept = any(α_accept_per_dim; dims = 2)[:]
 
         to_physical_space!(inputs, chainsamples)
 
@@ -363,14 +363,14 @@ function nextlevelsamples(
 end
 
 function nextlevelsamples(
-    samples::DataFrame,
-    performance::Vector{<:Real},
-    threshold::Real,
-    models::Union{Vector{<:UQModel},UQModel},
-    performancefunction::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::SubSetInfinity,
-)
+        samples::DataFrame,
+        performance::Vector{<:Real},
+        threshold::Real,
+        models::Union{Vector{<:UQModel}, UQModel},
+        performancefunction::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::SubSetInfinity,
+    )
     samples_per_seed = Int64(floor(sim.n / length(performance)))
 
     ρ = sqrt(1 - sim.s^2)
@@ -393,14 +393,14 @@ function nextlevelsamples(
 end
 
 function nextlevelsamples(
-    samples::DataFrame,
-    performance::Vector{<:Real},
-    threshold::Real,
-    models::Union{Vector{<:UQModel},UQModel},
-    performancefunction::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::SubSetInfinityAdaptive,
-)
+        samples::DataFrame,
+        performance::Vector{<:Real},
+        threshold::Real,
+        models::Union{Vector{<:UQModel}, UQModel},
+        performancefunction::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::SubSetInfinityAdaptive,
+    )
     a_star = 0.44 # Optimal acceptance rate, so say Papaioannou, I., et. al.
 
     Ns = length(performance) # Number of seeds
@@ -455,16 +455,16 @@ function nextlevelsamples(
 end
 
 function conditional_sampling(
-    seeds::DataFrame,
-    performance::AbstractVector,
-    threshold::Real,
-    models::Union{Vector{<:UQModel},UQModel},
-    performancefunction::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    ρ::Real,
-    σ::Real,
-    N::Integer,
-)
+        seeds::DataFrame,
+        performance::AbstractVector,
+        threshold::Real,
+        models::Union{Vector{<:UQModel}, UQModel},
+        performancefunction::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        ρ::Real,
+        σ::Real,
+        N::Integer,
+    )
     α = 0.0
 
     random_inputs = filter(i -> isa(i, RandomUQInput), inputs)

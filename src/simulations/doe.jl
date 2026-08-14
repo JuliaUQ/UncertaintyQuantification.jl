@@ -1,7 +1,6 @@
-
 struct TwoLevelFactorial <: AbstractDesignOfExperiments
     q::Real
-    function TwoLevelFactorial(q::Real=0.99)
+    function TwoLevelFactorial(q::Real = 0.99)
         !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
         return new(q)
     end
@@ -10,7 +9,7 @@ end
 struct FullFactorial <: AbstractDesignOfExperiments
     levels::Vector{<:Integer}
     q::Real
-    function FullFactorial(levels::Vector{<:Integer}, q::Real=0.99)
+    function FullFactorial(levels::Vector{<:Integer}, q::Real = 0.99)
         any(levels .< 2) && error("Levels must be >= 2")
         !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
         return new(levels, q)
@@ -20,16 +19,16 @@ end
 struct FractionalFactorial <: AbstractDesignOfExperiments
     columns::Vector{String}
     q::Real
-    function FractionalFactorial(columns::Vector{String}, q::Real=0.99)
+    function FractionalFactorial(columns::Vector{String}, q::Real = 0.99)
         !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
         return new(columns, q)
     end
 end
 
 struct BoxBehnken <: AbstractDesignOfExperiments
-    centers::Union{Int,Nothing}
+    centers::Union{Int, Nothing}
     q::Real
-    function BoxBehnken(centers::Union{Int,Nothing}=nothing, q::Real=0.99)
+    function BoxBehnken(centers::Union{Int, Nothing} = nothing, q::Real = 0.99)
         if !isnothing(centers) && centers < 0
             error("centers must be nonnegative")
         end
@@ -41,7 +40,7 @@ end
 struct CentralComposite <: AbstractDesignOfExperiments
     type::Symbol
     q::Real
-    function CentralComposite(type::Symbol, q::Real=0.99)
+    function CentralComposite(type::Symbol, q::Real = 0.99)
         type ∉ [:inscribed, :face] && error("type must be :inscribed or :face.")
         !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
         return new(type, q)
@@ -50,14 +49,14 @@ end
 
 struct PlackettBurman <: AbstractDesignOfExperiments
     q::Real
-    function PlackettBurman(q::Real=0.99)
+    function PlackettBurman(q::Real = 0.99)
         !(0.0 < q < 1.0) && error("q ∉ (0.0, 1.0)")
         return new(q)
     end
 end
 
 function full_factorial_matrix(levels::Vector{<:Integer})
-    ranges = [range(0.0, 1.0; length=l) for l in levels]
+    ranges = [range(0.0, 1.0; length = l) for l in levels]
     return mapreduce(t -> [t...]', vcat, Iterators.product(ranges...))
 end
 
@@ -83,7 +82,7 @@ function sample(inputs::Array{<:UQInput}, design::AbstractDesignOfExperiments)
     return samples
 end
 
-function doe_samples(design::FullFactorial, _::Int=0)
+function doe_samples(design::FullFactorial, _::Int = 0)
     return full_factorial_matrix(design.levels)
 end
 
@@ -91,7 +90,7 @@ function doe_samples(_::TwoLevelFactorial, rvs::Int)
     return full_factorial_matrix(fill(2, rvs))
 end
 
-function doe_samples(design::FractionalFactorial, _::Int=0)
+function doe_samples(design::FractionalFactorial, _::Int = 0)
     vars, varindex, gens, genindex = variables_and_generators(design.columns)
 
     frac = zeros(2^length(vars), length(design.columns))
@@ -160,96 +159,96 @@ function block_format(nvars::Int)
         return ["a", "b", "c"], [1 2 3; 1 4 6; 1 5 7; 2 5 6; 2 4 7; 3 4 5; 3 6 7]
     elseif nvars == 9
         return ["a", "b", "c"],
-        [
-            1 2 3
-            1 4 5
-            1 6 7
-            1 8 9
-            1 4 7
-            2 4 6
-            2 5 8
-            2 7 9
-            2 5 8
-            3 5 7
-            2 4 9
-            3 6 8
-            3 6 9
-            4 7 8
-            5 6 9
-        ]
+            [
+                1 2 3
+                1 4 5
+                1 6 7
+                1 8 9
+                1 4 7
+                2 4 6
+                2 5 8
+                2 7 9
+                2 5 8
+                3 5 7
+                2 4 9
+                3 6 8
+                3 6 9
+                4 7 8
+                5 6 9
+            ]
     elseif nvars == 10
         return ["a", "b", "c", "d"],
-        [
-            1 2 5 10
-            1 4 7 8
-            1 3 6 9
-            1 8 9 10
-            2 6 7 10
-            2 3 7 8
-            2 4 6 9
-            3 4 5 10
-            3 5 7 9
-            4 5 6 8
-        ]
+            [
+                1 2 5 10
+                1 4 7 8
+                1 3 6 9
+                1 8 9 10
+                2 6 7 10
+                2 3 7 8
+                2 4 6 9
+                3 4 5 10
+                3 5 7 9
+                4 5 6 8
+            ]
     elseif nvars == 11
         return ["a", "b", "c", "d", "abcd"],
-        [
-            1 4 8 9 10
-            1 3 6 10 11
-            1 2 4 7 11
-            1 2 3 5 8
-            1 5 6 7 9
-            2 5 9 10 11
-            2 3 4 6 9
-            2 6 7 8 10
-            3 7 8 9 11
-            3 4 5 7 10
-            4 5 6 8 11
-        ]
+            [
+                1 4 8 9 10
+                1 3 6 10 11
+                1 2 4 7 11
+                1 2 3 5 8
+                1 5 6 7 9
+                2 5 9 10 11
+                2 3 4 6 9
+                2 6 7 8 10
+                3 7 8 9 11
+                3 4 5 7 10
+                4 5 6 8 11
+            ]
     elseif nvars == 12
         return ["a", "b", "c", "d"],
-        [
-            1 2 5 7
-            1 7 8 11
-            1 3 9 10
-            1 4 6 12
-            2 3 6 8
-            2 8 9 12
-            2 4 10 11
-            3 4 7 9
-            3 5 11 12
-            4 5 8 10
-            5 6 9 11
-            6 7 10 12
-        ]
+            [
+                1 2 5 7
+                1 7 8 11
+                1 3 9 10
+                1 4 6 12
+                2 3 6 8
+                2 8 9 12
+                2 4 10 11
+                3 4 7 9
+                3 5 11 12
+                4 5 8 10
+                5 6 9 11
+                6 7 10 12
+            ]
     elseif nvars == 16
         return ["a", "b", "c", "d"],
-        [
-            1 2 6 9
-            1 4 5 12
-            1 9 10 14
-            1 5 8 16
-            1 3 13 15
-            1 7 11 13
-            2 3 7 10
-            2 4 14 16
-            2 5 6 13
-            2 10 11 15
-            2 8 12 14
-            3 4 8 11
-            3 6 7 14
-            3 11 12 16
-            3 5 9 15
-            4 7 8 15
-            4 9 12 13
-            4 6 10 16
-            5 10 13 14
-            5 7 9 11
-            6 11 14 15
-            6 8 10 12
-            7 12 15 16
-            8 9 13 16
-        ]
+            [
+                1 2 6 9
+                1 4 5 12
+                1 9 10 14
+                1 5 8 16
+                1 3 13 15
+                1 7 11 13
+                2 3 7 10
+                2 4 14 16
+                2 5 6 13
+                2 10 11 15
+                2 8 12 14
+                3 4 8 11
+                3 6 7 14
+                3 11 12 16
+                3 5 9 15
+                4 7 8 15
+                4 9 12 13
+                4 6 10 16
+                5 10 13 14
+                5 7 9 11
+                6 11 14 15
+                6 8 10 12
+                7 12 15 16
+                8 9 13 16
+            ]
     elseif nvars > 0
         return ["a", "b"], blocks(nvars)
     end
@@ -304,23 +303,25 @@ function doe_samples(_::PlackettBurman, nvars::Int)
         ]
     elseif nvars < 16
         m = doe_samples(
-            FractionalFactorial([
-                "a",
-                "b",
-                "c",
-                "d",
-                "ab",
-                "ac",
-                "ad",
-                "bc",
-                "bd",
-                "cd",
-                "abc",
-                "abd",
-                "acd",
-                "bcd",
-                "abcd",
-            ]),
+            FractionalFactorial(
+                [
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "ab",
+                    "ac",
+                    "ad",
+                    "bc",
+                    "bd",
+                    "cd",
+                    "abc",
+                    "abd",
+                    "acd",
+                    "bcd",
+                    "abcd",
+                ]
+            ),
         )
     elseif nvars < 20
         m = [
@@ -405,39 +406,41 @@ function doe_samples(_::PlackettBurman, nvars::Int)
         ]
     elseif nvars < 32
         m = doe_samples(
-            FractionalFactorial([
-                "a",
-                "b",
-                "c",
-                "d",
-                "e",
-                "ab",
-                "ac",
-                "ad",
-                "ae",
-                "bc",
-                "bd",
-                "be",
-                "cd",
-                "ce",
-                "de",
-                "abc",
-                "abd",
-                "abe",
-                "acd",
-                "ace",
-                "ade",
-                "bcd",
-                "bce",
-                "bde",
-                "cde",
-                "abcd",
-                "abce",
-                "abde",
-                "acde",
-                "bcde",
-                "abcde",
-            ]),
+            FractionalFactorial(
+                [
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "e",
+                    "ab",
+                    "ac",
+                    "ad",
+                    "ae",
+                    "bc",
+                    "bd",
+                    "be",
+                    "cd",
+                    "ce",
+                    "de",
+                    "abc",
+                    "abd",
+                    "abe",
+                    "acd",
+                    "ace",
+                    "ade",
+                    "bcd",
+                    "bce",
+                    "bde",
+                    "cde",
+                    "abcd",
+                    "abce",
+                    "abde",
+                    "acde",
+                    "bcde",
+                    "abcde",
+                ]
+            ),
         )
     elseif nvars < 36
         m = [

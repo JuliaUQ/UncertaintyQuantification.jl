@@ -1,4 +1,3 @@
-
 #===
 
 ## OpenSees supported beam parallel
@@ -26,23 +25,25 @@ addprocs(6)
 
     workdir = joinpath(pwd(), "supported-beam")
 
-    disp = Extractor(base -> begin
-        file = joinpath(base, "displacement.out")
-        data = readdlm(file, ' ')
+    disp = Extractor(
+        base -> begin
+            file = joinpath(base, "displacement.out")
+            data = readdlm(file, ' ')
 
-        return maximum(abs.(data[:, 2]))
-    end, :disp)
+            return maximum(abs.(data[:, 2]))
+        end, :disp
+    )
 
-    opensees = Solver("OpenSees", "supported-beam.tcl"; args="")
+    opensees = Solver("OpenSees", "supported-beam.tcl"; args = "")
 
     ext = ExternalModel(
-        sourcedir, sourcefile, disp, opensees; workdir=workdir, formats=numberformats
+        sourcedir, sourcefile, disp, opensees; workdir = workdir, formats = numberformats
     )
 end
 
 # The analysis is then executed on the main Julia process. When executing the model, the calls to the external solver will automatically be distributed to all available workers.
 
-pf, σ_pf, samples  = probability_of_failure(ext, df -> 0.35 .- df.disp, E, MonteCarlo(1000))
+pf, σ_pf, samples = probability_of_failure(ext, df -> 0.35 .- df.disp, E, MonteCarlo(1000))
 
 println("Probability of failure: $pf")
 

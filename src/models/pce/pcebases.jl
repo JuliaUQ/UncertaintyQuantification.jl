@@ -6,16 +6,16 @@ struct PolynomialChaosBasis
     d::Int
     α::Vector{Vector{Int64}}
 
-    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, index_set::Symbol=:TD; param=0.5)
+    function PolynomialChaosBasis(bases::Vector{<:AbstractOrthogonalBasis}, p::Int, index_set::Symbol = :TD; param = 0.5)
         d = length(bases)
-        return new(bases, p, d, multivariate_indices(p, d, index_set; param=param))
+        return new(bases, p, d, multivariate_indices(p, d, index_set; param = param))
     end
 end
 
 function evaluate(Ψ::PolynomialChaosBasis, x::AbstractVector{Float64})
     res = ones(length(Ψ.α))
-    for (i,α) in enumerate(Ψ.α)
-        for (j,order) in enumerate(α)
+    for (i, α) in enumerate(Ψ.α)
+        for (j, order) in enumerate(α)
             res[i] *= evaluate(Ψ.bases[j], x[j], order)
         end
     end
@@ -81,12 +81,12 @@ function HC(idx::Vector{Int}, p::Int)
 end
 
 # Q-ball multi-index set (Sparse alternative to TD or TP when q < 1, same as TD when q=1, same as TP when q=Inf)
-function QB(idx::Vector{Int}, p::Int, q::Real=0.5)
+function QB(idx::Vector{Int}, p::Int, q::Real = 0.5)
     @assert q > 0
     return norm(idx, q) <= p
 end
 
-function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_size=BigInt(p+1)^d)
+function multivariate_indices(p::Int, d::Int, in_index_set::Function = TD; max_size = BigInt(p + 1)^d)
     idx = zeros(Int, d)
     index_set = [copy(idx)]
     if p == 0
@@ -111,7 +111,7 @@ function multivariate_indices(p::Int, d::Int, in_index_set::Function=TD; max_siz
     return index_set
 end
 
-function multivariate_indices(p::Int, d::Int, index_set::Symbol; param=0.5)
+function multivariate_indices(p::Int, d::Int, index_set::Symbol; param = 0.5)
     if index_set in (:TD, :total_degree)
         return multivariate_indices(p, d, TD)
     elseif index_set in (:TP, :total_product)
@@ -119,7 +119,7 @@ function multivariate_indices(p::Int, d::Int, index_set::Symbol; param=0.5)
     elseif index_set in (:HC, :hyperbolic_cross)
         return multivariate_indices(p, d, HC)
     elseif index_set in (:QB, :q_ball)
-        return multivariate_indices(p, d, (idx,p) -> QB(idx,p,param))
+        return multivariate_indices(p, d, (idx, p) -> QB(idx, p, param))
     else
         errstr = "Unknown index_set=$index_set, choose from following\n"
         errstr *= "(:TD, :total_degree, :TP, :total_product"

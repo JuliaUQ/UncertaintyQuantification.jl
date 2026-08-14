@@ -1,4 +1,3 @@
-
 @testsnippet MLandMAPestimates begin
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
@@ -61,8 +60,8 @@
     ] # μ = 4, σ = 5
 
     function binomialinferencebenchmark(
-        estimater::AbstractBayesianPointEstimate, prior::Beta{Float64}
-    )
+            estimater::AbstractBayesianPointEstimate, prior::Beta{Float64}
+        )
         alpha0 = prior.α
         beta0 = prior.β
 
@@ -78,20 +77,20 @@
         function loglikelihood(df)
             return [
                 sum(logpdf.(Binomial.(N_binom, df_i.x), sum(data_binom))) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
         logprior(df) = logpdf.(prior, df.x)
 
-        estimate = bayesianupdating(loglikelihood, UQModel[], estimater; prior=logprior)
+        estimate = bayesianupdating(loglikelihood, UQModel[], estimater; prior = logprior)
 
         return estimate, analytic_mode, analytic_mean
     end
 
     function normalmeanbenchmark(
-        estimater::AbstractBayesianPointEstimate, prior::Normal{Float64}
-    )
+            estimater::AbstractBayesianPointEstimate, prior::Normal{Float64}
+        )
         std_fixed = 5     # Fixed
 
         prior_mean = prior.μ
@@ -104,13 +103,13 @@
         function loglikelihood(df)
             return [
                 sum(logpdf.(Normal.(df_i.x, std_fixed), data_normal_mean)) for
-                df_i in eachrow(df)
+                    df_i in eachrow(df)
             ]
         end
 
         logprior(df) = logpdf.(prior, df.x)
 
-        estimation = bayesianupdating(loglikelihood, UQModel[], estimater; prior=logprior)
+        estimation = bayesianupdating(loglikelihood, UQModel[], estimater; prior = logprior)
 
         return estimation, analytic_mean, analytic_std
     end
@@ -193,7 +192,7 @@ end
     prior = RandomVariable(prior_Function, :x)
 
     estimater = MaximumAPosterioriBayesian(
-        [prior], x0; lowerbounds=[0.0], upperbounds=[1.0]
+        [prior], x0; lowerbounds = [0.0], upperbounds = [1.0]
     )
 
     estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
@@ -209,7 +208,7 @@ end
     prior_Function = Beta(1, 1)
     prior = RandomVariable(prior_Function, :x)
 
-    estimater = MaximumLikelihoodBayesian([prior], x0; lowerbounds=[0.0], upperbounds=[1.0])
+    estimater = MaximumLikelihoodBayesian([prior], x0; lowerbounds = [0.0], upperbounds = [1.0])
 
     estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
         estimater, prior_Function
@@ -224,7 +223,7 @@ end
     prior_Function = Beta(1, 1)
     prior = RandomVariable(prior_Function, :x)
 
-    estimater = LaplaceEstimateBayesian([prior], x0; lowerbounds=[0.0], upperbounds=[1.0])
+    estimater = LaplaceEstimateBayesian([prior], x0; lowerbounds = [0.0], upperbounds = [1.0])
 
     estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
         estimater, prior_Function
@@ -246,7 +245,7 @@ end
     mapest_μ = [[row.x, row.y] for row in eachrow(MAPEst)]
 
     est_π = exp.(MAPEst.logMAP) ./ sum(exp.(MAPEst.logMAP))
-    est_sorted = sortperm(est_π; rev=true)
+    est_sorted = sortperm(est_π; rev = true)
 
     @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
     @test mapest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
@@ -265,7 +264,7 @@ end
     mleest_μ = [[row.x, row.y] for row in eachrow(MLEst)]
 
     est_π = exp.(MLEst.logMLE) ./ sum(exp.(MLEst.logMLE))
-    est_sorted = sortperm(est_π; rev=true)
+    est_sorted = sortperm(est_π; rev = true)
 
     # mmodel.prior.p is the weight of the components
     @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
@@ -273,7 +272,7 @@ end
 end
 
 @testitem "MLandMAP: Laplace estimate multivariate normal test" setup = [
-    MLandMAPestimates, TestSetup
+    MLandMAPestimates, TestSetup,
 ] begin
     x0 = [[1.0, 1.0], [-1.0, -1.0]]
 
@@ -290,7 +289,7 @@ end
 
     # LaplaceEst.d: Underlying MixtureModel
     # LaplaceEst.d.prior.p: weight of the components
-    est_sorted = sortperm(LaplaceEst.d.prior.p; rev=true)
+    est_sorted = sortperm(LaplaceEst.d.prior.p; rev = true)
 
     @test LaplaceEst.d.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
     @test est_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1

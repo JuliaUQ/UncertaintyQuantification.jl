@@ -19,7 +19,7 @@ gm_model = StochasticProcessModel(gm)
 
 function sdof(df)
     return map(eachrow(df)) do s
-        gm_interp = Spline1D(gm.time, s.gm; k=1)
+        gm_interp = Spline1D(gm.time, s.gm; k = 1)
 
         function f(dy, y, _, t)
             dy[1] = y[2]

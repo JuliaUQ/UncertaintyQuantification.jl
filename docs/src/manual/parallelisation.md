@@ -15,12 +15,12 @@ addprocs(4) # add 4 local workers
 # setup of the model and inputs
 @everywhere begin
 
-using UncertaintyQuantification
+    using UncertaintyQuantification
 
-x = RandomVariable(Normal(), :x)
-y = RandomVariable(Normal(), :y)
+    x = RandomVariable(Normal(), :x)
+    y = RandomVariable(Normal(), :y)
 
-m = ParallelModel(df -> sqrt(df.x^2 .+ df.y^2), :z)
+    m = ParallelModel(df -> sqrt(df.x^2 .+ df.y^2), :z)
 
 end
 

@@ -31,20 +31,22 @@ workdir = joinpath(pwd(), "openmc_TBR")
 #md #     If Slurm is to run the jobs on multiple nodes, all the above folders must be shared by the computing nodes.
 
 # Read output file and compute the Tritium breeding ratio. An extractor is based the working directory for the current sample.
-TBR = Extractor(base -> begin
-    file = joinpath(base, "openmc.out")
-    line = readline(file)
-    tbr = parse(Float64, split(line, " ")[1])
+TBR = Extractor(
+    base -> begin
+        file = joinpath(base, "openmc.out")
+        line = readline(file)
+        tbr = parse(Float64, split(line, " ")[1])
 
-    return tbr
-end, :TBR)
+        return tbr
+    end, :TBR
+)
 
 # In this example, an OpenMC model is built and run using the Python API. We therefore specify the `python3`` command, and the python file to run.
 
 openmc = Solver(
     "python3", # path to python3 binary
     "openmc_TBR.py";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 # slurm  sbatch options
@@ -60,8 +62,8 @@ options = Dict(
 
 slurm = SlurmInterface(
     options;
-    throttle=50,
-    extras=["module load openmc", "source ~/.virtualenvs/openmc/bin/activate"],
+    throttle = 50,
+    extras = ["module load openmc", "source ~/.virtualenvs/openmc/bin/activate"],
 )
 
 # With the `SlurmInterface` defined we can assemble the `ExternalModel`.
@@ -70,9 +72,9 @@ ext = ExternalModel(
     sourcefile,
     TBR,
     openmc;
-    workdir=workdir,
-    formats=numberformats,
-    scheduler=slurm,
+    workdir = workdir,
+    formats = numberformats,
+    scheduler = slurm,
 )
 
 # Specify a limitstate function, negative value consititutes failure. Here we are interested in P(TBR <= 1).
@@ -88,7 +90,7 @@ end
 
 #jl TBR = samples.TBR
 #jl TBR_mean = mean(TBR)
-#jl TBR_std  = std(TBR)
+#jl TBR_std = std(TBR)
 #jl lower_quantile = quantile(TBR, 0.025)
 #jl upper_quantile = quantile(TBR, 0.975)
 #jl println("TBR mean: $TBR_mean, TBR std: $TBR_std, TBR 95%: [$lower_quantile, $upper_quantile]")

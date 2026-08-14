@@ -7,7 +7,7 @@ A transport map used to transform between standard normal space Z and physical s
 struct TransportMap <: AbstractTransportMap
     map::AbstractTriangularMap
     target::MapTargetDensity
-    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}}
+    transform_density::Union{Nothing, Vector{<:RandomVariable{<:UnivariateDistribution}}}
     names::Vector{Symbol}
 end
 
@@ -102,50 +102,50 @@ function median(tm::TransportMap)
 end
 
 """
-    mean(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    mean(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the mean value of the density approximated by the transport map.
 The mean value is computed using numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function mean(
-    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
-)
+        tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm))
+    )
     # μ = E[X] = ∫x f(x) dx
     return _nth_moment(tm, 1, quad)
 end
 
 """
-    var(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    var(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the variance of the density approximated by the transport map.
 The variance is computed numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function var(
-    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
-)
+        tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm))
+    )
     # Var[X] = E[X²] - E[X]²
     return _nth_moment(tm, 2, quad) - _nth_moment(tm, 1, quad) .^ 2
 end
 
 """
-    std(tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    std(tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the standard deviation of the density approximated by the transport map.
 The standard deviation is computed numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function std(
-    tm::TransportMap, quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm))
-)
+        tm::TransportMap, quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm))
+    )
     return sqrt.(var(tm, quad))
 end
 
 function _nth_moment(tm::TransportMap, n::Int64, quad::AbstractQuadratureWeights)
     if !isnothing(tm.transform_density)
         return (_to_physical(tm.transform_density, evaluate(tm, quad.points)) .^ n)' *
-               quad.weights
+            quad.weights
     else
         return (evaluate(tm, quad.points) .^ n)' * quad.weights
     end
@@ -153,21 +153,21 @@ end
 
 # Helper function to transform vector to standard normal
 function _to_standard_normal(
-    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, x::AbstractVector{<:Real}
-)
+        inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, x::AbstractVector{<:Real}
+    )
     return [quantile(Normal(), cdf(rv.dist, x[i])) for (i, rv) in enumerate(inputs)]
 end
 
 # Helper function to transform vector to physical
 function _to_physical(
-    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, ξ::AbstractVector{<:Real}
-)
+        inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, ξ::AbstractVector{<:Real}
+    )
     return [quantile(rv.dist, cdf(Normal(), ξ[i])) for (i, rv) in enumerate(inputs)]
 end
 
 function _to_physical(
-    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, Ξ::AbstractMatrix{<:Real}
-)
+        inputs::Vector{<:RandomVariable{<:UnivariateDistribution}}, Ξ::AbstractMatrix{<:Real}
+    )
     X = similar(Ξ)
 
     for (i, ξ) in enumerate(eachrow(Ξ))
@@ -179,10 +179,10 @@ end
 
 # Helper function to get Jacobian of density transformation from standard normal to physical
 function _jacobian(
-    inputs::Vector{<:RandomVariable{<:UnivariateDistribution}},
-    x::AbstractVector{<:Real},
-    ξ::AbstractVector{<:Real},
-)
+        inputs::Vector{<:RandomVariable{<:UnivariateDistribution}},
+        x::AbstractVector{<:Real},
+        ξ::AbstractVector{<:Real},
+    )
     return abs(
         prod(pdf(rv.dist, x[i]) / pdf(Normal(), ξ[i]) for (i, rv) in enumerate(inputs))
     )
@@ -210,16 +210,16 @@ mapfromdensity(transportmap, target, quadrature, names, transform_density)  # op
 ```
 """
 function mapfromdensity(
-    transportmap::AbstractTriangularMap,
-    target::MapTargetDensity,
-    quadrature::AbstractQuadratureWeights,
-    names::Vector{Symbol},
-    transform_density::Union{Nothing,Vector{<:RandomVariable{<:UnivariateDistribution}}}=nothing,
-    optimizer::Optim.AbstractOptimizer=LBFGS(),
-    options::Optim.Options=Optim.Options(),
-)
+        transportmap::AbstractTriangularMap,
+        target::MapTargetDensity,
+        quadrature::AbstractQuadratureWeights,
+        names::Vector{Symbol},
+        transform_density::Union{Nothing, Vector{<:RandomVariable{<:UnivariateDistribution}}} = nothing,
+        optimizer::Optim.AbstractOptimizer = LBFGS(),
+        options::Optim.Options = Optim.Options(),
+    )
     TransportMaps.optimize!(
-        transportmap, target, quadrature; optimizer=optimizer, options=options
+        transportmap, target, quadrature; optimizer = optimizer, options = options
     )
 
     tm = TransportMap(transportmap, target, transform_density, names)
@@ -268,18 +268,18 @@ mapfromsamples(transportmap, X)  # optimizer = LBFGS(), options = Optim.Options(
 ```
 """
 function mapfromsamples(
-    transportmap::AbstractTriangularMap,
-    X::DataFrame,
-    optimizer::Optim.AbstractOptimizer=LBFGS(),
-    options::Optim.Options=Optim.Options(),
-)
+        transportmap::AbstractTriangularMap,
+        X::DataFrame,
+        optimizer::Optim.AbstractOptimizer = LBFGS(),
+        options::Optim.Options = Optim.Options(),
+    )
     target_samples = Matrix(X)
 
     # First, fit a linear map
     linear_map = LinearMap(target_samples)
     # Optimize transportmap
     TransportMaps.optimize!(
-        transportmap, target_samples, linear_map; optimizer=optimizer, options=options
+        transportmap, target_samples, linear_map; optimizer = optimizer, options = options
     )
     # define ComposedMap
     composed_map = ComposedMap(linear_map, transportmap)
@@ -312,11 +312,11 @@ function to_standard_normal_space!(tm::TransportMapFromSamples, X::DataFrame)
 end
 
 """
-    sample(tm::AbstractTransportMap, n::Integer=1)
+    sample(tm::AbstractTransportMap, n::Integer = 1)
 
 Generate `n` samples in the physical space `X` using the transport map `tm`.
 """
-function sample(tm::AbstractTransportMap, n::Integer=1)
+function sample(tm::AbstractTransportMap, n::Integer = 1)
     X = permutedims(rand(tm, n))
     return _to_dataframe(X, tm.names)
 end
@@ -340,45 +340,45 @@ function median(tm::TransportMapFromSamples)
 end
 
 """
-    mean(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    mean(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the mean value of the density approximated by the transport map.
 The mean value is computed using numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function mean(
-    tm::TransportMapFromSamples,
-    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
-)
+        tm::TransportMapFromSamples,
+        quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm)),
+    )
     return _nth_moment(tm, 1, quad)
 end
 
 """
-    var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    var(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the variance of the density approximated by the transport map.
 The variance is computed numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function var(
-    tm::TransportMapFromSamples,
-    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
-)
+        tm::TransportMapFromSamples,
+        quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm)),
+    )
     # Var[X] = E[X²] - E[X]²
     return _nth_moment(tm, 2, quad) - _nth_moment(tm, 1, quad) .^ 2
 end
 
 """
-    std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights=SparseSmolyakWeights)
+    std(tm::TransportMapFromSamples, quad::AbstractQuadratureWeights = SparseSmolyakWeights)
 
 Get the standard deviation of the density approximated by the transport map.
 The standard deviation is computed numerically in the reference space. The scheme can be set
 using the optional argument `quad` which uses `SparseSmolyakWeights` by default.
 """
 function std(
-    tm::TransportMapFromSamples,
-    quad::AbstractQuadratureWeights=SparseSmolyakWeights(3, length(tm)),
-)
+        tm::TransportMapFromSamples,
+        quad::AbstractQuadratureWeights = SparseSmolyakWeights(3, length(tm)),
+    )
     return sqrt.(var(tm, quad))
 end
 
@@ -427,15 +427,15 @@ function Distributions._rand!(rng::AbstractRNG, tm::TransportMap, x::AbstractMat
 end
 
 function Distributions._rand!(
-    rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractVector{<:Real}
-)
+        rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractVector{<:Real}
+    )
     randn!(rng, x)
     return inverse(tm, x)
 end
 
 function Distributions._rand!(
-    rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractMatrix{<:Real}
-)
+        rng::AbstractRNG, tm::TransportMapFromSamples, x::AbstractMatrix{<:Real}
+    )
     randn!(rng, x)
     return permutedims(inverse(tm, permutedims(x)))
 end

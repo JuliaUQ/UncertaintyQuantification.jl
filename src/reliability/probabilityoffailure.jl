@@ -11,11 +11,11 @@ pf, σ, samples = probability_of_failure(model, performance, inputs, sim)
 ```
 """
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::AbstractMonteCarlo,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::AbstractMonteCarlo,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -34,11 +34,11 @@ function probability_of_failure(
 end
 
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::LineSampling,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::LineSampling,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -74,11 +74,11 @@ function probability_of_failure(
 end
 
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::AdvancedLineSampling,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::AdvancedLineSampling,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -175,7 +175,7 @@ function probability_of_failure(
         end
 
         # Check if distance is smaller than previous distance
-        if β[i] + 1e-6 < β⁺
+        if β[i] + 1.0e-6 < β⁺
             # Update β
             β⁺ = βᵢ
 
@@ -203,11 +203,11 @@ function probability_of_failure(
 end
 
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::ImportanceSampling,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::ImportanceSampling,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -234,11 +234,11 @@ function probability_of_failure(
 end
 
 function probability_of_failure(
-    models::Union{Vector{<:UQModel},UQModel},
-    performance::Function,
-    inputs::Union{Vector{<:UQInput},UQInput},
-    sim::RadialBasedImportanceSampling,
-)
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::RadialBasedImportanceSampling,
+    )
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -269,7 +269,7 @@ end
 
 # Allow to calculate the pf using only a performance function but no model
 function probability_of_failure(
-    performance::Function, inputs::Union{Vector{<:UQInput},UQInput}, sim::Any
-)
+        performance::Function, inputs::Union{Vector{<:UQInput}, UQInput}, sim::Any
+    )
     return probability_of_failure(UQModel[], performance, wrap(inputs), sim)
 end

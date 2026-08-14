@@ -13,15 +13,15 @@ julia> RandomVariable(Exponential(1), :x)
 RandomVariable{Exponential{Float64}}(Exponential{Float64}(θ=1.0), :x)
 ```
 """
-struct RandomVariable{T<:Union{UnivariateDistribution,ProbabilityBox}} <: RandomUQInput
+struct RandomVariable{T <: Union{UnivariateDistribution, ProbabilityBox}} <: RandomUQInput
     dist::T
     name::Symbol
 end
 
 # promote precise rvs to common supertype
 function Base.promote_rule(
-    ::Type{RandomVariable{T1}}, ::Type{RandomVariable{T2}}
-) where {T1<:UnivariateDistribution,T2<:UnivariateDistribution}
+        ::Type{RandomVariable{T1}}, ::Type{RandomVariable{T2}}
+    ) where {T1 <: UnivariateDistribution, T2 <: UnivariateDistribution}
     if T1 == T2
         return RandomVariable{T1}
     else
@@ -38,7 +38,7 @@ Generates n samples from a random variable. Returns a DataFrame.
 
 See also: [`RandomVariable`](@ref)
 """
-function sample(rv::RandomVariable, n::Integer=1)
+function sample(rv::RandomVariable, n::Integer = 1)
     return DataFrame(rv.name => rand(rv.dist, n))
 end
 

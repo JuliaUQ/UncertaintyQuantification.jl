@@ -1,14 +1,14 @@
 abstract type AbstractRadialBasis <: AbstractBasis end
 
 """
-    GaussianRadialBasis(c::AbstractMatrix{<:Real}, ϵ::Union{Real,Vector{<:Real}})
+    GaussianRadialBasis(c::AbstractMatrix{<:Real}, ϵ::Union{Real, Vector{<:Real}})
 
 Construct a guassian radial basis using the center points given in the columns of `c` and shape parameter `ϵ`.
 Different shape parameters can be assigned to each basis function by passing a vector as `ϵ`.
 """
 struct GaussianRadialBasis <: AbstractRadialBasis
     c::AbstractMatrix{<:Real}
-    ϵ::Union{Real,Vector{<:Real}}
+    ϵ::Union{Real, Vector{<:Real}}
 end
 
 """
@@ -26,7 +26,7 @@ function (pb::PolyharmonicRadialBasis)(x::AbstractMatrix{<:Real})
 end
 
 function (pb::PolyharmonicRadialBasis)(x::AbstractVector{<:Real})
-    return vec(_ϕ.(sqrt.(sum((pb.c .- x) .^ 2; dims=1)), pb.k))
+    return vec(_ϕ.(sqrt.(sum((pb.c .- x) .^ 2; dims = 1)), pb.k))
 end
 
 function _ϕ(r::Real, k::Int)
@@ -44,7 +44,7 @@ function (gb::GaussianRadialBasis)(x::AbstractMatrix{<:Real})
 end
 
 function (gb::GaussianRadialBasis)(x::AbstractVector{<:Real})
-    return vec(exp.(-(gb.ϵ .* sqrt.(sum((gb.c .- x) .^ 2; dims=1))) .^ 2))
+    return vec(exp.(-(gb.ϵ .* sqrt.(sum((gb.c .- x) .^ 2; dims = 1))) .^ 2))
 end
 
 Base.length(b::GaussianRadialBasis) = size(b.c, 2)

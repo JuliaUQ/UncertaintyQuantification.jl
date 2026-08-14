@@ -1,6 +1,6 @@
 function to_standard_normal_space!(
-    rv::RandomVariable{<:UnivariateDistribution}, x::DataFrame
-)
+        rv::RandomVariable{<:UnivariateDistribution}, x::DataFrame
+    )
     x[!, rv.name] = quantile.(Normal(), cdf.(rv.dist, x[:, rv.name]))
     return nothing
 end

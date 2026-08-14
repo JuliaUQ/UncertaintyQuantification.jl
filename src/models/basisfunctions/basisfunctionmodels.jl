@@ -6,7 +6,7 @@
 Construct a linear basis function model for the data in `df` using the basis `b`.By default the input
 variables are assumed to be all columns of the `DataFrame` except for `out`.
 """
-struct LinearBasisFunctionModel{T<:AbstractBasis} <: UQModel
+struct LinearBasisFunctionModel{T <: AbstractBasis} <: UQModel
     b::T
     β::Vector{<:Real}
     inputs::Vector{Symbol}
@@ -14,8 +14,8 @@ struct LinearBasisFunctionModel{T<:AbstractBasis} <: UQModel
 end
 
 function LinearBasisFunctionModel(
-    df::DataFrame, out::Symbol, b::T, inputs::Vector{Symbol}=propertynames(df[:, Not(out)])
-) where {T<:AbstractBasis}
+        df::DataFrame, out::Symbol, b::T, inputs::Vector{Symbol} = propertynames(df[:, Not(out)])
+    ) where {T <: AbstractBasis}
     X = permutedims(Matrix(df[:, inputs]))
     y = df[:, out]
 

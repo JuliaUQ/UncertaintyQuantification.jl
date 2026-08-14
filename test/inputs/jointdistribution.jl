@@ -61,18 +61,18 @@ end
 
     samples = sample(jd, 10^6)
 
-    @test isapprox(mean(samples.x), 1.0; atol=0.01)
-    @test isapprox(mean(samples.y), 0.5; atol=0.01)
+    @test isapprox(mean(samples.x), 1.0; atol = 0.01)
+    @test isapprox(mean(samples.y), 0.5; atol = 0.01)
 
     @test cor(samples.x, samples.y) ≈ 0.77 atol = 0.01
 
     to_standard_normal_space!(jd, samples)
 
-    @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
-    @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
+    @test isapprox(abs(mean(samples.x)), 0.0; atol = 0.01)
+    @test isapprox(abs(mean(samples.y)), 0.0; atol = 0.01)
 
-    @test isapprox(std(samples.x), 1.0; atol=0.01)
-    @test isapprox(std(samples.y), 1.0; atol=0.01)
+    @test isapprox(std(samples.x), 1.0; atol = 0.01)
+    @test isapprox(std(samples.y), 1.0; atol = 0.01)
 
     @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
 
@@ -88,8 +88,8 @@ end
     @test eltype(samples.x) <: Real
     @test eltype(samples.y) <: Real
 
-    @test isapprox(abs(mean(samples.x)), 0.0; atol=0.01)
-    @test isapprox(abs(mean(samples.y)), 0.0; atol=0.01)
+    @test isapprox(abs(mean(samples.x)), 0.0; atol = 0.01)
+    @test isapprox(abs(mean(samples.y)), 0.0; atol = 0.01)
     @test cor(samples.x, samples.y) ≈ 0.0 atol = 0.01
 end
 
@@ -99,7 +99,7 @@ end
     )
 
     @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈ cdf(jd, [0.5, 0.5]) atol =
-        1e-4
+        1.0e-4
 end
 
 @testitem "JD-Copulas: to_physical_space" setup = [JDSetup] begin
@@ -109,10 +109,10 @@ end
 
     to_physical_space!(jd, samples)
 
-    @test isapprox(mean(samples.x), 1.0; atol=0.01)
-    @test isapprox(mean(samples.y), 0.5; atol=0.01)
+    @test isapprox(mean(samples.x), 1.0; atol = 0.01)
+    @test isapprox(mean(samples.y), 0.5; atol = 0.01)
 
-    @test round(cor(samples.x, samples.y); digits=2) == 0.77
+    @test round(cor(samples.x, samples.y); digits = 2) == 0.77
 end
 
 @testsnippet MVSetup begin

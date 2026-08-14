@@ -4,10 +4,10 @@ mutable struct LineSampling <: AbstractSimulation
     direction::NamedTuple
 
     function LineSampling(
-        lines::Integer,
-        points::Vector{<:Real}=collect(0.5:0.5:5),
-        direction::NamedTuple=NamedTuple(),
-    )
+            lines::Integer,
+            points::Vector{<:Real} = collect(0.5:0.5:5),
+            direction::NamedTuple = NamedTuple(),
+        )
         if maximum(points) > 8.12
             error("LineSampling does not support lines longer than 8.12.")
         end
@@ -29,9 +29,9 @@ function sample(inputs::Vector{<:UQInput}, sim::LineSampling)
     θ = rand(Normal(), n_rv, sim.lines)
 
     θ = θ - α * (α' * θ)
-    θ = repeat(θ; outer=[length(sim.points), 1])
+    θ = repeat(θ; outer = [length(sim.points), 1])
 
-    θ = θ[:] + repeat(α * sim.points'; outer=[1, sim.lines])[:]
+    θ = θ[:] + repeat(α * sim.points'; outer = [1, sim.lines])[:]
 
     samples = transpose(reshape(θ, n_rv, n_samples))
     samples = DataFrame(rv_names .=> eachcol(samples))
@@ -54,26 +54,26 @@ mutable struct AdvancedLineSampling <: AbstractSimulation
     maxiterations::Int64
 
     function AdvancedLineSampling(
-        lines::Integer,
-        points::Vector{<:Real}=collect(0.5:0.5:5),
-        direction::NamedTuple=NamedTuple(),
-        tolerance::Float64=1e-3,
-        stepsize::Float64=1e-5,
-        maxiterations::Int64=20,
-    )
+            lines::Integer,
+            points::Vector{<:Real} = collect(0.5:0.5:5),
+            direction::NamedTuple = NamedTuple(),
+            tolerance::Float64 = 1.0e-3,
+            stepsize::Float64 = 1.0e-5,
+            maxiterations::Int64 = 20,
+        )
         return new(lines, points, direction, tolerance, stepsize, maxiterations)
     end
 end
 
 function AdvancedLineSampling(
-    lines::Integer, tolerance::Float64, stepsize::Float64, maxiterations::Int64
-)
+        lines::Integer, tolerance::Float64, stepsize::Float64, maxiterations::Int64
+    )
     return AdvancedLineSampling(
         lines, collect(0.5:0.5:5), NamedTuple(), tolerance, stepsize, maxiterations
     )
 end
 
-function rootinterpolation(x::Vector{<:Real}, y::Vector{<:Real}, i::Integer=0)
+function rootinterpolation(x::Vector{<:Real}, y::Vector{<:Real}, i::Integer = 0)
     if all(y[:] .<= 0)
         @warn "All samples for line $i are inside the failure domain"
         return Inf
@@ -98,8 +98,8 @@ function _grad1D(x::Float64, f::Function, stepsize::Float64)
 end
 
 function newtonraphson(
-    x₀::Float64, f::Function, stepsize::Float64, tolerance::Float64, maxiterations::Integer
-)
+        x₀::Float64, f::Function, stepsize::Float64, tolerance::Float64, maxiterations::Integer
+    )
     # Initialize
     err = Inf
     steps = 0

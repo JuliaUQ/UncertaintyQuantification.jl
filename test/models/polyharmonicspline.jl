@@ -7,7 +7,7 @@
 
     ishigami = Model(
         df ->
-            sin.(df.x1) .+ df.a .* sin.(df.x2) .^ 2 .+ df.b .* (df.x3 .^ 4) .* sin.(df.x1),
+        sin.(df.x1) .+ df.a .* sin.(df.x2) .^ 2 .+ df.b .* (df.x3 .^ 4) .* sin.(df.x1),
         :y,
     )
 
@@ -23,5 +23,5 @@
     evaluate!(spline, splinedata)
 
     mse = mean((data.y .- splinedata.y) .^ 2)
-    @test isapprox(mse, 0; atol=eps(Float64))
+    @test isapprox(mse, 0; atol = eps(Float64))
 end

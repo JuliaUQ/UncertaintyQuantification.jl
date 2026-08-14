@@ -1,5 +1,5 @@
 @testitem "PolyChaosBasis: LegendreBasis" begin
-    x = range(-1, 1; length=10)
+    x = range(-1, 1; length = 10)
 
     Ψ = LegendreBasis(false)
 
@@ -18,7 +18,7 @@
     @test evaluate(Ψ, x, 4) ≈ (1 / 8) * (35x .^ 4 .- 30x .^ 2 .+ 3) .* sqrt(9)
 
     @test quadrature_nodes(5, Ψ) ≈ [
-        -0.906179845938664, -0.5384693101056831, 0.0, 0.5384693101056831, 0.906179845938664
+        -0.906179845938664, -0.5384693101056831, 0.0, 0.5384693101056831, 0.906179845938664,
     ]
     @test quadrature_weights(5, Ψ) ≈
         [
@@ -31,7 +31,7 @@
 end
 
 @testitem "PolyChaosBasis: HermiteBasis" begin
-    x = range(-3, 3; length=10)
+    x = range(-3, 3; length = 10)
 
     Ψ = HermiteBasis(false)
 

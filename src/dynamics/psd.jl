@@ -38,13 +38,13 @@ cp_psd = CloughPenzien(w, S_0, ω_f, ζ_f, ω_g, ζ_g)
 ```
 """
 function CloughPenzien(
-    ω::AbstractVector{<:Real}, S_0::Real, ω_f::Real, ζ_f::Real, ω_g::Real, ζ_g::Real
-)
+        ω::AbstractVector{<:Real}, S_0::Real, ω_f::Real, ζ_f::Real, ω_g::Real, ζ_g::Real
+    )
     p =
         S_0 * ((ω .^ 4) ./ ((ω_f^2 .- ω .^ 2) .^ 2 .+ 4 * ζ_f^2 * ω_f^2 * ω .^ 2)) .* (
-            (ω_g^4 .+ 4 * ζ_g^2 * ω_g^2 * ω .^ 2) ./
+        (ω_g^4 .+ 4 * ζ_g^2 * ω_g^2 * ω .^ 2) ./
             ((ω_g^2 .- ω .^ 2) .^ 2 .+ (4 * ζ_g^2 * ω_g^2 * ω .^ 2))
-        )
+    )
 
     return CloughPenzien(ω, S_0, ω_f, ζ_f, ω_g, ζ_g, p)
 end
@@ -81,12 +81,13 @@ kt = KanaiTajimi(w, S_0, ω_0, ζ)
 ```
 """
 function KanaiTajimi(
-    ω::AbstractVector{<:Real}, S_0::Real, ω_0::Real, ζ::Real
-)
-    p = 
+        ω::AbstractVector{<:Real}, S_0::Real, ω_0::Real, ζ::Real
+    )
+    p =
         S_0 .* (1 .+ 4 * ζ^2 .* (ω ./ ω_0) .^ 2) ./
-        ((1 .- (ω ./ ω_0) .^ 2) .^ 2 .+ 4 * ζ^2 * (ω ./ ω_0) .^ 2
-        )
+        (
+        (1 .- (ω ./ ω_0) .^ 2) .^ 2 .+ 4 * ζ^2 * (ω ./ ω_0) .^ 2
+    )
 
     return KanaiTajimi(ω, S_0, ω_0, ζ, p)
 end
