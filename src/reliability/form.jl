@@ -1,5 +1,5 @@
 """
-    FORM(n::Integer=10,tol::Real=1e-3,fdm::FiniteDifferencesMethod=CentralFiniteDifferences(3))
+    FORM(n::Integer = 10, tol::Real = 1.0e-3, fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3))
 
 used to perform the first order reliability method using the HLRF algorithm with `n` iterations and tolerance `tol`. Gradients are estimated through `fdm`.
 

@@ -90,7 +90,7 @@ end
 
 #jl TBR = samples.TBR
 #jl TBR_mean = mean(TBR)
-#jl TBR_std  = std(TBR)
+#jl TBR_std = std(TBR)
 #jl lower_quantile = quantile(TBR, 0.025)
 #jl upper_quantile = quantile(TBR, 0.975)
 #jl println("TBR mean: $TBR_mean, TBR std: $TBR_std, TBR 95%: [$lower_quantile, $upper_quantile]")

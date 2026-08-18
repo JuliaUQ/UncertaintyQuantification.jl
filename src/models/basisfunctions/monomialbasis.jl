@@ -1,5 +1,5 @@
 """
-    MonomialBasis(d::Integer, p::Integer; include_zero::Bool=true)
+    MonomialBasis(d::Integer, p::Integer; include_zero::Bool = true)
 
 Construct a monomial basis in `d` dimensions of degree less than or equal to `p`.
 The keyword `include_zero` controls wether the zero degree monomial is included.

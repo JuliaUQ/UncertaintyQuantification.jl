@@ -67,7 +67,7 @@ function SpectralRepresentation(
 end
 
 """
-    sample(sr::SpectralRepresentation, n::Integer=1) -> DataFrame
+    sample(sr::SpectralRepresentation, n::Integer = 1) -> DataFrame
 
 Generates samples of random phase angles for a given `SpectralRepresentation` instance.
 

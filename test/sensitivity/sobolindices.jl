@@ -84,7 +84,7 @@ end
     )
     @test isa(
         sobolindices([t1; t2], x1, [:t1, :t2], QMC(2, QuasiMonteCarlo.SobolSample())),
-        Dict{Symbol, DataFrame},
+        Dict{Symbol,DataFrame},
     )
     @test isa(sobolindices(t1, x1, :t1, QMC(2, QuasiMonteCarlo.SobolSample())), DataFrame)
 end

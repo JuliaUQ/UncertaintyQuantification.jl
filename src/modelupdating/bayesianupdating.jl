@@ -146,7 +146,7 @@ Alternative constructors
 
 ```julia
     TransitionalMarkovChainMonteCarlo(prior, n, burnin, β)  # `islog` = true
-     TransitionalMarkovChainMonteCarlo(prior, n, burnin)    # `β` = 0.2,  `islog` = true
+TransitionalMarkovChainMonteCarlo(prior, n, burnin)    # `β` = 0.2,  `islog` = true
 ```
 
 # References

@@ -13,7 +13,7 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
     return sample(inputs, sim.n)
 end
 
-function sample(inputs::Vector{<:UQInput}, sim::QMC, T::Type = Float64)
+function sample(inputs::Vector{<:UQInput}, sim::QMC, T::Type=Float64)
     random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
     deterministic_inputs = filter(i -> isa(i, Parameter) || isa(i, Interval), inputs)
 
