@@ -1,7 +1,7 @@
 @testitem "GaussianMixtureModel" setup = [TestSetup] begin
     # Test fitting with a DataFrame and initialization
-    df = DataFrame(; x1=randn(100), x2=randn(100))
-    gmm = GaussianMixtureModel(df, 3; maximum_iterations=1, tolerance=1e-3)
+    df = DataFrame(; x1 = randn(100), x2 = randn(100))
+    gmm = GaussianMixtureModel(df, 3; maximum_iterations = 1, tolerance = 1.0e-3)
 
     @test gmm isa JointDistribution
     @test length(gmm.m) == 2
@@ -25,6 +25,6 @@
     |
     # Test error handling
     @test_throws ErrorException to_standard_normal_space!(gmm, samples)
-    @test_throws ArgumentError GaussianMixtureModel(DataFrame(; x1=randn(100)), 3)  # Mismatched dimensions
+    @test_throws ArgumentError GaussianMixtureModel(DataFrame(; x1 = randn(100)), 3)  # Mismatched dimensions
     @test_throws ArgumentError GaussianMixtureModel(df, 0)
 end

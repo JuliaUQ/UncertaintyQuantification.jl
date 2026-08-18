@@ -1,4 +1,3 @@
-
 @testitem "TransportMap from density" setup = [TestSetup] begin
     # Define Target
     μ = [1.0, 2.0]
@@ -33,8 +32,8 @@
     x_test = [1.0, 2.0]
     p = pdf(tm, x_test)
     p2 = pdf(tm.d, x_test)
-    @test isapprox(p, pdf(target_dist, x_test); atol=1e-8)
-    @test isapprox(p2, pdf(target_dist, x_test); atol=1e-8)
+    @test isapprox(p, pdf(target_dist, x_test); atol = 1.0e-8)
+    @test isapprox(p2, pdf(target_dist, x_test); atol = 1.0e-8)
 
     X_test = hcat(samples.x1, samples.x2)
     p_vec = pdf(tm.d, X_test)
@@ -48,44 +47,44 @@
     @test lp2 ≈ log(p)
 
     # Test transformations
-    Z = DataFrame(; x1=randn(10), x2=randn(10))
+    Z = DataFrame(; x1 = randn(10), x2 = randn(10))
     Z_copy = copy(Z)
     to_physical_space!(tm, Z)
 
     X = copy(Z)
     to_standard_normal_space!(tm, X)
-    @test isapprox(Matrix(X), Matrix(Z_copy); atol=1e-8)
+    @test isapprox(Matrix(X), Matrix(Z_copy); atol = 1.0e-8)
 
-    Z_diag = DataFrame(; x1=randn(10), x2=randn(10))
+    Z_diag = DataFrame(; x1 = randn(10), x2 = randn(10))
     vd = variancediagnostic(tm.d, Z_diag)
-    @test isapprox(vd, 0; atol=1e-8)
+    @test isapprox(vd, 0; atol = 1.0e-8)
 
     # Test mean, var, std
     tm_mean = mean(tm.d)
     @test length(tm_mean) == 2
-    @test isapprox(tm_mean, μ; atol=1e-2)
+    @test isapprox(tm_mean, μ; atol = 1.0e-2)
 
     tm_var = var(tm.d)
     @test length(tm_var) == 2
     @test all(tm_var .> 0)
-    @test isapprox(tm_var, [1.0, 2.0]; atol=1e-1)
+    @test isapprox(tm_var, [1.0, 2.0]; atol = 1.0e-1)
 
     tm_std = std(tm.d)
     @test length(tm_std) == 2
     @test all(tm_std .> 0)
-    @test isapprox(tm_std, sqrt.([1.0, 2.0]); atol=1e-1)
-    @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+    @test isapprox(tm_std, sqrt.([1.0, 2.0]); atol = 1.0e-1)
+    @test isapprox(tm_std, sqrt.(tm_var); atol = 1.0e-10)
 
     # Test with custom quadrature
     quad_custom = GaussHermiteWeights(5, 2)
     tm_mean_custom = mean(tm.d, quad_custom)
     @test length(tm_mean_custom) == 2
-    @test isapprox(tm_mean_custom, μ; atol=1e-2)
+    @test isapprox(tm_mean_custom, μ; atol = 1.0e-2)
 
     # Test median
     tm_median = median(tm.d)
     @test length(tm_median) == 2
-    @test isapprox(tm_median, μ; atol=1e-2)  # For Gaussian, median = mean
+    @test isapprox(tm_median, μ; atol = 1.0e-2)  # For Gaussian, median = mean
 
     # Sampling
     samp = rand(tm.d)
@@ -104,7 +103,7 @@ end
     Σ = [1.5 0.3; 0.3 1.0]
     target_dist = MvNormal(μ, Σ)
     X_samples = rand(target_dist, 500)'
-    X_df = DataFrame(; x1=X_samples[:, 1], x2=X_samples[:, 2])
+    X_df = DataFrame(; x1 = X_samples[:, 1], x2 = X_samples[:, 2])
 
     # Create transport map from samples
     map = PolynomialMap(2, 1)
@@ -147,29 +146,29 @@ end
     @test lp2 ≈ log(p)
 
     # Test transformations
-    Z = DataFrame(; x1=randn(10), x2=randn(10))
+    Z = DataFrame(; x1 = randn(10), x2 = randn(10))
     Z_copy = copy(Z)
     to_physical_space!(tm_samples, Z)
 
     X = copy(Z)
     to_standard_normal_space!(tm_samples, X)
-    @test isapprox(Matrix(X), Matrix(Z_copy); atol=1e-6)
+    @test isapprox(Matrix(X), Matrix(Z_copy); atol = 1.0e-6)
 
     # Test mean, var, std
     tm_mean = mean(tm_samples.d)
     @test length(tm_mean) == 2
-    @test isapprox(tm_mean, μ; atol=2e-1)  # Approximation from samples
+    @test isapprox(tm_mean, μ; atol = 2.0e-1)  # Approximation from samples
 
     tm_var = var(tm_samples.d)
     @test length(tm_var) == 2
     @test all(tm_var .> 0)
-    @test isapprox(tm_var, [1.5, 1.0]; atol=3e-1)  # Approximation from samples
+    @test isapprox(tm_var, [1.5, 1.0]; atol = 3.0e-1)  # Approximation from samples
 
     tm_std = std(tm_samples.d)
     @test length(tm_std) == 2
     @test all(tm_std .> 0)
-    @test isapprox(tm_std, sqrt.([1.5, 1.0]); atol=2e-1)  # Approximation from samples
-    @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+    @test isapprox(tm_std, sqrt.([1.5, 1.0]); atol = 2.0e-1)  # Approximation from samples
+    @test isapprox(tm_std, sqrt.(tm_var); atol = 1.0e-10)
 
     # Test with custom quadrature
     quad_custom = GaussHermiteWeights(5, 2)
@@ -179,7 +178,7 @@ end
     # Test median
     tm_median = median(tm_samples.d)
     @test length(tm_median) == 2
-    @test isapprox(tm_median, μ; atol=2e-1)  # For Gaussian, median ≈ mean (approximation from samples)
+    @test isapprox(tm_median, μ; atol = 2.0e-1)  # For Gaussian, median ≈ mean (approximation from samples)
 
     samp = rand(tm_samples.d)
     @test length(samp) == 2
@@ -227,7 +226,7 @@ end
     tm_std = std(tm.d)
     @test length(tm_std) == 2
     @test all(tm_std .> 0)
-    @test isapprox(tm_std, sqrt.(tm_var); atol=1e-10)
+    @test isapprox(tm_std, sqrt.(tm_var); atol = 1.0e-10)
 
     # Test median
     tm_median = median(tm.d)
@@ -238,11 +237,11 @@ end
     # Test transformations
     df = sample(tm, 1000)
     to_standard_normal_space!(tm, df)
-    @test isapprox(mean(df.x1), 0; atol=3e-1)
-    @test isapprox(mean(df.x2), 0; atol=3e-1)
+    @test isapprox(mean(df.x1), 0; atol = 3.0e-1)
+    @test isapprox(mean(df.x2), 0; atol = 3.0e-1)
     to_physical_space!(tm, df)
-    @test isapprox(mean(df.x1), tm_mean[1]; atol=3e-1)
-    @test isapprox(mean(df.x2), tm_mean[2]; atol=3e-1)
+    @test isapprox(mean(df.x1), tm_mean[1]; atol = 3.0e-1)
+    @test isapprox(mean(df.x2), tm_mean[2]; atol = 3.0e-1)
 
     # Test pdf
     x_test = [-10.0, 0]

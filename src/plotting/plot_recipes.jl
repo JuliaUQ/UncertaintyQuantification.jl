@@ -3,19 +3,19 @@ DEFAULT_LABEL = ""
 DEFAULT_GRID = false
 DEFAULT_LEGEND = true
 DEFAULT_CDF = false
-DEFAULT_FILL_DISTRIBUTION=true
-DEFAULT_FILL_IMPRECISE=true
-DEFAULT_FILL_IMPRECISE_ECDF=false
+DEFAULT_FILL_DISTRIBUTION = true
+DEFAULT_FILL_IMPRECISE = true
+DEFAULT_FILL_IMPRECISE_ECDF = false
 DEFAULT_DISTRIBUTION = :pdf
 DEFAULT_FILL = :gray
 DEFAULT_COLOUR_PDF = :blue
 DEFAULT_COLOUR_UPPER = :red
 DEFAULT_COLOUR_LOWER = :black
 
-DEFAULT_INTERVAL_WIDTH=1.5
-DEFAULT_INTERVAL_EDGE_ALPHA=1
+DEFAULT_INTERVAL_WIDTH = 1.5
+DEFAULT_INTERVAL_EDGE_ALPHA = 1
 
-DEFAULT_DISTRIBUTION_WIDTH=2
+DEFAULT_DISTRIBUTION_WIDTH = 2
 
 DEFAULT_PLOT_RANGE_EXTEND_DENSITY = 0.2
 DEFAULT_PLOT_RANGE_EXTEND = 0.2
@@ -28,8 +28,8 @@ DEFAULT_TICK_SIZE = 12
 #   Plots for UQInputs
 ###
 @recipe function _plot(
-    x::RandomVariable{T}; cdf_on=DEFAULT_CDF, shade=DEFAULT_FILL_DISTRIBUTION
-) where {T<:UnivariateDistribution}
+        x::RandomVariable{T}; cdf_on = DEFAULT_CDF, shade = DEFAULT_FILL_DISTRIBUTION
+    ) where {T <: UnivariateDistribution}
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
     label --> String(x.name)
@@ -70,7 +70,7 @@ DEFAULT_TICK_SIZE = 12
     end
 end
 
-@recipe function _plot(x::IntervalVariable; shade=DEFAULT_FILL_IMPRECISE)
+@recipe function _plot(x::IntervalVariable; shade = DEFAULT_FILL_IMPRECISE)
     # --- plot-level defaults (soft) ---
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
@@ -137,8 +137,8 @@ end
 end
 
 @recipe function _plot(
-    x::RandomVariable{T}; shade=DEFAULT_FILL_IMPRECISE
-) where {T<:ProbabilityBox}
+        x::RandomVariable{T}; shade = DEFAULT_FILL_IMPRECISE
+    ) where {T <: ProbabilityBox}
     # --- plot-level defaults (soft) ---
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
@@ -189,7 +189,7 @@ end
     end
 end
 
-@recipe function _plot(x::Vector{T}) where {T<:UQInput}
+@recipe function _plot(x::Vector{T}) where {T <: UQInput}
     # Filter out Parameter objects
     x_no_params = filter(xi -> !isa(xi, Parameter), x)
 
@@ -212,7 +212,7 @@ end
 
 ###
 #   This code is a modified version of the plot recipe from IntervalArithmetic.jl
-#       https://github.com/JuliaIntervals/IntervalArithmetic.jl       
+#       https://github.com/JuliaIntervals/IntervalArithmetic.jl
 ###
 
 # Plot a 2D IntervalBox:
@@ -233,7 +233,7 @@ end
 end
 
 # Plot a vector of 2D IntervalBoxes:
-@recipe function _plot(xx::Vector{T}, yy::Vector{T}) where {T<:Interval}
+@recipe function _plot(xx::Vector{T}, yy::Vector{T}) where {T <: Interval}
     seriesalpha --> DEFAULT_ALPHA
     seriestype := :shape
 
@@ -262,8 +262,8 @@ end
 # Plots for samples of data frames
 ###
 
-@recipe function _plot(x::Vector{Interval}; shade=DEFAULT_FILL_IMPRECISE_ECDF)
-    if length(unique(x))==1
+@recipe function _plot(x::Vector{Interval}; shade = DEFAULT_FILL_IMPRECISE_ECDF)
+    if length(unique(x)) == 1
         return x[1]
     else
         grid --> DEFAULT_GRID

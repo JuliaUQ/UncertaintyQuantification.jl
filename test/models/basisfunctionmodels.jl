@@ -22,5 +22,5 @@
 
     mse = mean((test_data.y .- validate_data.y) .^ 2)
 
-    @test mse < 1e-25
+    @test mse < 1.0e-25
 end

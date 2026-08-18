@@ -75,7 +75,7 @@ end
     # Kontantin Zuev - Subset Simulation Method for Rare Event Estimation: An Introduction
     # Example 6.1
     # Target pf of 1e-10
-    pf_analytical = 1e-10
+    pf_analytical = 1.0e-10
 
     x1 = RandomVariable(Normal(), :x1)
     x2 = RandomVariable(Normal(), :x2)
@@ -127,7 +127,7 @@ end
         RadialBasedImportanceSampling(10^4, 2.953),
     )
 
-    @test isapprox(pf, 2.57e-3; rtol=0.1)
+    @test isapprox(pf, 2.57e-3; rtol = 0.1)
 
     # reference solution 1.23e-4
     pf, cov, samples = probability_of_failure(
@@ -137,7 +137,7 @@ end
         RadialBasedImportanceSampling(10^5, 3.434),
     )
 
-    @test isapprox(pf, 1.23e-4; rtol=0.1)
+    @test isapprox(pf, 1.23e-4; rtol = 0.1)
 
     # Englund and Rackwitz - A benchmark study on importance sampling techniques
     # in structural reliability (1993)

@@ -28,22 +28,22 @@ struct TransportMapBayesian <: AbstractBayesianMethod
     prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
     transportmap::AbstractTriangularMap
     quadrature::AbstractQuadratureWeights
-    gradient::Union{AbstractADType,Function}
+    gradient::Union{AbstractADType, Function}
     optimizer::Optim.AbstractOptimizer
     optim_options::Optim.Options
     islog::Bool
     transformprior::Bool
 
     function TransportMapBayesian(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        transportmap::AbstractTriangularMap,
-        quadrature::AbstractQuadratureWeights,
-        gradient::Union{AbstractADType,Function}=AutoFiniteDiff(),
-        optimizer::Optim.AbstractOptimizer=LBFGS(),
-        optim_options::Optim.Options=Optim.Options();
-        islog::Bool=true,
-        transformprior::Bool=true,
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            transportmap::AbstractTriangularMap,
+            quadrature::AbstractQuadratureWeights,
+            gradient::Union{AbstractADType, Function} = AutoFiniteDiff(),
+            optimizer::Optim.AbstractOptimizer = LBFGS(),
+            optim_options::Optim.Options = Optim.Options();
+            islog::Bool = true,
+            transformprior::Bool = true,
+        )
         @assert length(prior) == size(quadrature.points, 2)
         @assert length(prior) == numberdimensions(transportmap)
         return new(
@@ -81,18 +81,18 @@ end
 
 # Setup of the optimization problem for Bayesian updating with transport map
 function setupoptimizationproblem(
-    prior::Function,
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    tm::TransportMapBayesian,
-)
+        prior::Function,
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        tm::TransportMapBayesian,
+    )
     # Check gradient estimation and optimizer for external model
     if !isempty(models)
         if any([isa(m, ExternalModel) for m in models])
             @assert (
                 isa(tm.gradient, Function) ||
-                isa(tm.gradient, AutoFiniteDiff) ||
-                isa(tm.gradient, AutoFiniteDifferences)
+                    isa(tm.gradient, AutoFiniteDiff) ||
+                    isa(tm.gradient, AutoFiniteDifferences)
             ) "Unsupported gradient with ExternalModel. Supported are: AutoFiniteDiff, AutoFiniteDifferences or custom function."
             if isa(tm.optimizer, Optim.FirstOrderOptimizer)
                 @warn "Using gradient-based optimizer with external model."
@@ -103,9 +103,9 @@ function setupoptimizationproblem(
     # Check supported gradient estimation
     @assert (
         isa(tm.gradient, Function) ||
-        isa(tm.gradient, AutoFiniteDiff) ||
-        isa(tm.gradient, AutoFiniteDifferences) ||
-        isa(tm.gradient, AutoMooncake)
+            isa(tm.gradient, AutoFiniteDiff) ||
+            isa(tm.gradient, AutoFiniteDifferences) ||
+            isa(tm.gradient, AutoMooncake)
     ) "Unsupported gradient. Supported are: AutoFiniteDiff, AutoFiniteDifferences, AutoMooncake or custom function."
 
     logprior = if tm.islog
@@ -143,18 +143,18 @@ function setupoptimizationproblem(
     end
 
     if (
-        isa(tm.gradient, Function) ||
-        isa(tm.gradient, AutoFiniteDiff) ||
-        isa(tm.gradient, AutoFiniteDifferences)
-    ) || isa(tm.optimizer, Optim.ZerothOrderOptimizer)
+            isa(tm.gradient, Function) ||
+                isa(tm.gradient, AutoFiniteDiff) ||
+                isa(tm.gradient, AutoFiniteDifferences)
+        ) || isa(tm.optimizer, Optim.ZerothOrderOptimizer)
         # Analytical gradient, finite differences or gradient-free optimization
         target = MapTargetDensity(
-            target_density, tm.gradient; isvectorized=true, threaded=false
+            target_density, tm.gradient; isvectorized = true, threaded = false
         )
     else
         @warn "Setting up automatic differentiation. This may take a while."
         target = MapTargetDensity(
-            target_density, tm.gradient, length(tm.prior); isvectorized=true, threaded=false
+            target_density, tm.gradient, length(tm.prior); isvectorized = true, threaded = false
         )
     end
 
@@ -202,23 +202,23 @@ bayesianupdating(likelihood, models, tm)
 See also [`TransportMapBayesian`](@ref), [`MaximumAPosterioriBayesian`](@ref), [`TransportMap](@ref).
 """
 function bayesianupdating(
-    prior::Function,
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    tm::TransportMapBayesian,
-)
+        prior::Function,
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        tm::TransportMapBayesian,
+    )
     if tm.transformprior
         @warn "Prior function given while transforming to standard normal prior. Given prior will be ignored."
         prior = if tm.islog
             df -> vec(
                 sum(
                     hcat(map(rv -> logpdf.(Normal(), df[:, rv.name]), tm.prior)...);
-                    dims=2,
+                    dims = 2,
                 ),
             )
         else
             df -> vec(
-                prod(hcat(map(rv -> pdf.(Normal(), df[:, rv.name]), tm.prior)...); dims=2),
+                prod(hcat(map(rv -> pdf.(Normal(), df[:, rv.name]), tm.prior)...); dims = 2),
             )
         end
     end
@@ -229,8 +229,8 @@ function bayesianupdating(
 end
 
 function bayesianupdating(
-    likelihood::Function, models::Vector{<:UQModel}, tm::TransportMapBayesian
-)
+        likelihood::Function, models::Vector{<:UQModel}, tm::TransportMapBayesian
+    )
 
     # Transform the prior to be standard normal
     if tm.transformprior
@@ -238,22 +238,22 @@ function bayesianupdating(
             df -> vec(
                 sum(
                     hcat(map(rv -> logpdf.(Normal(), df[:, rv.name]), tm.prior)...);
-                    dims=2,
+                    dims = 2,
                 ),
             )
         else
             df -> vec(
-                prod(hcat(map(rv -> pdf.(Normal(), df[:, rv.name]), tm.prior)...); dims=2),
+                prod(hcat(map(rv -> pdf.(Normal(), df[:, rv.name]), tm.prior)...); dims = 2),
             )
         end
 
     else
         prior = if tm.islog
             df -> vec(
-                sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), tm.prior)...); dims=2),
+                sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), tm.prior)...); dims = 2),
             )
         else
-            df -> vec(prod(hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), tm.prior)...); dims=2))
+            df -> vec(prod(hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), tm.prior)...); dims = 2))
         end
     end
 

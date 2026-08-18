@@ -1,6 +1,6 @@
 using UncertaintyQuantification
 
-function run_sim(N_dimensions, pf_target, N_samples, N_runs=50)
+function run_sim(N_dimensions, pf_target, N_samples, N_runs = 50)
     inputs = RandomVariable.(Normal(), [Symbol("x$i") for i in 1:N_dimensions])
 
     y = Model(df -> sum(eachcol(df[:, names(inputs)])), :f)

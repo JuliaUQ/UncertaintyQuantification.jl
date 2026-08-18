@@ -10,8 +10,8 @@
         UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-2, sqrt(8)), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-2, sqrt(8)), -9) atol = 1.0e-6
 end
 
 @testsnippet P_failure_imprecise begin
@@ -24,7 +24,7 @@ end
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: P-boxes with Copula: independent" setup = [
-    TestSetup, P_failure_imprecise
+    TestSetup, P_failure_imprecise,
 ] begin
     c = GaussianCopula([1 0.0; 0.0 1])
 
@@ -34,12 +34,12 @@ end
         UQModel[], df -> 9 .+ df.X .+ df.Y, jd, DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-2, sqrt(8)), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-2, sqrt(8)), -9) atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: P-boxes with Copula: dependent" setup = [
-    TestSetup, P_failure_imprecise
+    TestSetup, P_failure_imprecise,
 ] begin
     c = GaussianCopula([1 0.71; 0.71 1])
 
@@ -61,8 +61,8 @@ end
         UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ cdf(Normal(1, 2), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-1, 2), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(1, 2), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-1, 2), -9) atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: P-box - Distribution" begin
@@ -75,8 +75,8 @@ end
         UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ cdf(Normal(1, sqrt(5)), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-1, sqrt(8)), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(1, sqrt(5)), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-1, sqrt(8)), -9) atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Double Loop: Interval - p-box" begin
@@ -87,8 +87,8 @@ end
         UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ cdf(Normal(1, 1), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-1, 2), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(1, 1), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-1, 2), -9) atol = 1.0e-6
 
     @test x_lb ≈ [1, 1]
     @test x_ub ≈ [-1, 2]
@@ -111,12 +111,12 @@ end
     )
     failure_analty = cdf(pbox_analyt, -9)
 
-    @test pf.lb ≈ failure_analty.lb atol = 1e-6
-    @test pf.ub ≈ failure_analty.ub atol = 1e-6
+    @test pf.lb ≈ failure_analty.lb atol = 1.0e-6
+    @test pf.ub ≈ failure_analty.ub atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Random Slicing: P-boxes with Copula" setup = [
-    TestSetup
+    TestSetup,
 ] begin
     X = RandomVariable(
         ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => Interval(1, 2))), :X
@@ -139,8 +139,8 @@ end
     )
     failure_analty = cdf(pbox_analyt, -9)
 
-    @test pf.lb ≈ failure_analty.lb atol = 1e-6
-    @test pf.ub ≈ failure_analty.ub atol = 1e-6
+    @test pf.lb ≈ failure_analty.lb atol = 1.0e-6
+    @test pf.ub ≈ failure_analty.ub atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Random Slicing: Interval - Distribution" begin
@@ -154,8 +154,8 @@ end
     pbox_analyt = ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 2))
     failure_analty = cdf(pbox_analyt, -9)
 
-    @test pf.lb ≈ failure_analty.lb atol = 1e-6
-    @test pf.ub ≈ failure_analty.ub atol = 1e-6
+    @test pf.lb ≈ failure_analty.lb atol = 1.0e-6
+    @test pf.ub ≈ failure_analty.ub atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Random Slicing: P-box - Distribution" begin
@@ -173,8 +173,8 @@ end
     )
     failure_analty = cdf(pbox_analyt, -9)
 
-    @test pf.lb ≈ cdf(Normal(1, sqrt(5)), -9) atol = 1e-6
-    @test pf.ub ≈ cdf(Normal(-1, sqrt(8)), -9) atol = 1e-6
+    @test pf.lb ≈ cdf(Normal(1, sqrt(5)), -9) atol = 1.0e-6
+    @test pf.ub ≈ cdf(Normal(-1, sqrt(8)), -9) atol = 1.0e-6
 end
 
 @testitem "Imprecise Probability of Failure: Random Slicing: Interval - p-box" begin
@@ -188,8 +188,8 @@ end
     pbox_analyt = ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => Interval(1, 2)))
     failure_analty = cdf(pbox_analyt, -9)
 
-    @test pf.lb ≈ failure_analty.lb atol = 1e-6
-    @test pf.ub ≈ failure_analty.ub atol = 1e-6
+    @test pf.lb ≈ failure_analty.lb atol = 1.0e-6
+    @test pf.ub ≈ failure_analty.ub atol = 1.0e-6
 end
 
 @testset "IPM Reliability Double Loop" begin
@@ -220,10 +220,10 @@ end
         [m1, ipm], df -> 5.0 .- df.y, [x1, x2, x3], DoubleLoop(FORM())
     )
 
-    @test pf.lb ≈ pf_ipm.lb atol = 1e-4
-    @test pf.ub ≈ pf_ipm.ub atol = 1e-4
-    @test x_lb ≈ x_lb_ipm atol = 1e-4
-    @test x_ub ≈ x_ub_ipm atol = 1e-4 broken = true
+    @test pf.lb ≈ pf_ipm.lb atol = 1.0e-4
+    @test pf.ub ≈ pf_ipm.ub atol = 1.0e-4
+    @test x_lb ≈ x_lb_ipm atol = 1.0e-4
+    @test x_ub ≈ x_ub_ipm atol = 1.0e-4 broken = true
 end
 
 @testset "IPM Reliability Random Slicing" begin
@@ -254,6 +254,6 @@ end
         [m1, ipm], df -> 5.0 .- df.y, [x1, x2, x3], RandomSlicing(FORM())
     )
 
-    @test pf.lb ≈ pf_ipm.lb atol = 1e-4
-    @test pf.ub ≈ pf_ipm.ub atol = 1e-4
+    @test pf.lb ≈ pf_ipm.lb atol = 1.0e-4
+    @test pf.ub ≈ pf_ipm.ub atol = 1.0e-4
 end

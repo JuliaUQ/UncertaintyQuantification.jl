@@ -14,15 +14,15 @@ ResponseSurface(MonomialBasis(1, 2, Monomials.Monomial[1, x1, x1²]), [0.4833333
 const ResponseSurface = LinearBasisFunctionModel{MonomialBasis}
 
 function ResponseSurface(
-    data::DataFrame,
-    output::Symbol,
-    p::Int,
-    inputs::Vector{Symbol}=propertynames(data[:, Not(output)]),
-)
+        data::DataFrame,
+        output::Symbol,
+        p::Int,
+        inputs::Vector{Symbol} = propertynames(data[:, Not(output)]),
+    )
     if p < 0
         error("Degree(p) of ResponseSurface must be non-negative.")
     end
 
-    basis = MonomialBasis(length(inputs), p; include_zero=true)
+    basis = MonomialBasis(length(inputs), p; include_zero = true)
     return LinearBasisFunctionModel(data, output, basis, inputs)
 end

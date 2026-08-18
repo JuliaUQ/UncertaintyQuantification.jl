@@ -62,5 +62,5 @@ end
     @test mean(interval) == Interval(0, 1)
     @test var(interval) == Interval(0.0, 0.25)
 
-    @test UncertaintyQuantification.sample(interval) == DataFrame(; x=Interval(interval))
+    @test UncertaintyQuantification.sample(interval) == DataFrame(; x = Interval(interval))
 end

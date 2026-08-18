@@ -8,7 +8,7 @@ struct MonomialBasis <: AbstractBasis
     d::Int # dimensions
     p::Int # degree
     m::Vector{Monomial}
-    function MonomialBasis(d::Integer, p::Integer; include_zero::Bool=true)
+    function MonomialBasis(d::Integer, p::Integer; include_zero::Bool = true)
         x = ["x$i" for i in 1:d]
         m = monomials(x, p, GradedLexicographicOrder(); include_zero)
         return new(d, p, m)

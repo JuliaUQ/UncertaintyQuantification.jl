@@ -27,23 +27,25 @@ workdir = joinpath(pwd(), "supported-beam")
 
 # Read output file and compute maximum (absolute) displacement.
 # The input `base` of the function used to construct the [`Extractor`](@ref) is the working directory for the current sample.
-disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = readdlm(file, ' ')
+disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = readdlm(file, ' ')
 
-    return maximum(abs.(data[:, 2]))
-end, :disp)
+        return maximum(abs.(data[:, 2]))
+    end, :disp
+)
 
 # Define the solver
 opensees = Solver(
     "OpenSees", # path to OpenSees binary, here we expect it to be available on the system PATH
     "supported-beam.tcl";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 # Put everything together to construct the external model
 ext = ExternalModel(
-    sourcedir, sourcefile, disp, opensees; workdir=workdir, formats=numberformats
+    sourcedir, sourcefile, disp, opensees; workdir = workdir, formats = numberformats
 )
 
 # Run the probability of failure analysis with 1000 samples

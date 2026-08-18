@@ -13,10 +13,10 @@
     n_mc = 10000
     n_qmc = 10000
 
-    firstorder_analytical1 = [0.3138, 0.4424, 0.00]
+    firstorder_analytical1 = [0.3138, 0.4424, 0.0]
     totaleffect_analytical1 = [0.5574, 0.4424, 0.2436]
 
-    firstorder_analytical2 = [0.219, 0.687, 0.00]
+    firstorder_analytical2 = [0.219, 0.687, 0.0]
     totaleffect_analytical2 = [0.3136, 0.687, 0.0946]
 end
 
@@ -84,7 +84,7 @@ end
     )
     @test isa(
         sobolindices([t1; t2], x1, [:t1, :t2], QMC(2, QuasiMonteCarlo.SobolSample())),
-        Dict{Symbol,DataFrame},
+        Dict{Symbol, DataFrame},
     )
     @test isa(sobolindices(t1, x1, :t1, QMC(2, QuasiMonteCarlo.SobolSample())), DataFrame)
 end

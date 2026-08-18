@@ -9,7 +9,7 @@
     For large datasets linear binning can be used by passing the keyword `nbins`.
 """
 struct EmpiricalDistribution <: ContinuousUnivariateDistribution
-    data::Union{AbstractVector{<:Real},BinnedData}
+    data::Union{AbstractVector{<:Real}, BinnedData}
     lb::Real
     ub::Real
     h::Real
@@ -17,8 +17,8 @@ struct EmpiricalDistribution <: ContinuousUnivariateDistribution
     q::Spline1D
 
     function EmpiricalDistribution(
-        X::AbstractVector{<:Real}, n::Integer=10000; nbins::Integer=0
-    )
+            X::AbstractVector{<:Real}, n::Integer = 10000; nbins::Integer = 0
+        )
         h, data = sheather_jones_bandwidth(X, nbins)
 
         f = u -> kde(h, u, data) - eps(eltype(X))
@@ -27,14 +27,14 @@ struct EmpiricalDistribution <: ContinuousUnivariateDistribution
         xmax = maximum(X)
 
         lb = if f(xmin - 10 * h) < 0 && f(xmin) > 0
-            find_zero(f, (xmin - 10 * h, xmin); maxevals=10^3)
+            find_zero(f, (xmin - 10 * h, xmin); maxevals = 10^3)
         else
             @warn "EmpiricalDistribution: Unable to compute compute accurate lower bound."
             xmin - 10 * h # conservative estimate for the lower bound
         end
 
         ub = if f(xmax) > 0 && f(xmax + 10 * h) < 0
-            find_zero(f, (xmax, xmax + 10 * h); maxevals=10^3)
+            find_zero(f, (xmax, xmax + 10 * h); maxevals = 10^3)
         else
             @warn "EmpiricalDistribution: Unable to compute compute accurate lower bound."
             xmax + 10 * h # conservative estimate for the upper bound
@@ -58,11 +58,11 @@ struct EmpiricalDistribution <: ContinuousUnivariateDistribution
         y[1] = 0.0
         y[end] = 1.0
 
-        c = Spline1D(x, y; k=1, s=0.0)
+        c = Spline1D(x, y; k = 1, s = 0.0)
 
         unique_idx = findlast.(isequal.(unique(y)), [y])
 
-        q = Spline1D(y[unique_idx], x[unique_idx]; k=1, s=0.0)
+        q = Spline1D(y[unique_idx], x[unique_idx]; k = 1, s = 0.0)
 
         return new(data, lb, ub, h, c, q)
     end

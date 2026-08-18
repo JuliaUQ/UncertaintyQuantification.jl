@@ -8,7 +8,7 @@ h = RandomVariable(Normal(0.24, 0.01), :h) # height
 plot(X1)    # p-box
 plot(X1, color = "red") # red p-box
 plot(X3)    # Interval
-plot(h)     # distribution 
+plot(h)     # distribution
 
 inputs = [X1, X2, X3, h]
 
@@ -17,7 +17,7 @@ plot(inputs)    # Everything together
 samples = sample(inputs, 200)
 
 plot(X1)
-plot!(samples.X1, shade=:false)    # Samples ecdf samples of X1
+plot!(samples.X1, shade = :false)    # Samples ecdf samples of X1
 
 plot(samples.X1[1], samples.X2[1])  # Plots 2D box
 

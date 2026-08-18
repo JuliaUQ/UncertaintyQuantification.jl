@@ -5,7 +5,7 @@ Generates n correlated samples from a collection of inputs. Returns a DataFrame
 
 See also: [`RandomVariable`](@ref), [`Parameter`](@ref)
 """
-function sample(inputs::Vector{<:UQInput}, n::Integer=1)
+function sample(inputs::Vector{<:UQInput}, n::Integer = 1)
     return mapreduce(i -> sample(i, n), hcat, inputs)
 end
 
@@ -57,4 +57,4 @@ function sns_zero_point(inputs::AbstractVector{<:UQInput})
     return sns
 end
 
-Base.broadcastable(i::T) where {T<:UQInput} = Ref(i)
+Base.broadcastable(i::T) where {T <: UQInput} = Ref(i)

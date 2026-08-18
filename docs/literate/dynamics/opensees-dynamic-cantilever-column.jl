@@ -43,39 +43,45 @@ workdir = joinpath(pwd(), "workdir-cantilever-column")
 
 # Read output file and compute maximum (absolute) displacement
 # An extractor is based the working directory for the current sample
-max_abs_disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+max_abs_disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return maximum(abs.(data[:, 2]))
-end, :max_abs_disp)
+        return maximum(abs.(data[:, 2]))
+    end, :max_abs_disp
+)
 
 # Extractor for the full time series of the displacement at the top node
-disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 2]
-end, :disp)
+        return data[:, 2]
+    end, :disp
+)
 
 # Extractor for the simulation time
-sim_time = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+sim_time = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 1]
-end, :sim_time)
+        return data[:, 1]
+    end, :sim_time
+)
 
 
 opensees = Solver(
     "OpenSees", # path to OpenSees binary
     "cantilever-column.tcl";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 # Define the external model with all needed parameters and attributes
 ext = ExternalModel(
-    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir=workdir, formats=numberformats
+    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir = workdir, formats = numberformats
 )
 
 # Define the UQ.jl models used in the analysis

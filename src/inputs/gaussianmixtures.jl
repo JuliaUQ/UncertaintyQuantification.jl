@@ -21,28 +21,28 @@ See also: [`JointDistribution`](@ref)
 
 """
 function GaussianMixtureModel(
-    data::DataFrame,
-    number_components::Integer;
-    maximum_iterations::Integer=100,
-    tolerance::Number=1e-4,
-)
+        data::DataFrame,
+        number_components::Integer;
+        maximum_iterations::Integer = 100,
+        tolerance::Number = 1.0e-4,
+    )
     # Fit mixture model to the data using EM algorithm
     mixture = _gaussian_mixture_expectation_maximization(
         number_components,
         Matrix(data);
-        maximum_iterations=maximum_iterations,
-        tolerance=tolerance,
+        maximum_iterations = maximum_iterations,
+        tolerance = tolerance,
     )
 
     return JointDistribution(mixture, Symbol.(names(data)))
 end
 
 function _gaussian_mixture_expectation_maximization(
-    number_components::Integer,
-    data::Matrix;
-    maximum_iterations::Integer=100,
-    tolerance::Number=1e-4,
-)
+        number_components::Integer,
+        data::Matrix;
+        maximum_iterations::Integer = 100,
+        tolerance::Number = 1.0e-4,
+    )
     # Check inputs
     if number_components <= 0
         throw(ArgumentError("Number of components must be a positive integer."))
@@ -63,11 +63,11 @@ function _gaussian_mixture_expectation_maximization(
         # Log-likelihood (for convergence check)
         log_likelihood = sum(
             log(
-                sum(
-                    π[k] * pdf(MvNormal(μ[k, :], Σ[k]), data[i, :]) for
-                    k in 1:number_components
-                ),
-            ) for i in 1:number_samples
+                    sum(
+                        π[k] * pdf(MvNormal(μ[k, :], Σ[k]), data[i, :]) for
+                        k in 1:number_components
+                    ),
+                ) for i in 1:number_samples
         )
 
         abs(log_likelihood - log_likelihood_old) < tolerance ? break : continue
@@ -78,8 +78,8 @@ function _gaussian_mixture_expectation_maximization(
 end
 
 function _initialize_gaussian_mixture_model(
-    data::Matrix{Float64}, number_components::Integer
-)
+        data::Matrix{Float64}, number_components::Integer
+    )
     # Randomly initialize parameters for GMM
     number_samples, dimensions = size(data)
     μ = data[rand(1:number_samples, number_components), :]  # random initialization of means
@@ -89,22 +89,22 @@ function _initialize_gaussian_mixture_model(
 end
 
 function _expectation_step(
-    data::Matrix{Float64}, μ::Matrix{Float64}, Σ::Vector, π::Vector{Float64}
-)
+        data::Matrix{Float64}, μ::Matrix{Float64}, Σ::Vector, π::Vector{Float64}
+    )
     number_samples, number_components = size(data, 1), length(π)
     # Compute responsibilities and normalize
     γ = [
         π[k] * pdf(MvNormal(μ[k, :], Σ[k]), data[i, :]) for i in 1:number_samples,
-        k in 1:number_components
+            k in 1:number_components
     ]
-    γ = γ ./ sum(γ; dims=2)
+    γ = γ ./ sum(γ; dims = 2)
     return γ
 end
 
 function _maximization_step(data::Matrix{Float64}, γ::Matrix{Float64})
     number_samples, dimensions = size(data)
     number_components = size(γ, 2)
-    Nₖ = sum(γ; dims=1)             # effective number of points in cluster 𝑘
+    Nₖ = sum(γ; dims = 1)             # effective number of points in cluster 𝑘
     π = vec(Nₖ ./ number_samples)   # weights: relative number of points in each cluster
     μ = γ' * data ./ Nₖ'            # means: weighted average of points in each cluster
     Σ = Vector{Matrix{Float64}}(undef, number_components)

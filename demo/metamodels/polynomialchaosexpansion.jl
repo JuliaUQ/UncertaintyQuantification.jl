@@ -2,9 +2,11 @@ using UncertaintyQuantification, Plots
 
 x = RandomVariable.(Uniform(-1, 1), [:x1, :x2])
 
-model = Model(df -> begin
-    π .* (df.x1 .- 1) .* sin.(π .* df.x1) .* (1 .- df.x2 .^ 2)
-end, :y)
+model = Model(
+    df -> begin
+        π .* (df.x1 .- 1) .* sin.(π .* df.x1) .* (1 .- df.x2 .^ 2)
+    end, :y
+)
 
 p = 8
 Ψ = PolynomialChaosBasis([LegendreBasis(), LegendreBasis()], p)
@@ -48,7 +50,7 @@ samplesLS = sample(pceLS, 10^5)
 samplesWAFP = sample(pceWAFP, 10^5)
 samplesGQ = sample(pceGQ, 10^5)
 
-histogram(samplesLS.y; alpha=0.5, label="Least squares", normalize=:probability, bins=100)
-histogram!(samplesWAFP.y; alpha=0.5, label="WAFP", normalize=:probability, bins=100)
-histogram!(samplesGQ.y; alpha=0.5, label="Quadrature", normalize=:probability, bins=100)
-histogram!(samplesMC.y; alpha=0.5, label="Monte Carlo", normalize=:probability, bins=100)
+histogram(samplesLS.y; alpha = 0.5, label = "Least squares", normalize = :probability, bins = 100)
+histogram!(samplesWAFP.y; alpha = 0.5, label = "WAFP", normalize = :probability, bins = 100)
+histogram!(samplesGQ.y; alpha = 0.5, label = "Quadrature", normalize = :probability, bins = 100)
+histogram!(samplesMC.y; alpha = 0.5, label = "Monte Carlo", normalize = :probability, bins = 100)
