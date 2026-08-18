@@ -42,7 +42,7 @@ struct PolyharmonicSpline <: UQModel
         wv = vec(M \ F)
 
         w = wv[1:n]
-        v = wv[(n+1):end]
+        v = wv[(n + 1):end]
 
         return new(w, v, phbasis, k, names, output)
     end

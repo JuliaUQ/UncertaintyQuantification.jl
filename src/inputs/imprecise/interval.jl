@@ -90,7 +90,7 @@ function Interval(i::IntervalVariable)
     return Interval(i.lb, i.ub)
 end
 
-function sample(i::IntervalVariable, n::Integer=1)
+function sample(i::IntervalVariable, n::Integer = 1)
     return DataFrame(i.name => fill(Interval(i), n))
 end
 
