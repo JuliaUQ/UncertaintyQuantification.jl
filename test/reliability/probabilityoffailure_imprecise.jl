@@ -197,7 +197,7 @@ end
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
     x3 = IntervalVariable(-1, 2, :x3)
 
-    # QMC Samples to fit IPM
+    # QuasiMonteCarloSampling Samples to fit IPM
     data = sample(
         [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
         HaltonSampling(150),
@@ -231,7 +231,7 @@ end
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
     x3 = IntervalVariable(-1, 2, :x3)
 
-    # QMC Samples to fit IPM
+    # QuasiMonteCarloSampling Samples to fit IPM
     data = sample(
         [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
         HaltonSampling(150),

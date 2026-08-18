@@ -1,5 +1,6 @@
 @testsnippet sobolindices begin
     using QuasiMonteCarlo
+    using DataFrames
 
     x = RandomVariable.(Uniform(-π, π), [:x1, :x2, :x3])
 
@@ -29,7 +30,7 @@ end
 end
 
 @testitem "Sobol Indices: Sobol" setup = [sobolindices] begin
-    si = sobolindices(ishigami1, x, :f1, QMC(n_qmc, QuasiMonteCarlo.SobolSample()))
+    si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.SobolSample()))
 
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
@@ -37,7 +38,7 @@ end
 end
 
 @testitem "Sobol Indices: Halton" setup = [sobolindices] begin
-    si = sobolindices(ishigami1, x, :f1, QMC(n_qmc, QuasiMonteCarlo.HaltonSample()))
+    si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.HaltonSample()))
 
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
@@ -54,7 +55,7 @@ end
 
 @testitem "Sobol Indices: Multiple Outputs" setup = [sobolindices] begin
     si = sobolindices(
-        [ishigami1, ishigami2], x, [:f1, :f2], QMC(n_qmc, QuasiMonteCarlo.SobolSample())
+        [ishigami1, ishigami2], x, [:f1, :f2], QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.SobolSample())
     )
 
     @test si[:f1].FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
@@ -73,20 +74,20 @@ end
     t2 = Model(df -> cos.(df.x1), :t2)
 
     @test isa(
-        sobolindices([t1; t2], x1, :t1, QMC(2, QuasiMonteCarlo.SobolSample())), DataFrame
+        sobolindices([t1; t2], x1, :t1, QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())), DataFrame
     )
     @test isa(
-        sobolindices(t1, [x1; x2], :t1, QMC(2, QuasiMonteCarlo.SobolSample())), DataFrame
+        sobolindices(t1, [x1; x2], :t1, QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())), DataFrame
     )
     @test isa(
-        sobolindices([t1; t2], [x1; x2], :t1, QMC(2, QuasiMonteCarlo.SobolSample())),
+        sobolindices([t1; t2], [x1; x2], :t1, QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())),
         DataFrame,
     )
     @test isa(
-        sobolindices([t1; t2], x1, [:t1, :t2], QMC(2, QuasiMonteCarlo.SobolSample())),
+        sobolindices([t1; t2], x1, [:t1, :t2], QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())),
         Dict{Symbol,DataFrame},
     )
-    @test isa(sobolindices(t1, x1, :t1, QMC(2, QuasiMonteCarlo.SobolSample())), DataFrame)
+    @test isa(sobolindices(t1, x1, :t1, QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())), DataFrame)
 end
 
 @testitem "Sobol Indices: Polynomial Chaos Expansion" setup = [sobolindices] begin

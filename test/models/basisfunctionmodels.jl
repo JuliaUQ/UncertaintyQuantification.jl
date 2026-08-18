@@ -13,7 +13,7 @@
     bfm = LinearBasisFunctionModel(data, :y, basis)
 
     test_data = UncertaintyQuantification.sample(
-        x, QMC(1024, QuasiMonteCarlo.SobolSample())
+        x, QuasiMonteCarloSampling(1024, QuasiMonteCarlo.SobolSample())
     )
     validate_data = copy(test_data)
 

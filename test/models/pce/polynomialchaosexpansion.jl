@@ -22,7 +22,7 @@
 end
 
 @testitem "PolynomialChaosExpansion: LeastSquares" setup = [PCE] begin
-    ls = LeastSquares(QMC(1000, QuasiMonteCarlo.SobolSample()))
+    ls = LeastSquares(QuasiMonteCarloSampling(1000, QuasiMonteCarlo.SobolSample()))
     pce, samples, mse = polynomialchaos(x, model, Ψ, :y, ls)
 
     new_samples = samples[:, Not(:y1, :y)]
@@ -35,7 +35,7 @@ end
 end
 
 @testitem "PolynomialChaosExpansion: WeightedApproximateFetekePoints" setup = [PCE] begin
-    wafp = WeightedApproximateFetekePoints(QMC(1000, QuasiMonteCarlo.SobolSample()))
+    wafp = WeightedApproximateFetekePoints(QuasiMonteCarloSampling(1000, QuasiMonteCarlo.SobolSample()))
     pce, samples, mse = polynomialchaos(x, model, Ψ, :y, wafp)
 
     new_samples = samples[:, Not(:y1, :y)]
@@ -73,8 +73,8 @@ end
 
     Ψ0 = PolynomialChaosBasis([LegendreBasis()], p)
 
-    ls = LeastSquares(QMC(1000, QuasiMonteCarlo.SobolSample()))
-    wafp = WeightedApproximateFetekePoints(QMC(1000, QuasiMonteCarlo.SobolSample()))
+    ls = LeastSquares(QuasiMonteCarloSampling(1000, QuasiMonteCarlo.SobolSample()))
+    wafp = WeightedApproximateFetekePoints(QuasiMonteCarloSampling(1000, QuasiMonteCarlo.SobolSample()))
     gq = GaussQuadrature()
 
     pces_ls, _, mses_ls = polynomialchaos(x1, [model_a, model_b], Ψ0, [:ya, :yb], ls)
@@ -114,7 +114,7 @@ end
     Ψ1 = PolynomialChaosBasis([LegendreBasis()], p)
     Ψ2 = PolynomialChaosBasis([LegendreBasis(), LegendreBasis()], p)
 
-    ls = LeastSquares(QMC(1000, QuasiMonteCarlo.SobolSample()))
+    ls = LeastSquares(QuasiMonteCarloSampling(1000, QuasiMonteCarlo.SobolSample()))
     gq = GaussQuadrature()
 
     pce_ls_11, _, _ = polynomialchaos(x1, model_a, Ψ1, :ya, ls)
@@ -148,7 +148,7 @@ end
     gq = GaussQuadrature()
     pce, _ = polynomialchaos(x, model, Ψ, :y, gq)
 
-    samples = sample(pce, 100)
+    samples = UncertaintyQuantification.sample(pce, 100)
     data = copy(samples)
 
     evaluate!(model, data)

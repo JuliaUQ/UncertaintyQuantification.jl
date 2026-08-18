@@ -13,7 +13,7 @@
     rs = ResponseSurface(data, :y, 4)
 
     test_data = UncertaintyQuantification.sample(
-        x, QMC(1024, QuasiMonteCarlo.SobolSample())
+        x, QuasiMonteCarloSampling(1024, QuasiMonteCarlo.SobolSample())
     )
     validate_data = copy(test_data)
 
