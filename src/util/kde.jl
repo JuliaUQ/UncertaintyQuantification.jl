@@ -108,7 +108,7 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer = 0)
         return log(C) - u
     end
 
-    h0 = 0.9 * min(std(x), iqr(x) / 1.34) * length(x)^(-1 / 5)   # scale-aware initial guess Silverman's rule of thumb
+    h0 = 0.9 * min(std(x), λ / 1.34) * n^(-1 / 5)   # scale-aware initial guess Silverman's rule of thumb
 
     return exp(newtonraphson(log(h0), f, 1.0e-3, 1.0e-10, 10^3)), data
 end
