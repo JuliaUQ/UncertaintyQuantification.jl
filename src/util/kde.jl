@@ -16,8 +16,8 @@ function TD(b::Real, x::Vector{<:Real})
 
     val = zero(eltype(x))
 
-    @inbounds @simd for i in 1:(n-1)
-        for j in (i+1):n
+    @inbounds @simd for i in 1:(n - 1)
+        for j in (i + 1):n
             val += @views 2 * ϕ6(b^(-1) * (x[i] - x[j]))
         end
     end
@@ -33,12 +33,12 @@ function TD(b::Real, data::BinnedData)
 
     val = zero(eltype(data.grid))
 
-    @inbounds @simd for i in 1:(nbins-1)
-        for j in (i+1):nbins
+    @inbounds @simd for i in 1:(nbins - 1)
+        for j in (i + 1):nbins
             val += @views 2 *
-                          data.weights[i] *
-                          data.weights[j] *
-                          ϕ6(b^(-1) * (data.grid[i] - data.grid[j]))
+                data.weights[i] *
+                data.weights[j] *
+                ϕ6(b^(-1) * (data.grid[i] - data.grid[j]))
         end
     end
 
@@ -52,8 +52,8 @@ function SD(α::Real, x::AbstractVector{<:Real})
 
     val = zero(eltype(x))
 
-    @inbounds @simd for i in 1:(n-1)
-        for j in (i+1):n
+    @inbounds @simd for i in 1:(n - 1)
+        for j in (i + 1):n
             val += @views 2 * ϕ4(α^(-1) * (x[i] - x[j]))
         end
     end
@@ -68,12 +68,12 @@ function SD(α::Real, data::BinnedData)
 
     val = zero(eltype(data.grid))
 
-    @inbounds @simd for i in 1:(nbins-1)
-        for j in (i+1):nbins
+    @inbounds @simd for i in 1:(nbins - 1)
+        for j in (i + 1):nbins
             val += @views 2 *
-                          data.weights[i] *
-                          data.weights[j] *
-                          ϕ4(α^(-1) * (data.grid[i] - data.grid[j]))
+                data.weights[i] *
+                data.weights[j] *
+                ϕ4(α^(-1) * (data.grid[i] - data.grid[j]))
         end
     end
 
@@ -85,7 +85,7 @@ end
 #=
 S. J. Sheather, M. C. Jones, A Reliable Data-Based Bandwidth Selection Method for Kernel Density Estimation, Journal of the Royal Statistical Society: Series B (Methodological), Volume 53, Issue 3, July 1991, Pages 683–690, https://doi.org/10.1111/j.2517-6161.1991.tb01857.x
 =#
-function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
+function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer = 0)
     λ = iqr(x)
     n = length(x)
 
@@ -100,7 +100,7 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
 
     α₂ = 1.357 * (SD(a, data) / TD(b, data))^(1 / 7)
 
-    # solve in log-space to avoid unconstrained Newton step on h jumping to h < 0. 
+    # solve in log-space to avoid unconstrained Newton step on h jumping to h < 0.
     function f(u)
         h = exp(u)
         α₂_h = α₂ * h^(5 / 7)
@@ -108,7 +108,7 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
         return log(C) - u
     end
 
-    h0 = 0.9 * min(std(x), iqr(x) / 1.34) * length(x)^(-1/5)   # scale-aware initial guess Silverman's rule of thumb
+    h0 = 0.9 * min(std(x), iqr(x) / 1.34) * length(x)^(-1 / 5)   # scale-aware initial guess Silverman's rule of thumb
 
     return exp(newtonraphson(log(h0), f, 1.0e-3, 1.0e-10, 10^3)), data
 end
@@ -119,5 +119,5 @@ end
 
 function kde(h::Real, x::Real, X::BinnedData)
     return sum(X.weights)^(-1) *
-           sum([h^(-1) * wⱼ * ϕ(h^(-1) * (x - xⱼ)) for (xⱼ, wⱼ) in zip(X.grid, X.weights)])
+        sum([h^(-1) * wⱼ * ϕ(h^(-1) * (x - xⱼ)) for (xⱼ, wⱼ) in zip(X.grid, X.weights)])
 end
