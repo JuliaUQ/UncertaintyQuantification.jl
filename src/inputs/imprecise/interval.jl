@@ -12,7 +12,7 @@ Represents a closed numeric interval with a lower bound `lb` and an upper bound 
 # Examples
 
 ```jldoctest
-julia> Interval(0.10, 0.14)
+julia> Interval(0.1, 0.14)
 [0.1, 0.14]
 ```
 """
@@ -65,7 +65,7 @@ For other uses, such as building probability boxes (p-boxes) from interval param
 # Examples
 
 ```jldoctest
-julia> IntervalVariable(0.10, 0.14, :x)
+julia> IntervalVariable(0.1, 0.14, :x)
 x ∈ [0.1, 0.14]
 ```
 """
