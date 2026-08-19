@@ -66,12 +66,40 @@
     @test logpdf.(ed, samples) ≈ log.(pdf.(ed, samples))
 
     @test quantile.(ed, cdf.(ed, samples)) ≈ samples
+
+    z = randn(1000)
+
+    ed = EmpiricalDistribution(2000 .* z)
+
+    @test ed.h ≈ 405.5731952771436
+
+    @test mean(ed) ≈ -133.08049905065332
+    @test var(ed) ≈ 4.0436509067724207e6
+
+    @test all(insupport.(ed, z))
+    @test all(pdf.(ed, z) .>= 0)
+
+    samples = rand(ed, 10000)
+
+    @test all(insupport.(ed, samples))
+    @test all(pdf.(ed, samples) .>= 0)
+
+    @test pdf(ed, minimum(ed)) ≈ 0.0 atol = 1.0e-10
+    @test pdf(ed, maximum(ed)) ≈ 0.0 atol = 1.0e-10
+
+    pdf_area, _ = hquadrature(x -> pdf(ed, x), minimum(ed), maximum(ed))
+
+    @test pdf_area ≈ 1 atol = 0.01
+    @test logpdf.(ed, samples) ≈ log.(pdf.(ed, samples))
+
+    @test quantile.(ed, cdf.(ed, samples)) ≈ samples
+
 end
 
 @testitem "EmpiricalDiistribution: Linear binning" setup = [TestSetup] begin
     x = [randn(10_000)..., (5 .+ randn(10_000))...]
 
-    ed = EmpiricalDistribution(x; nbins = 2^12)
+    ed = EmpiricalDistribution(x; nbins=2^12)
 
     @test mean(ed) ≈ 2.5 atol = 0.1
 
