@@ -100,13 +100,17 @@ function sheather_jones_bandwidth(x::AbstractVector, nbins::Integer=0)
 
     α₂ = 1.357 * (SD(a, data) / TD(b, data))^(1 / 7)
 
-    function f(h)
+    # solve in log-space to avoid unconstrained Newton step on h jumping to h < 0.
+    function f(u)
+        h = exp(u)
         α₂_h = α₂ * h^(5 / 7)
-
-        return ((1 / (2 * sqrt(π))) / (3 * SD(α₂_h, data)))^(1 / 5) * n^(-1 / 5) - h
+        C = ((1 / (2 * sqrt(π))) / (3 * SD(α₂_h, data)))^(1 / 5) * n^(-1 / 5)
+        return log(C) - u
     end
 
-    return newtonraphson(1.0, f, 1e-3, 1e-10, 10^3), data
+    h0 = 0.9 * min(std(x), λ / 1.34) * n^(-1 / 5)   # scale-aware initial guess Silverman's rule of thumb
+
+    return exp(newtonraphson(log(h0), f, 1.0e-3, 1.0e-10, 10^3)), data
 end
 
 function kde(h::Real, x::Real, X::AbstractVector{<:Real})
