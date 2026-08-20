@@ -15,9 +15,13 @@ function check_gp_input(σ²::Float64, learn_noise::Bool)
     end
 
     # σ² should be >0, otherwise the parameterization throws an error
-    if learn_noise && σ²<eps()
+    if learn_noise && σ² < eps()
         σ² = 1e-5
         @warn "learn_noise was set but σ² is too small, setting σ² = $(σ²)"
+    end
+
+    if !learn_noise && σ² < eps()
+        @warn "using small σ² < eps() might lead to numerical instabilities"
     end
     return σ²
 end
@@ -59,7 +63,7 @@ function GaussianProcess(
     kernel::Kernel=SqExponentialKernel(),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
+    σ²::Float64=1e-10,
     learn_noise::Bool=false,
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
@@ -116,7 +120,7 @@ function GaussianProcess(
     output::Symbol;
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
+    σ²::Float64=1e-10,
     learn_noise::Bool=false,
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
@@ -206,7 +210,7 @@ function GaussianProcess(
     kernel::Kernel=SqExponentialKernel(),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
+    σ²::Float64=1e-10,
     learn_noise::Bool=false,
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
@@ -274,7 +278,7 @@ function GaussianProcess(
     experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
+    σ²::Float64=1e-10,
     learn_noise::Bool=false,
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
@@ -305,7 +309,7 @@ function GaussianProcess(
     experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments}=LatinHypercubeSampling(n_design_points),
     input_transform::AbstractTransformChoice=IdentityTransformChoice(),
     output_transform::AbstractTransformChoice=IdentityTransformChoice(),
-    σ²::Float64=0.0,
+    σ²::Float64=1e-10,
     learn_noise::Bool=false,
     learn_hyperparameters::Bool=true,
     optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
