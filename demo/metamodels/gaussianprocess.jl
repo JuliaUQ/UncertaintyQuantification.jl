@@ -10,13 +10,13 @@ design = LatinHypercubeSampling(80)
 
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
-σ² = 1e-5
+σ² = 1.0e-5
 
 gp_prior = GP(mean_f, kernel)
 
 using Optim
 
-optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha=0.005), Optim.Options(; iterations=10, show_trace=false))
+optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 
 input_transform = ZScoreTransformChoice()
 
@@ -25,13 +25,13 @@ gp_model = GaussianProcess(
     x,
     himmelblau,
     :y;
-    experimental_design=design,
-    input_transform=input_transform,
-    optimizer=optimizer
+    experimental_design = design,
+    input_transform = input_transform,
+    optimizer = optimizer
 )
 
 test_data = sample(x, 1000)
-evaluate!(gp_model, test_data; mode=:mean_and_var)
+evaluate!(gp_model, test_data; mode = :mean_and_var)
 
 test_data = sample(x, 1000)
 evaluate!(gp_model, test_data)

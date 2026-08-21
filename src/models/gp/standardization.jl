@@ -86,58 +86,58 @@ end
 
 # Fitting
 fit_input_transform(
-    ::DataFrame, 
-    input::Union{Symbol, Vector{<:Symbol}}, 
+    ::DataFrame,
+    input::Union{Symbol, Vector{<:Symbol}},
     ::IdentityTransformChoice
 ) = GaussianProcessInputTransformer(NoTransform(), input)
 
 function fit_input_transform(
-    data::DataFrame, 
-    input::Union{Symbol, Vector{<:Symbol}}, 
-    ::ZScoreTransformChoice
-) 
+        data::DataFrame,
+        input::Union{Symbol, Vector{<:Symbol}},
+        ::ZScoreTransformChoice
+    )
     transform = fit(
-        StatsBase.ZScoreTransform, 
-        dataframe_to_array(data, input); 
-        dims=1
+        StatsBase.ZScoreTransform,
+        dataframe_to_array(data, input);
+        dims = 1
     )
     return GaussianProcessInputTransformer(transform, input)
 end
 
 function fit_input_transform(
-    data::DataFrame, 
-    input::Union{Symbol, Vector{<:Symbol}}, 
-    ::UnitRangeTransformChoice
-) 
+        data::DataFrame,
+        input::Union{Symbol, Vector{<:Symbol}},
+        ::UnitRangeTransformChoice
+    )
     transform = fit(
-        StatsBase.UnitRangeTransform, 
-        dataframe_to_array(data, input); 
-        dims=1
+        StatsBase.UnitRangeTransform,
+        dataframe_to_array(data, input);
+        dims = 1
     )
     return GaussianProcessInputTransformer(transform, input)
 end
 
 fit_input_transform(
-    ::DataFrame, 
-    input::Union{Symbol, Vector{<:Symbol}}, 
+    ::DataFrame,
+    input::Union{Symbol, Vector{<:Symbol}},
     ::StandardNormalTransformChoice
 ) = throw(ArgumentError("Standard normal input transform is only valid for inputs of type UQInput"))
 
 fit_input_transform(
-    data::DataFrame, 
-    input::Union{UQInput, Vector{<:UQInput}}, 
+    data::DataFrame,
+    input::Union{UQInput, Vector{<:UQInput}},
     choice::Union{IdentityTransformChoice, ZScoreTransformChoice, UnitRangeTransformChoice}
 ) = fit_input_transform(data, names(input), choice)
 
 fit_input_transform(
-    ::DataFrame, 
-    input::Union{UQInput, Vector{<:UQInput}}, 
+    ::DataFrame,
+    input::Union{UQInput, Vector{<:UQInput}},
     ::StandardNormalTransformChoice
 ) = GaussianProcessInputTransformer(StandardNormalTransform(), input)
 
 # Transforms
 transform(
-    data::DataFrame, 
+    data::DataFrame,
     transformer::GaussianProcessInputTransformer{<:NoTransform}
 ) = to_gp_format(dataframe_to_array(data, transformer.input))
 
@@ -146,19 +146,19 @@ transform(
     transformer::Union{GaussianProcessInputTransformer{<:ZScoreTransform}, GaussianProcessInputTransformer{<:UnitRangeTransform}}
 ) = to_gp_format(
     StatsBase.transform(
-            transformer.transform,
-            dataframe_to_array(data, transformer.input)
-        )
+        transformer.transform,
+        dataframe_to_array(data, transformer.input)
     )
+)
 
 function transform(
-    data::DataFrame, 
-    transformer::GaussianProcessInputTransformer{<:StandardNormalTransform}
-)
+        data::DataFrame,
+        transformer::GaussianProcessInputTransformer{<:StandardNormalTransform}
+    )
     data_copy = copy(data)
     to_standard_normal_space!(transformer.input, data_copy)
     return to_gp_format(dataframe_to_array(data_copy, names(transformer.input)))
-end 
+end
 
 
 # ---------------- Output transformation ----------------
@@ -172,46 +172,46 @@ end
 
 # Fitting
 fit_output_transform(
-    ::DataFrame, 
-    output::Symbol, 
+    ::DataFrame,
+    output::Symbol,
     ::IdentityTransformChoice
 ) = GaussianProcessOutputTransformer(NoTransform(), output)
 
 function fit_output_transform(
-    data::DataFrame, 
-    output::Symbol, 
-    ::ZScoreTransformChoice
-) 
+        data::DataFrame,
+        output::Symbol,
+        ::ZScoreTransformChoice
+    )
     transform = fit(
-        StatsBase.ZScoreTransform, 
-        dataframe_to_array(data, output); 
-        dims=1
+        StatsBase.ZScoreTransform,
+        dataframe_to_array(data, output);
+        dims = 1
     )
     return GaussianProcessOutputTransformer(transform, output)
 end
 
 function fit_output_transform(
-    data::DataFrame, 
-    output::Symbol, 
-    ::UnitRangeTransformChoice
-) 
+        data::DataFrame,
+        output::Symbol,
+        ::UnitRangeTransformChoice
+    )
     transform = fit(
-        StatsBase.UnitRangeTransform, 
-        dataframe_to_array(data, output); 
-        dims=1
+        StatsBase.UnitRangeTransform,
+        dataframe_to_array(data, output);
+        dims = 1
     )
     return GaussianProcessOutputTransformer(transform, output)
 end
 
 fit_output_transform(
-    ::DataFrame, 
-    ::Symbol, 
+    ::DataFrame,
+    ::Symbol,
     ::StandardNormalTransformChoice
 ) = throw(ArgumentError("Standard normal transform for outputs is not possible"))
 
 # Transforms
 transform(
-    data::DataFrame, 
+    data::DataFrame,
     transformer::GaussianProcessOutputTransformer{NoTransform}
 ) = to_gp_format(dataframe_to_array(data, transformer.output))
 
@@ -220,10 +220,10 @@ transform(
     transformer::Union{GaussianProcessOutputTransformer{<:ZScoreTransform}, GaussianProcessOutputTransformer{<:UnitRangeTransform}}
 ) = to_gp_format(
     StatsBase.transform(
-            transformer.transform,
-            dataframe_to_array(data, transformer.output)
-        )
+        transformer.transform,
+        dataframe_to_array(data, transformer.output)
     )
+)
 
 # Inverse transforms
 # # Developer Note
@@ -247,7 +247,7 @@ transform(
 #     Var[y] = E[(σ\tilde{y} + μ - E[σ\tilde{y} + μ])^2] = E[(σ^2(\tilde{y} - E[\tilde{y}])^2] = σ^2 Var[\tilde{y}]
 #     ```
 inverse_transform(
-    data::AbstractArray, 
+    data::AbstractArray,
     ::GaussianProcessOutputTransformer{NoTransform}
 ) = data
 

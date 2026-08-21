@@ -37,7 +37,7 @@ We also assume a small Gaussian noise term in the observations for numerical sta
 
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
-σ² = 1e-5
+σ² = 1.0e-5
 
 gp_prior = GP(mean_f, kernel)
 
@@ -46,7 +46,7 @@ Next, we set up an optimizer used in the log marginal likelihood maximization to
 ===#
 using Optim
 
-optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha=0.005), Optim.Options(; iterations=10, show_trace=false))
+optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 
 #===
 Finally, we define an input standardization (here a z-score transform). While not strictly necessary for this example, standardization can help finding good hyperparameters. 
@@ -64,13 +64,13 @@ The construction then samples the experimental design, evaluates the model at th
 #md Random.seed!(42) #hide
 
 gp_model = GaussianProcess(
-    gp_prior, 
-    x, 
-    himmelblau, 
+    gp_prior,
+    x,
+    himmelblau,
     :y;
-    experimental_design=design, 
-    input_transform=input_transform,
-    optimizer=optimizer
+    experimental_design = design,
+    input_transform = input_transform,
+    optimizer = optimizer
 )
 
 #===
@@ -90,7 +90,7 @@ We can specify the evaluation mode via the `mode` keyword argument. Supported op
 ===#
 
 test_data = sample(x, 1000)
-evaluate!(gp_model, test_data; mode=:mean_and_var)
+evaluate!(gp_model, test_data; mode = :mean_and_var)
 
 #===
 The mean prediction of our model in this case has an mse of about 65 and looks like this in comparison to the original:

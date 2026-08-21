@@ -154,37 +154,37 @@ function apply_parameters(::GibbsKernel, _)
 end
 
 extract_parameters(k::ConstantKernel) = ParameterHandling.positive(k.c)
-apply_parameters(::ConstantKernel, θ) = ConstantKernel(; c=only(θ))
+apply_parameters(::ConstantKernel, θ) = ConstantKernel(; c = only(θ))
 
 extract_parameters(k::GammaExponentialKernel) = ParameterHandling.bounded(k.γ, 0.0, 2.0)
-apply_parameters(::GammaExponentialKernel, θ) = GammaExponentialKernel(; γ=only(θ))
+apply_parameters(::GammaExponentialKernel, θ) = GammaExponentialKernel(; γ = only(θ))
 
 extract_parameters(k::FBMKernel) = ParameterHandling.bounded(k.h, 0.0, 1.0)
-apply_parameters(::FBMKernel, θ) = FBMKernel(; h=only(θ))
+apply_parameters(::FBMKernel, θ) = FBMKernel(; h = only(θ))
 
 extract_parameters(k::MaternKernel) = ParameterHandling.positive(k.ν)
-apply_parameters(::MaternKernel, θ) = MaternKernel(; ν=only(θ))
+apply_parameters(::MaternKernel, θ) = MaternKernel(; ν = only(θ))
 
 extract_parameters(k::PeriodicKernel) = ParameterHandling.positive(k.r)
-apply_parameters(::PeriodicKernel, θ) = PeriodicKernel(; r=θ)
+apply_parameters(::PeriodicKernel, θ) = PeriodicKernel(; r = θ)
 
 extract_parameters(k::LinearKernel) = ParameterHandling.positive(k.c)
-apply_parameters(::LinearKernel, θ) = LinearKernel(; c=only(θ))
+apply_parameters(::LinearKernel, θ) = LinearKernel(; c = only(θ))
 
 extract_parameters(k::PolynomialKernel) = ParameterHandling.positive(k.c)
-apply_parameters(::PolynomialKernel, θ) = PolynomialKernel(; c=only(θ))
+apply_parameters(::PolynomialKernel, θ) = PolynomialKernel(; c = only(θ))
 
 extract_parameters(k::RationalKernel) = ParameterHandling.positive(k.α)
-apply_parameters(::RationalKernel, θ) = RationalKernel(; α=only(θ))
+apply_parameters(::RationalKernel, θ) = RationalKernel(; α = only(θ))
 
 extract_parameters(k::RationalQuadraticKernel) = ParameterHandling.positive(k.α)
-apply_parameters(::RationalQuadraticKernel, θ) = RationalQuadraticKernel(; α=only(θ))
+apply_parameters(::RationalQuadraticKernel, θ) = RationalQuadraticKernel(; α = only(θ))
 
 function extract_parameters(k::GammaRationalKernel)
-    (ParameterHandling.positive(k.α), ParameterHandling.bounded(k.γ, 0.0, 2.0))
+    return (ParameterHandling.positive(k.α), ParameterHandling.bounded(k.γ, 0.0, 2.0))
 end
 function apply_parameters(::GammaRationalKernel, θ)
-    GammaRationalKernel(; α=only(θ[1]), γ=only(θ[2]))
+    return GammaRationalKernel(; α = only(θ[1]), γ = only(θ[2]))
 end
 
 # kernels (see KernelFunctions.jl src/kernels)
@@ -196,22 +196,22 @@ apply_parameters(k::KernelSum, θ) = KernelSum(map(apply_parameters, k.kernels, 
 
 extract_parameters(k::KernelTensorProduct) = map(extract_parameters, k.kernels)
 function apply_parameters(k::KernelTensorProduct, θ)
-    KernelTensorProduct(map(apply_parameters, k.kernels, θ))
+    return KernelTensorProduct(map(apply_parameters, k.kernels, θ))
 end
 
 extract_parameters(k::NormalizedKernel) = extract_parameters(k.kernel)
 apply_parameters(k::NormalizedKernel, θ) = NormalizedKernel(apply_parameters(k.kernel, θ))
 
 function extract_parameters(k::ScaledKernel)
-    (extract_parameters(k.kernel), ParameterHandling.positive(only(k.σ²)))
+    return (extract_parameters(k.kernel), ParameterHandling.positive(only(k.σ²)))
 end
 apply_parameters(k::ScaledKernel, θ) = ScaledKernel(apply_parameters(k.kernel, θ[1]), θ[2])
 
 function extract_parameters(k::TransformedKernel)
-    (extract_parameters(k.kernel), extract_parameters(k.transform))
+    return (extract_parameters(k.kernel), extract_parameters(k.transform))
 end
 function apply_parameters(k::TransformedKernel, θ)
-    TransformedKernel(apply_parameters(k.kernel, θ[1]), apply_parameters(k.transform, θ[2]))
+    return TransformedKernel(apply_parameters(k.kernel, θ[1]), apply_parameters(k.transform, θ[2]))
 end
 
 # transform (see KernelFunctions.jl src/transform)
@@ -220,7 +220,7 @@ apply_parameters(::ARDTransform, θ) = ARDTransform(θ)
 
 extract_parameters(t::ChainTransform) = map(extract_parameters, t.transforms)
 function apply_parameters(t::ChainTransform, θ)
-    ChainTransform(map(apply_parameters, t.transforms, θ))
+    return ChainTransform(map(apply_parameters, t.transforms, θ))
 end
 
 extract_parameters(t::LinearTransform) = t.A
@@ -235,12 +235,12 @@ apply_parameters(::ScaleTransform, θ) = ScaleTransform(θ)
 # ---------------- Gaussian Processes ----------------
 extract_parameters(f::GP) = (extract_parameters(f.mean), extract_parameters(f.kernel))
 function apply_parameters(f::GP, θ)
-    GP(apply_parameters(f.mean, θ[1]), apply_parameters(f.kernel, θ[2]))
+    return GP(apply_parameters(f.mean, θ[1]), apply_parameters(f.kernel, θ[2]))
 end
 
 
 #Internal struct for hyperparameter optimization. The struct saves the GP that is to be optimized and the noise.
-struct PriorGP{T<:GP,Tn<:Real}
+struct PriorGP{T <: GP, Tn <: Real}
     gp::T
     σ²::Tn
     learn_noise::Bool
@@ -248,16 +248,16 @@ end
 
 (gp::PriorGP)(x) = gp.gp(x, gp.σ²)
 
-extract_parameters(f::PriorGP) = begin 
-   f.learn_noise ? (
-    extract_parameters(f.gp), 
-    ParameterHandling.positive(f.σ², exp, 1e-6)
-    ) :
-    (extract_parameters(f.gp))
+extract_parameters(f::PriorGP) = begin
+    f.learn_noise ? (
+            extract_parameters(f.gp),
+            ParameterHandling.positive(f.σ², exp, 1.0e-6),
+        ) :
+        (extract_parameters(f.gp))
 end
 
 apply_parameters(f::PriorGP, θ) = begin
-    f.learn_noise ? 
-    PriorGP(apply_parameters(f.gp, θ[1]), θ[2], f.learn_noise) :
-    PriorGP(apply_parameters(f.gp, θ), f.σ², f.learn_noise)
+    f.learn_noise ?
+        PriorGP(apply_parameters(f.gp, θ[1]), θ[2], f.learn_noise) :
+        PriorGP(apply_parameters(f.gp, θ), f.σ², f.learn_noise)
 end

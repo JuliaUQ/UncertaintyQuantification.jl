@@ -10,20 +10,20 @@ function is_of_type(exporting_module::Module, name::Symbol, type::DataType)
 end
 
 function get_exported_types(exporting_module::Module, type::DataType)
-    exported_names = names(exporting_module; all=false)
+    exported_names = names(exporting_module; all = false)
     type_symbols = filter(n -> is_of_type(exporting_module, n, type), exported_names)
     types = map(sym -> getfield(exporting_module, sym), type_symbols)
     return filter(t -> !isabstracttype(t), types)
 end
 
 function check_extract_parameters(type::Type)
-    hasmethod(UncertaintyQuantification.extract_parameters, Tuple{type})
+    return hasmethod(UncertaintyQuantification.extract_parameters, Tuple{type})
 end
 function check_apply_parameters(type::Type)
-    hasmethod(UncertaintyQuantification.apply_parameters, Tuple{type,Any})
+    return hasmethod(UncertaintyQuantification.apply_parameters, Tuple{type, Any})
 end
 function check_implementation(type::Type)
-    check_extract_parameters(type) && check_apply_parameters(type)
+    return check_extract_parameters(type) && check_apply_parameters(type)
 end
 
 @testset "Parameterization" begin
@@ -63,7 +63,7 @@ end
 
         @testset "Kernels with parameters" begin
             @testset "ConstantKernel" begin
-                k = ConstantKernel(; c=3.0)
+                k = ConstantKernel(; c = 3.0)
                 θ = UncertaintyQuantification.extract_parameters(k)
                 k2 = UncertaintyQuantification.apply_parameters(
                     k, ParameterHandling.value(θ)
@@ -87,7 +87,7 @@ end
                 @test t2.v ≈ [1.0, 2.0, 3.0]
             end
             @testset "PeriodicKernel" begin
-                k = PeriodicKernel(; r=[1.5])
+                k = PeriodicKernel(; r = [1.5])
                 θ = UncertaintyQuantification.extract_parameters(k)
                 k2 = UncertaintyQuantification.apply_parameters(
                     k, ParameterHandling.value(θ)
@@ -103,7 +103,7 @@ end
                 @test only(k2.σ²) ≈ 2.0
             end
             @testset "RationalQuadraticKernel" begin
-                k = RationalQuadraticKernel(; α=1.5)
+                k = RationalQuadraticKernel(; α = 1.5)
                 θ = UncertaintyQuantification.extract_parameters(k)
                 k2 = UncertaintyQuantification.apply_parameters(
                     k, ParameterHandling.value(θ)
@@ -114,7 +114,7 @@ end
 
         @testset "Composite kernels" begin
             @testset "KernelSum" begin
-                k = SqExponentialKernel() + ConstantKernel(; c=2.0)
+                k = SqExponentialKernel() + ConstantKernel(; c = 2.0)
                 θ = UncertaintyQuantification.extract_parameters(k)
                 k2 = UncertaintyQuantification.apply_parameters(
                     k, ParameterHandling.value(θ)
@@ -124,7 +124,7 @@ end
                 @test only(k2.kernels[2].c) ≈ 2.0
             end
             @testset "KernelProduct" begin
-                k = SqExponentialKernel() * ConstantKernel(; c=3.0)
+                k = SqExponentialKernel() * ConstantKernel(; c = 3.0)
                 θ = UncertaintyQuantification.extract_parameters(k)
                 k2 = UncertaintyQuantification.apply_parameters(
                     k, ParameterHandling.value(θ)
