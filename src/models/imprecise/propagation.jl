@@ -1,6 +1,6 @@
 function propagate_intervals!(
-    models::Union{UQModel,AbstractVector{<:UQModel}}, df::DataFrame, bound::Symbol=:both
-)
+        models::Union{UQModel, AbstractVector{<:UQModel}}, df::DataFrame, bound::Symbol = :both
+    )
     if bound ∉ [:lb, :ub, :both]
         error("Invalid bound: $bound")
     end
@@ -40,10 +40,10 @@ function propagate_intervals!(
 
         lb, ub = if any(degenerates)
             getproperty.(collect(row[interval_names[pure]]), :lb),
-            getproperty.(collect(row[interval_names[pure]]), :ub)
+                getproperty.(collect(row[interval_names[pure]]), :ub)
         else
             getproperty.(collect(row[interval_names]), :lb),
-            getproperty.(collect(row[interval_names]), :ub)
+                getproperty.(collect(row[interval_names]), :ub)
         end
 
         x0 = middle.(lb, ub)
@@ -97,36 +97,36 @@ function propagate_intervals!(
                 OrthoMADS(length(x0)),
                 f_lb,
                 x0;
-                lowerbound=lb,
-                upperbound=ub,
-                min_mesh_size=1e-13,
+                lowerbound = lb,
+                upperbound = ub,
+                min_mesh_size = 1.0e-13,
             ).f
         elseif bound == :ub
             return -minimize(
                 OrthoMADS(length(x0)),
                 x -> -f_ub(x),
                 x0;
-                lowerbound=lb,
-                upperbound=ub,
-                min_mesh_size=1e-13,
+                lowerbound = lb,
+                upperbound = ub,
+                min_mesh_size = 1.0e-13,
             ).f
         else
             result_lb = minimize(
                 OrthoMADS(length(x0)),
                 f_lb,
                 x0;
-                lowerbound=lb,
-                upperbound=ub,
-                min_mesh_size=1e-13,
+                lowerbound = lb,
+                upperbound = ub,
+                min_mesh_size = 1.0e-13,
             )
 
             result_ub = minimize(
                 OrthoMADS(length(x0)),
                 x -> -f_ub(x),
                 x0;
-                lowerbound=lb,
-                upperbound=ub,
-                min_mesh_size=1e-13,
+                lowerbound = lb,
+                upperbound = ub,
+                min_mesh_size = 1.0e-13,
             )
 
             return Interval(result_lb.f, -result_ub.f)

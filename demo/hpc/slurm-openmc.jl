@@ -11,18 +11,20 @@ numberformats = Dict(:E => ".8e")
 
 workdir = joinpath(pwd(), "openmc_TBR")
 
-TBR = Extractor(base -> begin
-    file = joinpath(base, "openmc.out")
-    line = readline(file)
-    tbr = parse(Float64, split(line, " ")[1])
+TBR = Extractor(
+    base -> begin
+        file = joinpath(base, "openmc.out")
+        line = readline(file)
+        tbr = parse(Float64, split(line, " ")[1])
 
-    return tbr
-end, :TBR)
+        return tbr
+    end, :TBR
+)
 
 openmc = Solver(
     "python3", # path to python3 binary
     "openmc_TBR.py";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 options = Dict(
@@ -36,8 +38,8 @@ options = Dict(
 
 slurm = SlurmInterface(
     options;
-    throttle=50,
-    extras=["module load openmc", "source ~/.virtualenvs/openmc/bin/activate"],
+    throttle = 50,
+    extras = ["module load openmc", "source ~/.virtualenvs/openmc/bin/activate"],
 )
 
 ext = ExternalModel(
@@ -45,9 +47,9 @@ ext = ExternalModel(
     sourcefile,
     TBR,
     openmc;
-    workdir=workdir,
-    formats=numberformats,
-    scheduler=slurm,
+    workdir = workdir,
+    formats = numberformats,
+    scheduler = slurm,
 )
 
 function limitstate(df)
@@ -61,7 +63,7 @@ using StatsBase
 
 TBR = samples.TBR
 TBR_mean = mean(TBR)
-TBR_std  = std(TBR)
+TBR_std = std(TBR)
 lower_quantile = quantile(TBR, 0.025)
 upper_quantile = quantile(TBR, 0.975)
 println("TBR mean: $TBR_mean, TBR std: $TBR_std, TBR 95%: [$lower_quantile, $upper_quantile]")

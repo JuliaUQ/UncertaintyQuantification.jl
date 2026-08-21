@@ -1,14 +1,14 @@
 const _sobol_table_types = [Symbol[], Float64[], Float64[], Float64[], Float64[]]
 const _sobol_table_header = [
-    "Variables", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError"
+    "Variables", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError",
 ]
 
 function sobolindices(
-    models::Vector{<:UQModel},
-    inputs::Vector{<:UQInput},
-    outputs::Vector{Symbol},
-    sim::AbstractMonteCarlo,
-)
+        models::Vector{<:UQModel},
+        inputs::Vector{<:UQInput},
+        outputs::Vector{Symbol},
+        sim::AbstractMonteCarlo,
+    )
     sim_double_samples = double_samples(sim)
 
     samples = sample(inputs, sim_double_samples)
@@ -17,19 +17,21 @@ function sobolindices(
     random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
 
     evaluate!(models, samples)
-    indices = Dict([
-        (name, DataFrame(_sobol_table_types, _sobol_table_header)) for name in outputs
-    ])
+    indices = Dict(
+        [
+            (name, DataFrame(_sobol_table_types, _sobol_table_header)) for name in outputs
+        ]
+    )
 
     A = samples[1:(sim.n), :]
     B = samples[(sim.n + 1):end, :]
 
     fA = Matrix(A[:, outputs])
     fB = Matrix(B[:, outputs])
-    fA = fA .- mean(fA; dims=1)
-    fB = fB .- mean(fB; dims=1)
+    fA = fA .- mean(fA; dims = 1)
+    fB = fB .- mean(fB; dims = 1)
 
-    VY = var([fA; fB]; dims=1)
+    VY = var([fA; fB]; dims = 1)
 
     for name in random_names
         ABi = select(A, Not(name))
@@ -64,50 +66,50 @@ function sobolindices(pce::PolynomialChaosExpansion)
     indices.Variables = random_names
     indices.FirstOrder =
         [
-            sum(pce.y[findall(α -> α[i] != 0 && sum(α) == α[i], pce.Ψ.α)] .^ 2) for
+        sum(pce.y[findall(α -> α[i] != 0 && sum(α) == α[i], pce.Ψ.α)] .^ 2) for
             i in 1:length(random_names)
-        ] ./ var(pce)
+    ] ./ var(pce)
     indices.TotalEffect =
         [
-            sum(pce.y[findall(α -> α[i] != 0, pce.Ψ.α)] .^ 2) for
+        sum(pce.y[findall(α -> α[i] != 0, pce.Ψ.α)] .^ 2) for
             i in 1:length(random_names)
-        ] ./ var(pce)
+    ] ./ var(pce)
 
     return indices
 end
 
 function sobolindices(
-    models::Vector{<:UQModel},
-    inputs::UQInput,
-    outputs::Vector{Symbol},
-    sim::AbstractMonteCarlo,
-)
+        models::Vector{<:UQModel},
+        inputs::UQInput,
+        outputs::Vector{Symbol},
+        sim::AbstractMonteCarlo,
+    )
     return sobolindices(models, [inputs], outputs, sim)
 end
 
 function sobolindices(
-    models::Vector{<:UQModel},
-    inputs::Vector{<:UQInput},
-    outputs::Symbol,
-    sim::AbstractMonteCarlo,
-)
+        models::Vector{<:UQModel},
+        inputs::Vector{<:UQInput},
+        outputs::Symbol,
+        sim::AbstractMonteCarlo,
+    )
     return sobolindices(models, inputs, [outputs], sim)
 end
 
 function sobolindices(
-    models::UQModel, inputs::Vector{<:UQInput}, outputs::Symbol, sim::AbstractMonteCarlo
-)
+        models::UQModel, inputs::Vector{<:UQInput}, outputs::Symbol, sim::AbstractMonteCarlo
+    )
     return sobolindices([models], inputs, [outputs], sim)
 end
 
 function sobolindices(
-    models::Vector{<:UQModel}, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
-)
+        models::Vector{<:UQModel}, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
+    )
     return sobolindices(models, [inputs], [outputs], sim)
 end
 
 function sobolindices(
-    models::UQModel, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
-)
+        models::UQModel, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
+    )
     return sobolindices([models], [inputs], [outputs], sim)
 end

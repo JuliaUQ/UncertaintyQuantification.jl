@@ -12,7 +12,7 @@ Represents a closed numeric interval with a lower bound `lb` and an upper bound 
 # Examples
 
 ```jldoctest
-julia> Interval(0.10, 0.14)
+julia> Interval(0.1, 0.14)
 [0.1, 0.14]
 ```
 """
@@ -65,7 +65,7 @@ For other uses, such as building probability boxes (p-boxes) from interval param
 # Examples
 
 ```jldoctest
-julia> IntervalVariable(0.10, 0.14, :x)
+julia> IntervalVariable(0.1, 0.14, :x)
 x ∈ [0.1, 0.14]
 ```
 """
@@ -90,7 +90,7 @@ function Interval(i::IntervalVariable)
     return Interval(i.lb, i.ub)
 end
 
-function sample(i::IntervalVariable, n::Integer=1)
+function sample(i::IntervalVariable, n::Integer = 1)
     return DataFrame(i.name => fill(Interval(i), n))
 end
 

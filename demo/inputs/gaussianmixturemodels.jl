@@ -11,13 +11,13 @@ df = DataFrame(X, [:x1, :x2])
 
 gmm = GaussianMixtureModel(df, 2)
 
-x_range = range(-2, 10, length=100)
-y_range = range(-2, 10, length=100)
+x_range = range(-2, 10, length = 100)
+y_range = range(-2, 10, length = 100)
 
-scatter(df.x1, df.x2, alpha=0.3, label="Data")
-contour!(x_range, y_range, (x,y) -> pdf(gmm, [x, y]), levels=10, linewidth=2, c=2, label="GMM")
+scatter(df.x1, df.x2, alpha = 0.3, label = "Data")
+contour!(x_range, y_range, (x, y) -> pdf(gmm, [x, y]), levels = 10, linewidth = 2, c = 2, label = "GMM")
 
 samples = sample(gmm, 500)
-scatter!(samples.x1, samples.x2, alpha=0.3, c=2, label="Samples")
+scatter!(samples.x1, samples.x2, alpha = 0.3, c = 2, label = "Samples")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

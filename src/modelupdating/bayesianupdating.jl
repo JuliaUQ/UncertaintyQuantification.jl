@@ -18,12 +18,12 @@ struct SingleComponentMetropolisHastings <: AbstractBayesianMethod
     islog::Bool
 
     function SingleComponentMetropolisHastings(
-        proposal::Union{UnivariateDistribution,Vector{<:UnivariateDistribution}},
-        x0::NamedTuple,
-        n::Int,
-        burnin::Int,
-        islog::Bool=true,
-    )
+            proposal::Union{UnivariateDistribution, Vector{<:UnivariateDistribution}},
+            x0::NamedTuple,
+            n::Int,
+            burnin::Int,
+            islog::Bool = true,
+        )
         if n <= 0
             error("Number of samples `n` must be positive")
         end
@@ -66,11 +66,11 @@ If a model evaluation is required to evaluate the likelihood, a vector of `UQMod
 
 """
 function bayesianupdating(
-    prior::Function,
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    mh::SingleComponentMetropolisHastings,
-)
+        prior::Function,
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        mh::SingleComponentMetropolisHastings,
+    )
     number_of_dimensions = length(mh.x0)
 
     samples = DataFrame(collect(mh.x0)', collect(keys(mh.x0)))
@@ -123,17 +123,17 @@ function bayesianupdating(
 end
 
 function bayesianupdating(
-    prior::Function,
-    likelihood::Function,
-    models::UQModel,
-    mh::SingleComponentMetropolisHastings,
-)
+        prior::Function,
+        likelihood::Function,
+        models::UQModel,
+        mh::SingleComponentMetropolisHastings,
+    )
     return bayesianupdating(prior, likelihood, wrap(models), mh)
 end
 
 function bayesianupdating(
-    prior::Function, likelihood::Function, mh::SingleComponentMetropolisHastings
-)
+        prior::Function, likelihood::Function, mh::SingleComponentMetropolisHastings
+    )
     return bayesianupdating(prior, likelihood, UQModel[], mh)
 end
 
@@ -146,7 +146,7 @@ Alternative constructors
 
 ```julia
     TransitionalMarkovChainMonteCarlo(prior, n, burnin, β)  # `islog` = true
-     TransitionalMarkovChainMonteCarlo(prior, n, burnin)    # `β` = 0.2,  `islog` = true
+TransitionalMarkovChainMonteCarlo(prior, n, burnin)    # `β` = 0.2,  `islog` = true
 ```
 
 # References
@@ -162,12 +162,12 @@ struct TransitionalMarkovChainMonteCarlo <: AbstractBayesianMethod # Transitiona
     islog::Bool
 
     function TransitionalMarkovChainMonteCarlo(
-        prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
-        n::Int,
-        burnin::Int,
-        β::Real=0.2,
-        islog::Bool=true,
-    )
+            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
+            n::Int,
+            burnin::Int,
+            β::Real = 0.2,
+            islog::Bool = true,
+        )
         if n <= 0
             error("Number of samples `n` must be positive")
         end
@@ -178,11 +178,11 @@ end
 
 # TMCMC implementation
 function bayesianupdating(
-    prior::Function,
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    tmcmc::TransitionalMarkovChainMonteCarlo,
-)
+        prior::Function,
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        tmcmc::TransitionalMarkovChainMonteCarlo,
+    )
     covariance_method = LinearShrinkage(DiagonalUnitVariance(), :lw)
 
     rv_names = names(tmcmc.prior)
@@ -213,7 +213,7 @@ function bayesianupdating(
 
         weights = FrequencyWeights(wⱼ ./ sum(wⱼ))
 
-        idx = StatsBase.sample(collect(1:(tmcmc.n)), weights, tmcmc.n; replace=true)
+        idx = StatsBase.sample(collect(1:(tmcmc.n)), weights, tmcmc.n; replace = true)
 
         θⱼ⁺ = θⱼ[idx, :]
 
@@ -278,16 +278,16 @@ function bayesianupdating(
 end
 
 function bayesianupdating(
-    likelihood::Function,
-    models::Vector{<:UQModel},
-    tmcmc::TransitionalMarkovChainMonteCarlo,
-)
+        likelihood::Function,
+        models::Vector{<:UQModel},
+        tmcmc::TransitionalMarkovChainMonteCarlo,
+    )
     prior = if tmcmc.islog
         df -> vec(
-            sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), tmcmc.prior)...); dims=2),
+            sum(hcat(map(rv -> logpdf.(rv.dist, df[:, rv.name]), tmcmc.prior)...); dims = 2),
         )
     else
-        df -> vec(prod(hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), tmcmc.prior)...); dims=2))
+        df -> vec(prod(hcat(map(rv -> pdf.(rv.dist, df[:, rv.name]), tmcmc.prior)...); dims = 2))
     end
 
     return bayesianupdating(prior, likelihood, models, tmcmc)
@@ -298,8 +298,8 @@ function bayesianupdating(likelihood::Function, tmcmc::TransitionalMarkovChainMo
 end
 
 function bayesianupdating(
-    prior::Function, likelihood::Function, tmcmc::TransitionalMarkovChainMonteCarlo
-)
+        prior::Function, likelihood::Function, tmcmc::TransitionalMarkovChainMonteCarlo
+    )
     return bayesianupdating(prior, likelihood, UQModel[], tmcmc)
 end
 
@@ -310,7 +310,7 @@ function _beta_and_weights(β::Real, L::AbstractVector{<:Real})
 
     local x, w # Declare variables so they are visible outside the loop
 
-    while (high - low) / middle(low, high) > 1e-6 && high > eps()
+    while (high - low) / middle(low, high) > 1.0e-6 && high > eps()
         x = middle(low, high)
         w = exp.((x - β) .* L)
 

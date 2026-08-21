@@ -43,39 +43,45 @@ workdir = joinpath(pwd(), "workdir-cantilever-column")
 
 # Read output file and compute maximum (absolute) displacement
 # An extractor is based the working directory for the current sample
-max_abs_disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+max_abs_disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return maximum(abs.(data[:, 2]))
-end, :max_abs_disp)
+        return maximum(abs.(data[:, 2]))
+    end, :max_abs_disp
+)
 
 # Extractor for the full time series of the displacement at the top node
-disp = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 2]
-end, :disp)
+        return data[:, 2]
+    end, :disp
+)
 
 # Extractor for the simulation time
-sim_time = Extractor(base -> begin
-    file = joinpath(base, "displacement.out")
-    data = DelimitedFiles.readdlm(file, ' ')
+sim_time = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = DelimitedFiles.readdlm(file, ' ')
 
-    return data[:, 1]
-end, :sim_time)
+        return data[:, 1]
+    end, :sim_time
+)
 
 
 opensees = Solver(
     "OpenSees", # path to OpenSees binary
     "cantilever-column.tcl";
-    args="", # (optional) extra arguments passed to the solver
+    args = "", # (optional) extra arguments passed to the solver
 )
 
 # Define the external model with all needed parameters and attributes
 ext = ExternalModel(
-    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir=workdir, formats=numberformats
+    sourcedir, sourcefile, [max_abs_disp, disp, sim_time], opensees; workdir = workdir, formats = numberformats
 )
 
 # Define the UQ.jl models used in the analysis
@@ -93,12 +99,12 @@ models = [gm_model, ext]
 # Plotting of single time history
 
 #md # ```julia
-#md # plot(t, samples.gm[1]./(maximum(abs.(samples.gm[1]))); label="Stochastic ground motion acceleration", xlabel="time in s", ylabel="Normalized acceleration and displacement")
-#md # plot!(samples.sim_time[1], samples.disp[1]./(maximum(abs.(samples.disp[1]))); label="Displacement at top node", linewidth=2)
+#md # plot(t, samples.gm[1] ./ (maximum(abs.(samples.gm[1]))); label = "Stochastic ground motion acceleration", xlabel = "time in s", ylabel = "Normalized acceleration and displacement")
+#md # plot!(samples.sim_time[1], samples.disp[1] ./ (maximum(abs.(samples.disp[1]))); label = "Displacement at top node", linewidth = 2)
 #md # ```
 
-#jl plot(t, samples.gm[1]./(maximum(abs.(samples.gm[1]))); label="Stochastic ground motion acceleration", xlabel="time in s", ylabel="Normalized acceleration and displacement")
-#jl plot!(samples.sim_time[1], samples.disp[1]./(maximum(abs.(samples.disp[1]))); label="Displacement at top node", linewidth=2)
+#jl plot(t, samples.gm[1] ./ (maximum(abs.(samples.gm[1]))); label = "Stochastic ground motion acceleration", xlabel = "time in s", ylabel = "Normalized acceleration and displacement")
+#jl plot!(samples.sim_time[1], samples.disp[1] ./ (maximum(abs.(samples.disp[1]))); label = "Displacement at top node", linewidth = 2)
 
 #md # ![Resulting time history](../assets/time-history.svg)
 #md # A plot to visualize the stochastic input ground motion acceleration singal and the resulting displacement time series at the top node of the cantilever column.

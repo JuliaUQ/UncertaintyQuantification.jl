@@ -206,7 +206,7 @@ nDMaterial ElasticIsotropic 1 {{{ :E }}} 0.25 {{{ :rho }}}
 This identifies where to inject the values, but not in which format. For this reason, we define a `Dict{Symbol, String}` which maps the identifiers of the inputs to a Python-style format string. In order to inject our values in scientific notation with eight digits, we use the format string `".8e"`. For any not explicitly defined `Symbol` we can include `:*` as a fallback.
 
 ```julia
-formats = Dict(:E => ".8e",:rho => ".8e", :* => ".12e")
+formats = Dict(:E => ".8e", :rho => ".8e", :* => ".12e")
 ```
 
 After formatting and injecting the values into the source file, it would look similar to this.
@@ -218,12 +218,14 @@ nDMaterial ElasticIsotropic 1 9.99813819e+02 0.25 3.03176259e+00
 Now that the values are injected into the source files, the next step is to extract the desired output quantities. This is done using an `Extractor`. The `Extractor` is designed similarly to the `Model` in that it takes a `Function` and a `Symbol` as its parameters. However, where a `DataFrame` is passed to the `Model`, the working directory for the currently evaluated sample is passed to the function of the `Extractor`. The user defined function must then extract the required values from the file and return them. Here, we make use of the *DelimitedFiles* module to extract the maximum absolute displacement from the output file that *OpenSees* generated.
 
 ```julia
-disp = Extractor(base -> begin
-  file = joinpath(base, "displacement.out")
-  data = readdlm(file, ' ')
+disp = Extractor(
+    base -> begin
+        file = joinpath(base, "displacement.out")
+        data = readdlm(file, ' ')
 
-  return maximum(abs.(data[:, 2]))
-end, :disp)
+        return maximum(abs.(data[:, 2]))
+    end, :disp
+)
 ```
 
 An arbitrary number of `Extractor` functions can be defined in order to extract multiple output values from the solver.
@@ -232,13 +234,13 @@ The final step before building the model is to define the solver. The solver req
 
 ```julia
 opensees = Solver(
-  "OpenSees",
-  "supported-beam.tcl";
-  args = ""
+    "OpenSees",
+    "supported-beam.tcl";
+    args = ""
 )
 
 ext = ExternalModel(
-  sourcedir, sourcefiles, disp, opensees; formats=numberformats, workdir=workdir, extras=extrafiles
+    sourcedir, sourcefiles, disp, opensees; formats = numberformats, workdir = workdir, extras = extrafiles
 )
 ```
 

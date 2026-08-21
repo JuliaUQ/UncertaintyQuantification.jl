@@ -2,7 +2,7 @@
 
     @testset "RandomVariable PDF Plot" begin
         rv = RandomVariable(Normal(0, 1), :X)
-        plt = plot(rv; cdf_on=false)
+        plt = plot(rv; cdf_on = false)
         @test typeof(plt) <: Plots.Plot
         @test plt.series_list[1][:seriestype] == :path
         @test plt.series_list[2][:seriestype] == :path
@@ -10,7 +10,7 @@
 
     @testset "RandomVariable CDF Plot" begin
         rv = RandomVariable(Normal(0, 1), :X)
-        plt = plot(rv; cdf_on=true)
+        plt = plot(rv; cdf_on = true)
         @test typeof(plt) <: Plots.Plot
     end
 
@@ -27,7 +27,7 @@
     end
 
     @testset "Vector of UQInputs Plot" begin
-        inputs = [RandomVariable(Normal(0,1), :A), IntervalVariable(1.0, 2.0, :B)]
+        inputs = [RandomVariable(Normal(0, 1), :A), IntervalVariable(1.0, 2.0, :B)]
         plt = plot(inputs)
         @test typeof(plt) <: Plots.Plot
         @test plt.layout isa Plots.GridLayout
@@ -44,7 +44,7 @@
     @testset "Vector of IntervalBoxes Plot" begin
         xs = [Interval(1.0, 2.0), Interval(2.0, 3.0)]
         ys = [Interval(3.0, 4.0), Interval(4.0, 5.0)]
-        plt = plot(xs, ys; label="boxes")
+        plt = plot(xs, ys; label = "boxes")
         @test typeof(plt) <: Plots.Plot
         @test plt.series_list[1][:seriestype] == :shape
         @test plt.series_list[1][:label] == "boxes"
@@ -57,7 +57,7 @@
         @test plt.series_list[1][:linewidth] == 2
         @test plt.series_list[2][:linewidth] == 2
 
-        shaded = plot(intervals; shade=true)
+        shaded = plot(intervals; shade = true)
         @test length(shaded.series_list) == 3
         @test shaded.series_list[3][:fillrange] !== nothing
     end

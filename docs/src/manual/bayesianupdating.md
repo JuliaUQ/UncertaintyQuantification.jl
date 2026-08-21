@@ -215,7 +215,7 @@ The resulting scatter plot shows how TMCMC is able to sample both peaks of the b
 For convenience, the prior can be automatically constructed from the random variables passed to `TransitionalMarkovChainMonteCarlo`.
 
 ```julia
-tmcmc = TransitionalMarkovChainMonteCarlo(RandomVariable.(Uniform(-2,2), [:x, :y]), n, burnin)
+tmcmc = TransitionalMarkovChainMonteCarlo(RandomVariable.(Uniform(-2, 2), [:x, :y]), n, burnin)
 
 tmcmc_samples, S = bayesianupdating(loglikelihood, tmcmc)
 ```

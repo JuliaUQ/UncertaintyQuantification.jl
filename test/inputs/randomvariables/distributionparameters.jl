@@ -38,7 +38,7 @@
     μ = mean(d)
     σ = std(d)
     @test distribution_parameters(μ, Rayleigh) ≈ 3.0
-    @test distribution_parameters(σ, Rayleigh; std=true) ≈ 3.0
+    @test distribution_parameters(σ, Rayleigh; std = true) ≈ 3.0
 
     # Uniform
     d = Uniform(-1.0, 3.0)

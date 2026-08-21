@@ -57,7 +57,7 @@ mc = MonteCarlo(10^6)
 
 #jl subset = UncertaintyQuantification.SubSetSimulation(2000, 0.1, 10, Uniform(-0.5, 0.5))
 #jl subset_pf, subset_std, subset_samples = probability_of_failure(models, limitstate, inputs, subset)
-#jl println("Subset Simulation probability of failure: $subset_pf ($(size(subset_samples, 1)) model evaluations)",)
+#jl println("Subset Simulation probability of failure: $subset_pf ($(size(subset_samples, 1)) model evaluations)")
 
 # Compute probability of failure using conditional Subset Sampling
 #md # ```julia
@@ -67,7 +67,7 @@ mc = MonteCarlo(10^6)
 
 #jl subset_inf = UncertaintyQuantification.SubSetInfinity(2000, 0.1, 10, 0.5)
 #jl subset_pf_inf, subset_std_inf, subset_samples_inf = probability_of_failure(models, limitstate, inputs, subset_inf)
-#jl println("Subset infinity probability of failure: $subset_pf_inf ($(size(subset_samples_inf, 1)) model evaluations)",)
+#jl println("Subset infinity probability of failure: $subset_pf_inf ($(size(subset_samples_inf, 1)) model evaluations)")
 
 # Compute probability of failure using adaptive Subset Sampling
 #md # ```julia
@@ -77,4 +77,4 @@ mc = MonteCarlo(10^6)
 
 #jl subset_adap = UncertaintyQuantification.SubSetInfinityAdaptive(2000, 0.1, 10, 10, 0.6, 1.0)
 #jl subset_pf_adap, subset_std_adap, subset_samples_adap = probability_of_failure(models, limitstate, inputs, subset_adap)
-#jl println("Subset infinity adaptive probability of failure: $subset_pf_adap ($(size(subset_samples_adap, 1)) model evaluations)",)
+#jl println("Subset infinity adaptive probability of failure: $subset_pf_adap ($(size(subset_samples_adap, 1)) model evaluations)")

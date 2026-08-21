@@ -10,8 +10,8 @@
 
     pf, β, dp, α = probability_of_failure(df -> df.x1 .- df.x2, inputs, form)
 
-    @test round(pf; digits=4) ≈ 0.0127
-    @test round(β; digits=4) ≈ 2.2361
+    @test round(pf; digits = 4) ≈ 0.0127
+    @test round(β; digits = 4) ≈ 2.2361
 
     dp = DataFrame([dp])
     to_standard_normal_space!(inputs, dp)
@@ -21,8 +21,8 @@
 
     pf, β, dp, α = probability_of_failure(model, df -> df.y, inputs, form)
 
-    @test round(pf; digits=4) ≈ 0.0127
-    @test round(β; digits=4) ≈ 2.2361
+    @test round(pf; digits = 4) ≈ 0.0127
+    @test round(β; digits = 4) ≈ 2.2361
 
     dp = DataFrame([dp])
     to_standard_normal_space!(inputs, dp)

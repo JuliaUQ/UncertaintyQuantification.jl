@@ -5,21 +5,21 @@ struct ExternalModel <: UQModel
     solver::Solver
     workdir::String
     extras::Vector{String}
-    formats::Dict{Symbol,String}
+    formats::Dict{Symbol, String}
     cleanup::Bool
-    scheduler::Union{<:AbstractHPCScheduler,Nothing}
+    scheduler::Union{<:AbstractHPCScheduler, Nothing}
 
     function ExternalModel(
-        sourcedir::String,
-        sources::Union{String,Vector{String}},
-        extractors::Union{Extractor,Vector{Extractor}},
-        solver::Solver,
-        workdir::String,
-        extras::Union{String,Vector{String}},
-        formats::Dict{Symbol,String},
-        cleanup::Bool,
-        scheduler::Union{<:AbstractHPCScheduler,Nothing},
-    )
+            sourcedir::String,
+            sources::Union{String, Vector{String}},
+            extractors::Union{Extractor, Vector{Extractor}},
+            solver::Solver,
+            workdir::String,
+            extras::Union{String, Vector{String}},
+            formats::Dict{Symbol, String},
+            cleanup::Bool,
+            scheduler::Union{<:AbstractHPCScheduler, Nothing},
+        )
         sources, extractors, extras = wrap.([sources, extractors, extras])
         return new(
             sourcedir,
@@ -36,16 +36,16 @@ struct ExternalModel <: UQModel
 end
 
 function ExternalModel(
-    sourcedir::String,
-    sources::Union{String,Vector{String}},
-    extractors::Union{Extractor,Vector{Extractor}},
-    solver::Solver;
-    workdir::String=tempname(),
-    extras::Union{String,Vector{String}}=String[],
-    formats::Dict{Symbol,String}=Dict{Symbol,String}(),
-    cleanup::Bool=false,
-    scheduler::Union{<:AbstractHPCScheduler,Nothing}=nothing,
-)
+        sourcedir::String,
+        sources::Union{String, Vector{String}},
+        extractors::Union{Extractor, Vector{Extractor}},
+        solver::Solver;
+        workdir::String = tempname(),
+        extras::Union{String, Vector{String}} = String[],
+        formats::Dict{Symbol, String} = Dict{Symbol, String}(),
+        cleanup::Bool = false,
+        scheduler::Union{<:AbstractHPCScheduler, Nothing} = nothing,
+    )
     return ExternalModel(
         sourcedir, sources, extractors, solver, workdir, extras, formats, cleanup, scheduler
     )
@@ -80,7 +80,7 @@ function getresult(m::ExternalModel, path::String)
     result = map(e -> e.f(path), m.extractors)
     if m.cleanup
         try
-            rm(path; recursive=true)
+            rm(path; recursive = true)
         catch e
             @warn "Error during cleanup: $e"
         end
@@ -89,12 +89,12 @@ function getresult(m::ExternalModel, path::String)
 end
 
 function evaluate!(
-    m::ExternalModel,
-    df::DataFrame;
-    datetime::String=Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
-)
+        m::ExternalModel,
+        df::DataFrame;
+        datetime::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+    )
     if !isnothing(m.scheduler)
-        return evaluate!(m, df, m.scheduler; datetime=datetime)
+        return evaluate!(m, df, m.scheduler; datetime = datetime)
     end
 
     n = size(df, 1)
@@ -115,14 +115,15 @@ function evaluate!(
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[i, :]
     end
+    return
 end
 
 function evaluate!(
-    m::ExternalModel,
-    df::DataFrame,
-    scheduler::AbstractHPCScheduler;
-    datetime::String=Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
-)
+        m::ExternalModel,
+        df::DataFrame,
+        scheduler::AbstractHPCScheduler;
+        datetime::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+    )
     n = size(df, 1)
     digits = ndigits(n)
 
@@ -145,9 +146,10 @@ function evaluate!(
     for (i, name) in enumerate(names(m.extractors))
         df[!, name] = results[i, :]
     end
+    return
 end
 
-function formatinputs(row::DataFrameRow, formats::Dict{Symbol,String})
+function formatinputs(row::DataFrameRow, formats::Dict{Symbol, String})
     names = propertynames(row)
     values = []
     for symbol in names

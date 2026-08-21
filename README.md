@@ -3,6 +3,7 @@ UncertaintyQuantification.jl
 
 ![Build Status](https://github.com/JuliaUQ/UncertaintyQuantification.jl/actions/workflows/ci.yml/badge.svg?branch=master)
 [![Coverage Status](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl/branch/master/graph/badge.svg?token=LfslMAoWvA)](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl)
+[![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3993816.svg)](https://doi.org/10.5281/zenodo.3993816)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliauq.github.io/UncertaintyQuantification.jl/stable)

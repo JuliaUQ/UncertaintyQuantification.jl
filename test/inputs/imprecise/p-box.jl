@@ -16,7 +16,7 @@
 
     @test UncertaintyQuantification.bounds(p_box) == ([0.14, 0.21], [0.16, 0.23])
 
-    par = [0.13, 0.20]
+    par = [0.13, 0.2]
     @test_throws ErrorException("Values outside of parameter intervals for ProbabilityBox") UncertaintyQuantification.map_to_precise(
         par, p_box
     )
@@ -30,7 +30,7 @@
     @test UncertaintyQuantification.map_to_precise(par, p_box) == Uniform(par...)
 
     p_box = ProbabilityBox{Exponential}(Interval(0.5, 0.75))
-    @test p_box.parameters == Dict{Symbol,Interval}(:θ => Interval(0.5, 0.75))
+    @test p_box.parameters == Dict{Symbol, Interval}(:θ => Interval(0.5, 0.75))
     @test p_box.lb == 0.0
     @test p_box.ub == Inf
     @test mean(p_box) == Interval(0.5, 0.75)
@@ -56,13 +56,13 @@ end
 
 @testitem "P-box: Invalid distributions" begin
     @test_throws ["Invalid", "Normal distribution for parameter combination (0, -1)"] ProbabilityBox{
-        Normal
+        Normal,
     }(
         Dict(:μ => 0, :σ => Interval(-1, 1))
     )
 
     @test_throws ["Invalid", "Uniform distribution for parameter combination (0.16, 0.16)"] ProbabilityBox{
-        Uniform
+        Uniform,
     }(
         Dict(:a => Interval(0.14, 0.16), :b => 0.16)
     )

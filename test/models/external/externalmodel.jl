@@ -1,4 +1,3 @@
-
 @testsnippet ExternalModel begin
     sourcedir = tempdir()
     sourcefile = ["radius.jl"]
@@ -48,9 +47,9 @@ end
         sourcefile,
         radius,
         solver;
-        workdir=tempname(),
-        formats=numberformats,
-        extras="extra.txt",
+        workdir = tempname(),
+        formats = numberformats,
+        extras = "extra.txt",
     )
 
     UncertaintyQuantification.makedirectory(ext, df[1, :], dirname)
@@ -74,9 +73,9 @@ end
         sourcefile,
         radius,
         solver;
-        workdir=tempname(),
-        formats=numberformats,
-        extras="",
+        workdir = tempname(),
+        formats = numberformats,
+        extras = "",
     )
     UncertaintyQuantification.makedirectory(ext, df[1, :], dirname)
     @test isdir(dirname)
@@ -91,15 +90,15 @@ end
         sourcefile,
         radius,
         solver;
-        workdir=tempname(),
-        formats=numberformats,
-        extras="extra.txt",
+        workdir = tempname(),
+        formats = numberformats,
+        extras = "extra.txt",
     )
 
     evaluate!(ext, df)
 
-    @test length(readdir(readdir(ext.workdir; join=true)[1])) == 5
-    @test "extra.txt" in readdir(readdir(readdir(ext.workdir; join=true)[1]; join=true)[1])
+    @test length(readdir(readdir(ext.workdir; join = true)[1])) == 5
+    @test "extra.txt" in readdir(readdir(readdir(ext.workdir; join = true)[1]; join = true)[1])
     @test df.r ≈ sqrt.(df.x .^ 2 .+ df.y .^ 2)
 end
 
@@ -109,12 +108,12 @@ end
         sourcefile,
         radius,
         solver;
-        formats=numberformats,
-        workdir=tempname(),
-        cleanup=true,
+        formats = numberformats,
+        workdir = tempname(),
+        cleanup = true,
     )
     evaluate!(ext, df)
-    @test length(readdir(readdir(ext.workdir; join=true)[1])) == 0
+    @test length(readdir(readdir(ext.workdir; join = true)[1])) == 0
     @test isapprox(df.r, sqrt.(df.x .^ 2 + df.y .^ 2))
 end
 
@@ -122,7 +121,7 @@ end
     workdir = tempname()
 
     ext1 = ExternalModel(
-        sourcedir, sourcefile, radius, solver; formats=numberformats, workdir=workdir
+        sourcedir, sourcefile, radius, solver; formats = numberformats, workdir = workdir
     )
 
     squared = Extractor(
@@ -132,12 +131,11 @@ end
     )
 
     ext2 = ExternalModel(
-        sourcedir, ["squared.jl"], squared, solver2; workdir=workdir, cleanup=true
+        sourcedir, ["squared.jl"], squared, solver2; workdir = workdir, cleanup = true
     )
 
     evaluate!([ext1, ext2], df)
     @test df.r2 ≈ df.r .^ 2
-    @test length(readdir(readdir(ext1.workdir; join=true)[1])) == 0
-    @test length(readdir(readdir(ext2.workdir; join=true)[1])) == 0
+    @test length(readdir(readdir(ext1.workdir; join = true)[1])) == 0
+    @test length(readdir(readdir(ext2.workdir; join = true)[1])) == 0
 end
-

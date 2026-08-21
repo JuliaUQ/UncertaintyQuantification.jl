@@ -1,5 +1,5 @@
 @testitem "Model" setup = [TestSetup] begin
-    input = DataFrame(; a=1, b=2)
+    input = DataFrame(; a = 1, b = 2)
 
     model = Model(df -> df.a + 2 * df.b, :c)
     @test isa(model, Model)
@@ -35,7 +35,7 @@ end
 
     @everywhere using UncertaintyQuantification
 
-    input = DataFrame(; a=rand(6), b=rand(6))
+    input = DataFrame(; a = rand(6), b = rand(6))
 
     model = ParallelModel(df -> df.a + 2 * df.b, :c)
 

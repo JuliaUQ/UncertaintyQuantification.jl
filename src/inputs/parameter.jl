@@ -14,7 +14,7 @@ struct Parameter <: DeterministicUQInput
     name::Symbol
 end
 
-function sample(p::Parameter, n::Integer=1)
+function sample(p::Parameter, n::Integer = 1)
     return DataFrame(p.name => ones(n) * p.value)
 end
 

@@ -7,7 +7,7 @@
 
     m = Model(
         df ->
-            df.x .^ 2 .* cos.(df.x) .- sin.(3 * df.x) .* exp.(-df.x .^ 2) .- df.x .-
+        df.x .^ 2 .* cos.(df.x) .- sin.(3 * df.x) .* exp.(-df.x .^ 2) .- df.x .-
             cos.(df.x .^ 2) .+ df.x .* randn(size(df, 1)),
         :y,
     )
@@ -18,22 +18,22 @@
 
     evaluate!(ipm, verify)
 
-    @assert all(getproperty.(verify.y, :lb) .<= data.y .+ abs.(data.y) * 1e-8)
+    @assert all(getproperty.(verify.y, :lb) .<= data.y .+ abs.(data.y) * 1.0e-8)
 
-    @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1e-8)
+    @assert all(getproperty.(verify.y, :ub) .>= data.y .- abs.(data.y) * 1.0e-8)
 
     # lower bound only
     verify = copy(data)
     evaluate!(ipm, verify, :lb)
-    @assert all(verify.y .<= data.y .+ abs.(data.y) * 1e-8)
+    @assert all(verify.y .<= data.y .+ abs.(data.y) * 1.0e-8)
 
     # upper bound only
     verify = copy(data)
     evaluate!(ipm, verify, :ub)
-    @assert all(verify.y .>= data.y .- abs.(data.y) * 1e-8)
+    @assert all(verify.y .>= data.y .- abs.(data.y) * 1.0e-8)
 
     @test ipm.N == 150
-    @test reliability(ipm, 0.1548) ≈ 0.01 atol=0.001
+    @test reliability(ipm, 0.1548) ≈ 0.01 atol = 0.001
 end
 
 @testset "Interval propagation IPM" begin

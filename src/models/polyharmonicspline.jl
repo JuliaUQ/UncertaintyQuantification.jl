@@ -59,7 +59,7 @@ julia> data = DataFrame(x = 1:10, y = [1, -5, -10, -12, -8, -1, 5, 12, 23, 50]);
 
 julia> ps = PolyharmonicSpline(data, 2, :y);
 
-julia> df = DataFrame( x = [2.5, 7.5, 12, 30]);
+julia> df = DataFrame(x = [2.5, 7.5, 12, 30]);
 
 julia> evaluate!(ps, df);
 

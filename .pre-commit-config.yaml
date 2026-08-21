@@ -1,0 +1,7 @@
+repos:
+  - repo: https://github.com/fredrikekre/runic-pre-commit
+    rev: v2.2.0
+    hooks:
+      - id: runic
+        args: ["--inplace", "--diff", "--docstrings"]
+      - id: runic-md
