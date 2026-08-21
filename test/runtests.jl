@@ -4,12 +4,14 @@ using Distributed
 using HCubature
 using HypothesisTests
 using InteractiveUtils
+using ParameterHandling
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
 using Plots
 using TestItemRunner
 using UncertaintyQuantification
+import UncertaintyQuantification: sample
 
 @testsnippet TestSetup begin
     using Copulas
@@ -46,14 +48,18 @@ end
     end
 
 end
+
 include("models/model.jl")
+include("models/gp/gaussianprocess.jl")
+include("models/gp/hyperparametertuning.jl")
+include("models/gp/parameterization.jl")
+include("models/gp/standardization.jl")
 include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")
-@run_package_tests
-
-
 include("plotting/plotting.jl")
+
+@run_package_tests
 
 if Sys.islinux()
     HPC = false

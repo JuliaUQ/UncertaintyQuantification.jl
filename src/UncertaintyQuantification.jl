@@ -21,6 +21,7 @@ using Monomials
 using Mooncake: Mooncake
 using Mustache
 using Optim
+using ParameterHandling
 using Primes
 using QuadGK
 using QuasiMonteCarlo
@@ -31,6 +32,7 @@ using StatsBase
 using TransportMaps
 using RecipesBase
 
+@reexport using AbstractGPs
 @reexport using TransportMaps
 @reexport using Distributions
 @reexport using DifferentiationInterface
@@ -122,9 +124,11 @@ export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianMixtureModel
+export GaussianProcess
 export GaussQuadrature
 export HaltonSampling
 export HermiteBasis
+export IdentityTransformChoice
 export ImportanceSampling
 export Interval
 export IntervalVariable
@@ -141,6 +145,7 @@ export LineSampling
 export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
+export MaximumLikelihoodEstimation
 export Model
 export MonomialBasis
 export MonteCarlo
@@ -161,6 +166,7 @@ export ShinozukaDeodatis
 export SobolSampling
 export Solver
 export SpectralRepresentation
+export StandardNormalTransformChoice
 export StochasticProcessModel
 export SubSetInfinity
 export SubSetInfinityAdaptive
@@ -170,6 +176,8 @@ export TransportMap
 export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
+export UnitRangeTransformChoice
+export ZScoreTransformChoice
 export UQTargetDensity
 
 # Methods
@@ -190,6 +198,7 @@ export mapfromdensity
 export mapfromsamples
 export mean
 export multivariate_indices
+export optimize_hyperparameters
 export pdf
 export periodogram
 export polynomialchaos
@@ -206,6 +215,7 @@ export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
 export variancediagnostic
+export with_gaussian_noise
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
@@ -240,6 +250,10 @@ include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
 include("models//slicingmodel.jl")
+include("models/gp/standardization.jl")
+include("models/gp/parameterization.jl")
+include("models/gp/hyperparametertuning.jl")
+include("models/gp/gaussianprocess.jl")
 include("models/ipm.jl")
 include("models/models.jl")
 
