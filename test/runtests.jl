@@ -4,6 +4,7 @@ using Distributed
 using HCubature
 using HypothesisTests
 using InteractiveUtils
+using LinearAlgebra: norm
 using ParameterHandling
 using Random
 using StatsBase: fit, Histogram, corkendall
@@ -54,6 +55,8 @@ include("models/gp/gaussianprocess.jl")
 include("models/gp/hyperparametertuning.jl")
 include("models/gp/parameterization.jl")
 include("models/gp/standardization.jl")
+include("models/gp/gp_acquisitionfunction.jl")
+include("models/gp/adaptivegaussianprocess.jl")
 include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")

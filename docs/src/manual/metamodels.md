@@ -281,9 +281,9 @@ For a new input location $x^*$ we are interested at the unknown function value $
 
 where:
 
-- $K(\hat{X}, \hat{X})$ is the covariance matrix with entries $K_{ij} = k(\hat{x}_i, \hat{x}_j)$,
-- $K(\hat{X}, x^*)$ is the covariance matrix with entries $K_{i1} = k(\hat{x}_i, x^*)$,
-- and $K(x^*, x^*)$ is the variance at the unknown input location.
+- ``K(\hat{X}, \hat{X})`` is the covariance matrix with entries ``K_{ij} = k(\hat{x}_i, \hat{x}_j)``,
+- ``K(\hat{X}, x^*)`` is the covariance matrix with entries ``K_{i1} = k(\hat{x}_i, x^*)``,
+- and ``(x^*, x^*)`` is the variance at the unknown input location.
 
 We can then obtain the posterior distribution of $f^*$ from the properties of multivariate Gaussian distributions (see, e.g. Appendix A.2 in [rasmussen2005gaussian](@cite)), by conditioning the joint Gaussian on the observed outputs $\hat{f}_i$:
 
@@ -442,3 +442,159 @@ Further, GP models containing the following kernels are not supported for hyperp
 
 - Multi-output kernels [`MOKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#Multi-output-Kernels),
 - Neural kernel networks [`NeuralKernelNetwork`].
+
+## Adaptive Gaussian Process Regression
+
+Fitting a good GP surrogate can require many expensive model evaluations if the initial
+experimental design is chosen naively. **Adaptive** (or *active learning*) Gaussian process
+regression instead starts from a small initial design and iteratively enriches the training
+data: at each iteration a set of candidate points is sampled from the input space, an
+**acquisition function** (also called a *learning function*) scores every candidate, the most
+promising candidate is evaluated with the true (expensive) model, and the GP is refitted with
+the enlarged training set. This is repeated for a fixed number of iterations, or until the
+acquisition function's own convergence criterion is met.
+
+The [`AdaptiveGaussianProcess`](@ref) function drives this loop. It first constructs (or
+accepts) an initial [`GaussianProcess`](@ref), then calls `evaluate!` on the supplied `model`
+for each newly selected point.
+
+```@example adaptivegp
+using UncertaintyQuantification # hide
+
+x = RandomVariable(Uniform(-10, 10), :x1)
+model = Model(df -> sin.(df.x1) .* df.x1 .^ 2, :y)
+
+mean_f = ConstMean(0.0)
+kernel = Matern52Kernel()
+gp_prior = GP(mean_f, kernel)
+
+n_design_points = 10
+n_added_points = 5
+
+adaptive_gp = AdaptiveGaussianProcess(
+    gp_prior,
+    x,
+    model,
+    :y,
+    MaximumVariance(),
+    n_added_points,
+    n_design_points,
+)
+nothing # hide
+```
+
+As with [`GaussianProcess`](@ref), the initial `n_design_points` are sampled with an
+`experimental_design` (`LatinHypercubeSampling` by default), while the `n_added_points`
+adaptively selected candidates are drawn from `candidate_sampling`, a Monte Carlo sampling
+scheme (`MonteCarlo(100_000)` by default). Hyperparameters can be re-optimized after every
+added point via `learn_hyperparameters` (default `true`).
+
+The resulting `adaptive_gp` is a regular [`GaussianProcess`](@ref) and can be evaluated as usual:
+
+```@example adaptivegp
+using DataFrames 
+using Plots
+
+test_data = DataFrame(x1 = -10:0.1:10)
+evaluate!(adaptive_gp, test_data; mode = :mean_and_var)
+evaluate!(model, test_data)
+
+p = plot(test_data.x1, test_data.y_mean; ribbon = 2 .* sqrt.(test_data.y_var), label = "GP mean ± 2σ", xlabel = "x₁", ylabel = "y", color = :blue, alpha = 0.5)
+plot!(p, test_data.x1, test_data.y; label = "True function", color = :red, linestyle = :dash)
+scatter!(p, adaptive_gp.training_data.x1[1:n_design_points], adaptive_gp.training_data.y[1:n_design_points]; label = "Initial design", color = :black)
+scatter!(p, adaptive_gp.training_data.x1[(n_design_points + 1):end], adaptive_gp.training_data.y[(n_design_points + 1):end]; label = "Adaptively added") 
+savefig(p, "adaptive_gp_example.svg"); nothing # hide
+```
+
+# ![Adaptive GP](adaptive_gp_example.svg)
+
+### Acquisition Functions
+
+The acquisition function determines *which* candidate point is added next, and therefore what
+the adaptive scheme optimizes for. Given the posterior mean ``\mu(\mathbf{x})`` and posterior
+standard deviation ``\sigma(\mathbf{x})`` of the current GP, the next point ``\mathbf{x}^{+}``
+is chosen from the sampled candidates ``\mathbf{x} \in \mathcal{X}_c`` by maximizing (or
+minimizing) a criterion ``a(\mathbf{x})``. For a review of various acquisition functions we
+refer to [fuhg2021state](@cite).
+
+`UncertaintyQuantification.jl` provides the following acquisition functions to adapatively
+refine GP regression models; we separate them by there main area of application: 
+
+### General active learning
+Goal: improve the global fit of the GP
+
+- [`MaximumVariance`](@ref) simply adds the point of maximum posterior variance,
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \sigma^2(\mathbf{x}).
+```
+
+- [`MaximinDistance`](@ref) is a space-filling criterion that adds the candidate farthest (in input space) from every existing training point ``\hat{\mathbf{x}}_i \in \hat{X}``,
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \min_{i} \lVert \mathbf{x} - \hat{\mathbf{x}}_i \rVert.
+```
+
+- [`ExpectedImprovementForGlobalFit`](@ref) (EIGF) trades off the local discrepancy to the nearest training observation ``\hat{f}_{i(\mathbf{x})}`` (with ``i(\mathbf{x}) = \operatorname{argmin}_i \lVert \mathbf{x} - \hat{\mathbf{x}}_i \rVert``) against the posterior variance,
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \left[\mu(\mathbf{x}) - \hat{f}_{i(\mathbf{x})}\right]^2 + \sigma^2(\mathbf{x}).
+```
+
+### Bayesian optimization
+Goal: refine the global minimum ``\hat{f}_{\text{best}} = \min_i \hat{f}_i``
+
+- [`ExpectedImprovement`](@ref) with exploration parameter ``\xi``,
+
+```math
+\mathrm{EI}(\mathbf{x}) = \left(\hat{f}_{\text{best}} - \mu(\mathbf{x}) - \xi\right) \Phi(z) + \sigma(\mathbf{x}) \phi(z), \qquad
+z = \frac{\hat{f}_{\text{best}} - \mu(\mathbf{x}) - \xi}{\sigma(\mathbf{x})},
+```
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \mathrm{EI}(\mathbf{x}),
+```
+
+where ``\Phi`` and ``\phi`` are the standard normal cdf and pdf, respectively (``\mathrm{EI}(\mathbf{x}) = 0`` if ``\sigma(\mathbf{x}) = 0``).
+
+- [`ProbabilityOfImprovement`](@ref),
+
+```math
+\mathrm{PI}(\mathbf{x}) = \Phi(z), \qquad z = \frac{\hat{f}_{\text{best}} - \mu(\mathbf{x}) - \xi}{\sigma(\mathbf{x})}, \qquad
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \mathrm{PI}(\mathbf{x}).
+```
+
+- [`UpperConfidenceBound`](@ref) with exploration weight ``\kappa`` minimizes a lower confidence bound (for a minimization objective),
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmin}}\ \mu(\mathbf{x}) - \kappa\, \sigma(\mathbf{x}).
+```
+
+### Reliability analysis
+Goal: refine the limit-state surface ``g(\mathbf{x}) = \tau`` (typically, ``\tau = 0``):
+
+- [`DeviationNumber`](@ref), the ``U``-function used in AK-MCS, adds the point closest to the limit state relative to its uncertainty,
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmin}}\ U(\mathbf{x}), \qquad
+U(\mathbf{x}) = \frac{|\mu(\mathbf{x}) - \tau|}{\sigma(\mathbf{x})}.
+```
+
+- [`ExpectedFeasibility`](@ref) (EFF) integrates the probability that the true response lies within an ``\epsilon``-band ``\epsilon(\mathbf{x}) = \text{epsilon\_factor} \cdot \sigma(\mathbf{x})`` around the limit state,
+
+```math
+\begin{aligned}
+\mathrm{EFF}(\mathbf{x}) = {} & \left(\mu(\mathbf{x}) - \tau\right) \Big[2\Phi(z) - \Phi(z^-) - \Phi(z^+)\Big] \\
+& - \sigma(\mathbf{x}) \Big[2\phi(z) - \phi(z^-) - \phi(z^+)\Big] + \epsilon(\mathbf{x}) \Big[\Phi(z^+) - \Phi(z^-)\Big],
+\end{aligned}
+```
+
+```math
+z = \frac{\tau - \mu(\mathbf{x})}{\sigma(\mathbf{x})}, \quad
+z^- = \frac{\tau - \epsilon(\mathbf{x}) - \mu(\mathbf{x})}{\sigma(\mathbf{x})}, \quad
+z^+ = \frac{\tau + \epsilon(\mathbf{x}) - \mu(\mathbf{x})}{\sigma(\mathbf{x})},
+```
+
+```math
+\mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \mathrm{EFF}(\mathbf{x}).
+```

@@ -1,5 +1,5 @@
 #===
-# Gaussian Process Regression 
+# Gaussian Process Regression
 
 ## Himmelblau's Function
 
@@ -23,6 +23,7 @@ x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 himmelblau = Model(
     df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y
 )
+#md nothing # hide
 
 #===
 Next, we chose a experimental design. In this example, we are using a `LatinHyperCube` design from which we draw 80 samples to train our model:
@@ -31,13 +32,12 @@ Next, we chose a experimental design. In this example, we are using a `LatinHype
 design = LatinHypercubeSampling(80)
 
 #===
-After that, we construct a prior GP model. Here we assume a constant mean of 0.0 and a squared exponential kernel with automatic relevance determination (ARD). 
+After that, we construct a prior GP model. Here we assume a constant mean of 0.0 and a squared exponential kernel with automatic relevance determination (ARD).
 We also assume a small Gaussian noise term in the observations for numerical stability:
 ===#
 
 mean_f = ConstMean(0.0)
-kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
-σ² = 1.0e-5
+kernel = SqExponentialKernel()
 
 gp_prior = GP(mean_f, kernel)
 
@@ -47,14 +47,16 @@ Next, we set up an optimizer used in the log marginal likelihood maximization to
 using Optim
 
 optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
+#md nothing # hide
 
 #===
-Finally, we define an input standardization (here a z-score transform). While not strictly necessary for this example, standardization can help finding good hyperparameters. 
+Finally, we define an input standardization (here a z-score transform). While not strictly necessary for this example, standardization can help finding good hyperparameters.
 Note that we can also define an output transform to scale the output for training the GP. When evaluating the GP model, the input will be automatically transformed with the fitted standardization.
 The output will be transformed back to the original scale automatically as well.
 ===#
 
 input_transform = ZScoreTransformChoice()
+#md nothing # hide
 
 #===
 The GP regression model is now constructed by calling the `GaussianProcess` constructor with the prior GP, the input random variables, the model, the output symbol, the experimental design, and the optional input and output transform choices.
@@ -72,14 +74,15 @@ gp_model = GaussianProcess(
     input_transform = input_transform,
     optimizer = optimizer
 )
+#md nothing # hide
 
 #===
-The GP regression model uses finite projections of the fitted posterior GP to make predictions. As of now, the hyperparameters of the GP might not be optimal. 
+The GP regression model uses finite projections of the fitted posterior GP to make predictions. As of now, the hyperparameters of the GP might not be optimal.
 We can find optimal hyperparameters through maximizing the log marginal likelihood of observing the training data under the posterior GP.
 ===#
 
 #===
-To evaluate the `GaussianProcess`, use `evaluate!(gp::GaussianProcess, data::DataFrame)` with the `DataFrame` containing the points you want to evaluate. 
+To evaluate the `GaussianProcess`, use `evaluate!(gp::GaussianProcess, data::DataFrame)` with the `DataFrame` containing the points you want to evaluate.
 The evaluation of a GP is not unique, and we can choose to evaluate the mean prediction, the prediction variance, a combination of both, or draw samples from the posterior distribution.
 The default is to evaluate the mean prediction.
 We can specify the evaluation mode via the `mode` keyword argument. Supported options are:

@@ -9,8 +9,7 @@ himmelblau = Model(
 design = LatinHypercubeSampling(80)
 
 mean_f = ConstMean(0.0)
-kernel = SqExponentialKernel() ∘ ARDTransform([1.0, 1.0])
-σ² = 1.0e-5
+kernel = SqExponentialKernel()
 
 gp_prior = GP(mean_f, kernel)
 

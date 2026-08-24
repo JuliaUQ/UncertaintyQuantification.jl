@@ -6,7 +6,7 @@
         y = fct(x)
         data = DataFrame(:x => x, :y => y)
 
-        σ² = 0.0
+        σ² = 1.0e-9
         kernel = SqExponentialKernel() ∘ ScaleTransform(10.0)
         prior_gp = GP(ConstMean(0.0), kernel)
         gp_opt = GaussianProcess(prior_gp, data, :y; σ² = σ²)
@@ -24,7 +24,7 @@
         y = sin.(x[:, 1]) + cos.(x[:, 2])
         data = DataFrame(:x1 => x[:, 1], :x2 => x[:, 2], :y => y)
 
-        σ² = 0.0
+        σ² = 1.0e-9
         kernel = Matern52Kernel() ∘ ARDTransform([5.0, 5.0])
         prior_gp = GP(ConstMean(0.0), kernel)
         gp_opt = GaussianProcess(prior_gp, data, :y; σ² = σ²)

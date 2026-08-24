@@ -32,6 +32,8 @@ using StatsBase
 using TransportMaps
 using RecipesBase
 
+import NLSolversBase
+
 @reexport using AbstractGPs
 @reexport using TransportMaps
 @reexport using Distributions
@@ -87,7 +89,12 @@ abstract type AbstractHPCScheduler end
 
 abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
 
+abstract type AbstractAcquisitionFunction end
+abstract type AbstractGaussianProcessAcquisitionFunction <: AbstractAcquisitionFunction end
+
 # Types
+export AbstractAcquisitionFunction
+export AbstractGaussianProcessAcquisitionFunction
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
@@ -105,6 +112,7 @@ export UQModel
 
 # Structs
 export AdvancedLineSampling
+export AdaptiveGaussianProcess
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -113,10 +121,14 @@ export BoxBehnken
 export CentralComposite
 export CentralFiniteDifferences
 export CloughPenzien
+export DeviationNumber
 export DoubleLoop
 export EmpiricalPSD
 export ExternalModel
 export SlurmInterface
+export ExpectedFeasibility
+export ExpectedImprovement
+export ExpectedImprovementForGlobalFit
 export Extractor
 export FaureSampling
 export FORM
@@ -146,6 +158,8 @@ export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
 export MaximumLikelihoodEstimation
+export MaximinDistance
+export MaximumVariance
 export Model
 export MonomialBasis
 export MonteCarlo
@@ -157,6 +171,7 @@ export PolynomialChaosExpansion
 export PolyharmonicRadialBasis
 export PolyharmonicSpline
 export ProbabilityBox
+export ProbabilityOfImprovement
 export RadialBasedImportanceSampling
 export GaussianRadialBasis
 export RandomVariable
@@ -177,8 +192,8 @@ export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
 export UnitRangeTransformChoice
+export UpperConfidenceBound
 export ZScoreTransformChoice
-export UQTargetDensity
 
 # Methods
 export bayesianupdating
@@ -249,11 +264,13 @@ include("models/model.jl")
 include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
-include("models//slicingmodel.jl")
+include("models/slicingmodel.jl")
 include("models/gp/standardization.jl")
 include("models/gp/parameterization.jl")
 include("models/gp/hyperparametertuning.jl")
 include("models/gp/gaussianprocess.jl")
+include("models/gp/adaptivegaussianprocess.jl")
+include("models/gp/gp_acquisitionfunction.jl")
 include("models/ipm.jl")
 include("models/models.jl")
 

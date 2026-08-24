@@ -7,6 +7,27 @@ struct GaussianProcess <: UQModel
     training_data::DataFrame
 end
 
+function Base.show(io::IO, gp::GaussianProcess)
+    print(io, "GaussianProcess(")
+    print(io, "mean=$(gp.posterior.prior.mean), ")
+    print(io, "kernel=$(gp.posterior.prior.kernel), ")
+    print(io, "input=$(gp.input_transformer.input)), ")
+    print(io, "output=$(gp.output), ")
+    print(io, "n_datapoints=$(size(gp.training_data, 1))")
+    print(io, ")")
+    return nothing
+end
+
+function Base.show(io::IO, ::MIME"text/plain", gp::GaussianProcess)
+    println(io, "GaussianProcess")
+    println(io, "   mean: $(gp.posterior.prior.mean)")
+    println(io, "   kernel: $(gp.posterior.prior.kernel)")
+    println(io, "   input: $(gp.input_transformer.input)")
+    println(io, "   output: $(gp.output)")
+    print(io, "   n_datapoints: $(size(gp.training_data, 1))")
+    return nothing
+end
+
 # function to check the inputs to a GaussianProcess constructor
 function check_gp_input(σ²::Float64, learn_noise::Bool)
     # check if σ² is ≥0, not using @assert because apparently it can be turned off and shouldn't be used for function input checking (https://discourse.julialang.org/t/efficient-use-of-test-or-assert/75895/4)
@@ -335,21 +356,21 @@ end
 """
     evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
 
-Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locations. 
+Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locations.
 
 # Arguments
 - `gp`: Trained Gaussian process model to be evaluated.
 - `data`: A `DataFrame` containing the input locations at which predictions are computed.
 
 # Keyword Arguments
-- `mode`: A `Symbol` specifying the type of output to return. 
+- `mode`: A `Symbol` specifying the type of output to return.
     Supported options are:
     - `:mean` - predictive mean (default)
     - `:var` - predictive variance
     - `:mean_and_var` - both mean and variance
     - `:sample` - random samples from the predictive distribution
 - `n_samples`: Number of samples to draw when `mode = :sample`. Ignored otherwise.
-    (Note: Sampling can be unstable when input locations are very close together, leading to numerical issues in the covariance matrix.) 
+    (Note: Sampling can be unstable when input locations are very close together, leading to numerical issues in the covariance matrix.)
 
 # Examples
 ```jldoctest
