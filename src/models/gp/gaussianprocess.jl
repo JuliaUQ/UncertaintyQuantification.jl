@@ -11,7 +11,7 @@ function Base.show(io::IO, gp::GaussianProcess)
     print(io, "GaussianProcess(")
     print(io, "mean=$(gp.posterior.prior.mean), ")
     print(io, "kernel=$(gp.posterior.prior.kernel), ")
-    print(io, "input=$(gp.input_transformer.input)), ")
+    print(io, "input=$(gp.input_transformer.input), ")
     print(io, "output=$(gp.output), ")
     print(io, "n_datapoints=$(size(gp.training_data, 1))")
     print(io, ")")
@@ -61,7 +61,7 @@ Constructs a `GaussianProcess` model with the specified data and output variable
 - `kernel`: The kernel for the Gaussian process. Defaults to `SqExponentialKernel`.
 - `input_transform`: The transformation to apply to the input variables. Defaults to `IdentityTransformChoice`.
 - `output_transform`: The transformation to apply to the output variables. Defaults to `IdentityTransformChoice`.
-- `σ²`: The noise variance. Defaults to 0.0.
+- `σ²`: The noise variance. Defaults to 1.0e-10.
 - `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
 - `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
 - `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
@@ -171,10 +171,10 @@ function GaussianProcess(
     if learn_hyperparameters
         _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
         σ² = _gp.σ²
-        # _gp is a PriorGP object, callig it directly involves the noise, so no need to add σ² again
+        # _gp is a PriorGP object, calling it directly involves the noise, so no need to add σ² again
         posterior_gp = posterior(_gp(x), y)
     else
-        # gp has to be called with noise since it is an AbstrctGPs.GP object, not a PriorGP object
+        # gp has to be called with noise since it is an AbstractGPs.GP object, not a PriorGP object
         posterior_gp = posterior(gp(x, σ²), y)
     end
 

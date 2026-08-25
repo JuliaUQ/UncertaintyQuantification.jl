@@ -2,6 +2,8 @@
     AdaptiveGaussianProcess(
         gp::GP,
         input,
+        model,
+        output,
         acquisition_function,
         n_added_points,
         n_design_points = 10,

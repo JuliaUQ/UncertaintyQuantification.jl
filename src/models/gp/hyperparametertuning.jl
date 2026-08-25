@@ -2,10 +2,10 @@ abstract type AbstractHyperparameterOptimization end
 
 """
     MaximumLikelihoodEstimation(
-        optimizer=LBFGS(),
-        options=Optim.Options(; iterations = 100, show_trace = false)),
-        backend=AutoMooncake();
-        restarts=5
+        optimizer = LBFGS(),
+        options = Optim.Options(; iterations = 100, show_trace = false),
+        backend = AutoMooncake();
+        restarts = 5,
     )
 
 Represents a hyperparameter optimization strategy that maximizes the log marginal likelihood
@@ -13,9 +13,8 @@ of a Gaussian process model with random restarts of the optimization.
 
 # Arguments
 - `optimizer::Optim.AbstractOptimizer`: chosen optimizer (default: `LBFGS()`)
-- `options:.Optim.Options`: options for the optimizer (default: `Optim.Options(; iterations=100, show_trace=false)`)
-- `backend::AbstractADType`: automatic different backend (default: `Mooncake()`; can be `nothing` when using gradient-free optimization)
-
+- `options::Optim.Options`: options for the optimizer (default: `Optim.Options(; iterations = 100, show_trace = false)`)
+- `backend::AbstractADType`: automatic differentiation backend (default: `AutoMooncake()`; can be `nothing` when using gradient-free optimization)
 # Keyword Arguments
 - `restarts`: Number of additional randomized optimization runs. Defaults to `5`.
 
