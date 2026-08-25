@@ -4,8 +4,8 @@
         input,
         acquisition_function,
         n_added_points,
-        n_design_points=10,
-        experimental_design=LatinHypercubeSampling(n_design_points);
+        n_design_points = 10,
+        experimental_design = LatinHypercubeSampling(n_design_points);
         kwargs...
     )
 
@@ -111,10 +111,10 @@ end
         output,
         acquisition_function,
         n_added_points,
-        n_design_points=10,
-        experimental_design=LatinHypercubeSampling(n_design_points);
-        mean_fct=ZeroMean(),
-        kernel=SqExponentialKernel(),
+        n_design_points = 10,
+        experimental_design = LatinHypercubeSampling(n_design_points);
+        mean_fct = ZeroMean(),
+        kernel = SqExponentialKernel(),
         kwargs...
     )
 
@@ -274,8 +274,8 @@ end
         output,
         acquisition_function,
         n_added_points;
-        mean_fct=ZeroMean(),
-        kernel=SqExponentialKernel(),
+        mean_fct = ZeroMean(),
+        kernel = SqExponentialKernel(),
         kwargs...
     )
 

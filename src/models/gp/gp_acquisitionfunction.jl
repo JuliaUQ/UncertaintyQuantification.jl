@@ -54,7 +54,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::MaximumV
 end
 
 """
-    ExpectedImprovement(ξ=0.0)
+    ExpectedImprovement(ξ = 0.0)
 
 Selects the candidate maximizing expected improvement over the current best
 (minimum) observed training output. `ξ` controls the exploration/exploitation
@@ -89,7 +89,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ei::Expect
 end
 
 """
-    ProbabilityOfImprovement(ξ=0.0)
+    ProbabilityOfImprovement(ξ = 0.0)
 
 Selects the candidate maximizing the probability of improving over the current
 best (minimum) observed training output.
@@ -123,7 +123,7 @@ end
 
 
 """
-    UpperConfidenceBound(κ=2.0)
+    UpperConfidenceBound(κ = 2.0)
 
 Selects the candidate minimizing `μ(x) - κ·σ(x)` (lower confidence bound for a
 minimization objective). `κ` controls the exploration weight.
@@ -152,7 +152,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ucb::Upper
 end
 
 """
-    DeviationNumber(threshold=0.0)
+    DeviationNumber(threshold = 0.0)
 
 U-function: selects the candidate minimizing `|μ(x) - threshold| / σ(x)`, i.e. the
 point closest to the limit state and with the highest uncertainty.
@@ -192,7 +192,7 @@ function _mean_var_cols(gp::GaussianProcess)
 end
 
 """
-    ExpectedFeasibility(threshold=0.0, epsilon_factor=2.0)
+    ExpectedFeasibility(threshold = 0.0, epsilon_factor = 2.0)
 
 Selects the candidate with the largest expected feasibility function (EFF)
 near the limit state `G(x) = threshold`. The feasibility half-width is set
