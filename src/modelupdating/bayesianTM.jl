@@ -199,7 +199,7 @@ Alternatively, the `prior` function can be omitted and the prior is constructed 
 bayesianupdating(likelihood, models, tm)
 ```
 
-See also [`TransportMapBayesian`](@ref), [`MaximumAPosterioriBayesian`](@ref), [`TransportMap](@ref).
+See also [`TransportMapBayesian`](@ref), [`MaximumAPosterioriBayesian`](@ref), [`TransportMap`](@ref).
 """
 function bayesianupdating(
         prior::Function,

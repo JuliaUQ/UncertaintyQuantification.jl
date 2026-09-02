@@ -28,16 +28,15 @@ The package gives access to these deterministic sampling algorithms: Lattices: `
 !!! note
     The number of samples for digital nets should always be a power of the base, while lattices work best with large prime numbers as sample-sizes. Straying from these rules may worsen results significantly, since the samples will be imbalanced [owenQuasiMonteCarlo2021](@cite).
 
-The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotation [cranleyPattersonRandomization1976](@cite)), or by scrambling via `MatousekScramble`, `OwenScramble`[owenScramble1995](@cite) or `DigitalShift`.
+The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotation [cranleyPattersonRandomization1976](@cite)). or by scrambling via `MatousekScramble`[matousekScramble1998](@cite), `OwenScramble`[owenScramble1995](@cite) or `DigitalShift`. The latter works similarly to `Shift`, but takes the base that was used during sampling into account. 
+
 Further, `LatinHypercubeSample` and `RandomizedHaltonSample` [owenRandomizedHalton2017](@cite) are the available randomized sampling algorithms.
 
 !!! note
     For randomizing lattice-samples, `Shift` is recommended. The mentioned scrambling methods work well with samples from digital nets.
 
 
-NEW: scramble needs n = b^x, not k*b^x. Also, Faure will round to next prime as base, n must fit that. TODO: other qmc-methods too?
-
-    sobol #samples should be 2^dim
+To facilitate QMC-sampling in `UncertaintyQuantification.jl` one needs to first create one or more random variables to sample from as well as an instance of `QuasiMonteCarloSampling`, which takes the number of samplescand the desired sampling algorithm from `QuasiMonteCarlo.jl`. Using the `sample`-function, the defined number of samples is created from the given variable(s).
 
 ```@setup qmc
     using UncertaintyQuantification
@@ -50,7 +49,7 @@ NEW: scramble needs n = b^x, not k*b^x. Also, Faure will round to next prime as 
     samples = UncertaintyQuantification.sample(x, qmc)
     nothing    # hide
 ```
-It is of course possible to directly create the struct inside the `sample`-call, enabling a more efficient version of the example above which looks like this:
+It is of course possible to directly create the `QuasiMonteCarloSampling`-instance inside the `sample`-call, enabling a more efficient version of the example above which looks like this:
 
 ```@example qmc
     x = RandomVariable(Uniform(), :x)
@@ -59,7 +58,7 @@ It is of course possible to directly create the struct inside the `sample`-call,
 ```
 
 !!! note
-    When chosing `n`, be reminded that for digital nets, `n` must fit the base that is used for creating the respective sequence. For `SobolSample` the base is always equal to 2 while for `FaureSample`, it depends on the number of input-variables, being the smallest prime number that is greater or equal to the number of variables. 
+    When chosing `n`, be reminded that, for digital nets, `n` must fit the base that is used for creating the respective sequence. For `SobolSample` the base is always equal to 2 while for `FaureSample`, it depends on the number of input-variables, being the smallest prime number that is greater or equal to the number of variables. 
 
 ```@example qmc
     x = RandomVariable(Uniform(), :x)
