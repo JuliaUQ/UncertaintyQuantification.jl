@@ -172,6 +172,7 @@ export TransportMapBayesian
 export TwoLevelFactorial
 export UQTargetDensity
 export QuasiMonteCarloSampling
+
 # Methods
 export bayesianupdating
 export calc

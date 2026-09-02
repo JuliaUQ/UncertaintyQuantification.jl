@@ -9,7 +9,7 @@ end
 @testitem "QuasiMonteCarlo" begin
     using QuasiMonteCarlo
 
-    sobol = QuasiMonteCarloSampling(4, QuasiMonteCarlo.SobolSample())
+    sobol = QuasiMonteCarloSampling(4, SobolSample())
     @test isa(sobol, QuasiMonteCarloSampling)
 
     @test double_samples(sobol).n == 8
@@ -22,7 +22,7 @@ end
     @test samples.c == [1.0, 1.0, 1.0, 1.0]
 
     sobol = QuasiMonteCarloSampling(
-        64, QuasiMonteCarlo.SobolSample(R = QuasiMonteCarlo.OwenScramble(base = 2, pad = 32))
+        64, SobolSample(R = OwenScramble(base = 2, pad = 32))
     )
     @test UncertaintyQuantification.sample(inputs, sobol) !=
         UncertaintyQuantification.sample(inputs, sobol)
