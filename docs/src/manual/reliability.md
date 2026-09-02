@@ -382,7 +382,7 @@ In some sense, the two loops from the double-loop method have been reversed, whe
 
 The software implementation is such that this imprecise reliability method can be coupled to any simulation method (FORM, line sampling, etc.) in a straightforward way. As with the double-loop, one can apply different simulations for each bound if desired.
 
-The problem setup for random slicing is identical to that of the double-loop. The only difference is that a [`RandomSlicing`](@ref) instance is passed instead of [`DoubleLoop](@ref).
+The problem setup for random slicing is identical to that of the double-loop. The only difference is that a [`RandomSlicing`](@ref) instance is passed instead of [`DoubleLoop`](@ref).
 
 Here, the lower bound is again estimated using FORM, while we apply subset simulation to obtain the upper bound. The result for the lower bound matches the analytical solution perfectly. The upper bound is estimated accurately as ``\overline{p}_f \approx 3.884325e-5``. Note, that in addition to the probability of failure, random slicing also returns other outputs of the underlying simulations, such as the coefficient of variation and the evaluated samples for potential post-processing.
 
