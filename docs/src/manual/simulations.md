@@ -27,7 +27,7 @@ The package gives access to these deterministic sampling algorithms: Lattices: `
 !!! note
     The number of samples for digital nets should always be a power of the base, while lattices work best with large prime numbers as sample-sizes. Straying from these rules may worsen results significantly, since the samples will be imbalanced [owenQuasiMonteCarlo2021](@cite).
 
-The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotation [cranleyPattersonRandomization1976](@cite)). or by scrambling via `MatousekScramble`[matousekScramble1998](@cite), `OwenScramble`[owenScramble1995](@cite) or `DigitalShift`. The latter works similarly to `Shift`, but takes the base that was used during sampling into account. 
+The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotation [cranleyPattersonRandomization1976](@cite)). or by scrambling via `MatousekScramble`[matousekScramble1998](@cite), `OwenScramble`[owenScramble1995](@cite) or `DigitalShift`. The latter functions similarly to `Shift`, but takes the base that was used during sampling into account. 
 
 !!! note
     For randomizing lattice-samples, `Shift` is recommended. The mentioned scrambling methods work well with samples from digital nets.
