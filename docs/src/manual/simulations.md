@@ -8,15 +8,14 @@ Extensive information on the Monte-Carlo method can be found in [zioMonteCarlo20
 
 ## Quasi Monte Carlo
 
-For comprehensive information on Quasi Monte Carlo, view [leobacherQuasiMonteCarlo2026](@cite). The following provides an essential overview.
+For a comprehensive introduction to Quasi Monte Carlo, view [leobacherQuasiMonteCarlo2026](@cite). The following provides an essential overview.
 
 Quasi Monte Carlo (QMC), is a method of producing samples similar to those generated via Monte Carlo (MC).
 The difference being that QMC samples are generated deterministically in a way to ensure they are evenly distributed across the sampling space, not forming clutters or voids as MC samples might.
-This makes QMC more efficient than MC for lots of applications since fewer samples are needed in order to produce a sufficient density of samples throughout. However, their deterministic nature is not suitable for random number generation. To gain some random properties it is possible to randomize QMC samples.
-There are multiple ways of QMC sampling methods which can be classified as either digital nets or lattices. Randomization methods discriminate between shifts and scrambles.
-While the disjunction of a deterministic sampling and a randomization method that can be applied to the samples is most common for QMC, there are also some algorithms that directly produce quasi random samples.
+This makes QMC more efficient than MC for lots of applications, since fewer samples are needed in order to produce a sufficient density of samples throughout. There are multiple ways of QMC sampling methods which can be classified as either digital nets/sequences or lattices. 
+Since the samples are not random, they are not suitable for many tasks. However, it is possible to randomize QMC samples by randomly shifting or scrambling each sample.
 
-
+While the disjunction of a deterministic sampling and a randomization method that can be applied to the samples later is most common for QMC, there are also some sampling methods that directly produce quasi random samples.
 
 This package relies on [`QuasiMonteCarlo.jl`](https://github.com/SciML/QuasiMonteCarlo.jl) which offers various QMC sampling methods as well as corresponding randomization methods. An example on how to use them is shown below.
 
@@ -30,11 +29,10 @@ The package gives access to these deterministic sampling algorithms: Lattices: `
 
 The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotation [cranleyPattersonRandomization1976](@cite)). or by scrambling via `MatousekScramble`[matousekScramble1998](@cite), `OwenScramble`[owenScramble1995](@cite) or `DigitalShift`. The latter works similarly to `Shift`, but takes the base that was used during sampling into account. 
 
-Further, `LatinHypercubeSample` and `RandomizedHaltonSample` [owenRandomizedHalton2017](@cite) are the available randomized sampling algorithms.
-
 !!! note
     For randomizing lattice-samples, `Shift` is recommended. The mentioned scrambling methods work well with samples from digital nets.
 
+Further, `LatinHypercubeSample`[mcKayLatinHypercubeSampling1979](@cite) and `RandomizedHaltonSample`[owenRandomizedHalton2017](@cite) are the available randomized sampling algorithms.
 
 To facilitate QMC-sampling in `UncertaintyQuantification.jl` one needs to first create one or more random variables to sample from as well as an instance of `QuasiMonteCarloSampling`, which takes the number of samplescand the desired sampling algorithm from `QuasiMonteCarlo.jl`. Using the `sample`-function, the defined number of samples is created from the given variable(s).
 
@@ -58,7 +56,7 @@ It is of course possible to directly create the `QuasiMonteCarloSampling`-instan
 ```
 
 !!! note
-    When chosing `n`, be reminded that, for digital nets, `n` must fit the base that is used for creating the respective sequence. For `SobolSample` the base is always equal to 2 while for `FaureSample`, it depends on the number of input-variables, being the smallest prime number that is greater or equal to the number of variables. 
+    When chosing `n`, be reminded that, for digital nets, `n` must be a power of the base that is used for creating the respective sequence. For `SobolSample` the base is always equal to 2 while for `FaureSample`, it depends on the number of input-variables, being the smallest prime number that is greater or equal to the number of variables. 
 
 ```@example qmc
     x = RandomVariable(Uniform(), :x)
