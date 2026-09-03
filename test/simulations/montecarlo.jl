@@ -27,9 +27,9 @@ end
 
 
     sobol = QuasiMonteCarloSampling(
-        64, SobolSample(R=OwenScramble(base=2, pad=32))
+        64, SobolSample(R = OwenScramble(base = 2, pad = 32))
     )
     @test UncertaintyQuantification.sample(inputs, sobol) !=
-          UncertaintyQuantification.sample(inputs, sobol)
+        UncertaintyQuantification.sample(inputs, sobol)
 
 end
