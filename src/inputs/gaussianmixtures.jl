@@ -63,11 +63,11 @@ function _gaussian_mixture_expectation_maximization(
         # Log-likelihood (for convergence check)
         log_likelihood = sum(
             log(
-                    sum(
-                        π[k] * pdf(MvNormal(μ[k, :], Σ[k]), data[i, :]) for
+                sum(
+                    π[k] * pdf(MvNormal(μ[k, :], Σ[k]), data[i, :]) for
                         k in 1:number_components
-                    ),
-                ) for i in 1:number_samples
+                ),
+            ) for i in 1:number_samples
         )
 
         abs(log_likelihood - log_likelihood_old) < tolerance ? break : continue
