@@ -11,7 +11,6 @@ Pages = ["simulations.md"]
 ## Types
 
 ```@docs
-HaltonSampling
 RadialBasedImportanceSampling
 SubSetSimulation
 SubSetInfinity

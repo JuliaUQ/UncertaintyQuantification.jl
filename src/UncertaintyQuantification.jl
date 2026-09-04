@@ -171,6 +171,7 @@ export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
 export UQTargetDensity
+export QuasiMonteCarloSampling
 
 # Methods
 export bayesianupdating
@@ -179,6 +180,7 @@ export count_rvs
 export dimensions
 export distribution_parameters
 export doe_samples
+export double_samples
 export evaluate
 export evaluate!
 export gradient

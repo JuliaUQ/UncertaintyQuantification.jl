@@ -84,16 +84,18 @@ Consider the function
 
 where ``x \sim U(-5, 5)``
 
-We use [`HaltonSampling`](@ref) to sample 150 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree ``d=9``.
+We use `HaltonSample` through `QuasiMonteCarloSampling` to sample 128 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree ``d=9``.
 
 ```@example lbfm
 using UncertaintyQuantification # hide
+using QuasiMonteCarlo
+
 x = RandomVariable(Uniform(-5, 5), :x)
 y = Model(
         df -> df.x .* cos.(df.x),
         :y,
     )
-data = sample(x, HaltonSampling(150))
+data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(128, QuasiMonteCarlo.HaltonSample()))
 evaluate!(y, data)
 lbfm = LinearBasisFunctionModel(data, :y, MonomialBasis(1, 9))
 ```
@@ -180,13 +182,14 @@ Consider the function
     y(x) = x^2\cos(x) - \sin(3x)\exp(-x^2) - x - \cos(x^2) +xg,
 ```
 
-where ``x \sim U(-5.5, 5.5`` and ``g \sim N(0,1)``. We generate a data sequence of ``N = 150`` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
+where ``x \sim U(-5.5, 5.5`` and ``g \sim N(0,1)``. We generate a data sequence of ``N = 128`` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
 
 ```@example ipm
 using UncertaintyQuantification # hide
+using QuasiMonteCarlo
 
 x = RandomVariable(Uniform(-5.5, 5.5), :x)
-data = sample(x, HaltonSampling(150))
+data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(128, QuasiMonteCarlo.HaltonSample()))
 
 m = Model(
         df ->
