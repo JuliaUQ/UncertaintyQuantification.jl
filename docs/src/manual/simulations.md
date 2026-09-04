@@ -34,7 +34,7 @@ The samples can be randomized by shifting with `Shift` (Cranley-Patterson rotati
 
 Further, `LatinHypercubeSample`[mcKayLatinHypercubeSampling1979](@cite) and `RandomizedHaltonSample`[owenRandomizedHalton2017](@cite) are the available randomized sampling algorithms.
 
-To facilitate QMC-sampling in `UncertaintyQuantification.jl` one needs to first create one or more random variables to sample from as well as an instance of `QuasiMonteCarloSampling`, which takes the number of samplescand the desired sampling algorithm from `QuasiMonteCarlo.jl`. Using the `sample`-function, the defined number of samples is created from the given variable(s).
+To facilitate QMC-sampling in `UncertaintyQuantification.jl` one needs to first create one or more random variables to sample from as well as an instance of `QuasiMonteCarloSampling`, which takes the number of samples and the desired sampling algorithm from `QuasiMonteCarlo.jl`. Using the `sample`-function, the defined number of samples is created from the given variable(s).
 
 ```@setup qmc
     using UncertaintyQuantification
