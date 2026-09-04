@@ -84,7 +84,7 @@ Consider the function
 
 where ``x \sim U(-5, 5)``
 
-We use `HaltonSampling` to sample 128 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree ``d=9``.
+We use `HaltonSample` through `QuasiMonteCarloSampling` to sample 128 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree ``d=9``.
 
 ```@example lbfm
 using UncertaintyQuantification # hide
