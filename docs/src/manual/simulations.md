@@ -60,7 +60,7 @@ It is of course possible to directly create the `QuasiMonteCarloSampling`-instan
 
 ```@example qmc
     x = RandomVariable(Uniform(), :x)
-    samples = QuasiMonteCarloSampling(128, QuasiMonteCarlo.SobolSample())
+    samples = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(128, QuasiMonteCarlo.SobolSample()))
 ```
 
 To emphasize the importance of randomization, take a look at the correlations that might occur using unrandomized qmc and how they are fixed by randomizing:
