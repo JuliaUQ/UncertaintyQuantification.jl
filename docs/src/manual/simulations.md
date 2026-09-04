@@ -22,7 +22,7 @@ This package relies on [`QuasiMonteCarlo.jl`](https://github.com/SciML/QuasiMont
 The package gives access to these deterministic sampling algorithms: Lattices: `GridSample`, `LatticeRuleSample`, `GoldenSample` and `KroneckerSample`. Digital nets: `SobolSample`, `FaureSample`, `HaltonSample`.
 
 !!! note 
-    `KroneckerSample` should not be used with bases > 3. `GoldenSample` is a special version of a `KroneckerSample` and should be used with base 1 only. Otherwise, `LatticeRuleSampling` is the preferred method. For more information on this and on the implementation of the other sampling algorithms, please consult the corresponding [documentation of QuasiMonteCarlo.jl](https://docs.sciml.ai/QuasiMonteCarlo/dev/samplers/).
+    `KroneckerSample` should not be used with bases > 3. `GoldenSample` is a special version of a `KroneckerSample` and should be used with base 1 only. Otherwise, `LatticeRuleSample` is the preferred method. For more information on this and on the implementation of the other sampling algorithms, please consult the corresponding [documentation of QuasiMonteCarlo.jl](https://docs.sciml.ai/QuasiMonteCarlo/dev/samplers/).
 
 !!! note
     The number of samples for digital nets should always be a power of the base, while lattices work best with large prime numbers as sample-sizes. Straying from these rules may worsen results significantly, since the samples will be imbalanced [owenQuasiMonteCarlo2021](@cite).
