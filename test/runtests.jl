@@ -2,7 +2,6 @@ using Copulas
 using DataFrames
 using Distributed
 using HCubature
-using HypothesisTests
 using InteractiveUtils
 using Random
 using StatsBase: fit, Histogram, corkendall
@@ -16,7 +15,6 @@ using UncertaintyQuantification
     using DataFrames
     using Distributed
     using HCubature
-    using HypothesisTests
     using InteractiveUtils
     using Random
     using StatsBase: fit, Histogram, corkendall
