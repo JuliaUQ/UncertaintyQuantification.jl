@@ -18,7 +18,7 @@ The `throttle` specifies the number of simulations in the job array which are ru
 # Examples
 ```jldoctest
 julia> slurm = SlurmInterface(Dict("account" => "HPC_account_1", "partition" => "CPU_partition"), extras = ["load python3"])
-SlurmInterface(Dict("account" => "HPC_account_1", "partition" => "CPU_partition"), 0, 0, ["load python3"])
+SlurmInterface(Dict("partition" => "CPU_partition", "account" => "HPC_account_1"), 0, 0, ["load python3"])
 ```
 
 """
