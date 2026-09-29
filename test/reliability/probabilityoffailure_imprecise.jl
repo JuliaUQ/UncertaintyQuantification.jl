@@ -192,15 +192,15 @@ end
     @test pf.ub ≈ failure_analty.ub atol = 1.0e-6
 end
 
-@testset "IPM Reliability Double Loop" begin
+@testitem "IPM Reliability Double Loop" setup = [TestSetup, QMC] begin
     x1 = RandomVariable(Normal(), :x1)
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
     x3 = IntervalVariable(-1, 2, :x3)
 
-    # QMC Samples to fit IPM
-    data = sample(
+    # QuasiMonteCarloSampling Samples to fit IPM
+    data = UncertaintyQuantification.sample(
         [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
-        HaltonSampling(150),
+        QuasiMonteCarloSampling(150, HaltonSample()),
     )
 
     m1 = Model(df -> df.x1 + df.x3, :x4)
@@ -226,15 +226,15 @@ end
     @test x_ub ≈ x_ub_ipm atol = 1.0e-4 broken = true
 end
 
-@testset "IPM Reliability Random Slicing" begin
+@testitem "IPM Reliability Random Slicing" setup = [TestSetup, QMC] begin
     x1 = RandomVariable(Normal(), :x1)
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
     x3 = IntervalVariable(-1, 2, :x3)
 
-    # QMC Samples to fit IPM
-    data = sample(
+    # QuasiMonteCarloSampling Samples to fit IPM
+    data = UncertaintyQuantification.sample(
         [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
-        HaltonSampling(150),
+        QuasiMonteCarloSampling(150, HaltonSample()),
     )
 
     m1 = Model(df -> df.x1 + df.x3, :x4)

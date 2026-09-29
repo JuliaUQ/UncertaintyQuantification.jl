@@ -35,8 +35,9 @@ return nothing # hide
 The `sample` method returns a `DataFrame` with the samples in a single column. When sampling from a `Vector` of random variables these individual columns are automatically merged into one unified `DataFrame`. By default, this will use standard Monte Carlo simulation to obtain the samples. Alternatively, any of the quasi-Monte Carlo methods can be used instead.
 
 ```@example rv
-samples = sample(x, SobolSampling(100))
-samples = sample(x, LatinHypercubeSampling(100))
+using QuasiMonteCarlo
+samples = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(128, QuasiMonteCarlo.SobolSample()))
+samples = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(128, QuasiMonteCarlo.LatinHypercubeSample()))
 return nothing # hide
 ```
 

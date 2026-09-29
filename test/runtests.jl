@@ -20,6 +20,10 @@ using UncertaintyQuantification
     using StatsBase: fit, Histogram, corkendall
 end
 
+@testsnippet QMC begin
+    using QuasiMonteCarlo
+end
+
 @testsnippet ReadWriteUtil begin
     # Function to check if (exact) line exits in file
     function isline(file, string_check)
