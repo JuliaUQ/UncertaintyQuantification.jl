@@ -21,6 +21,7 @@ using Monomials
 using Mooncake: Mooncake
 using Mustache
 using Optim
+using ParameterHandling
 using Primes
 using QuadGK
 using QuasiMonteCarlo
@@ -31,6 +32,9 @@ using StatsBase
 using TransportMaps
 using RecipesBase
 
+import NLSolversBase
+
+@reexport using AbstractGPs
 @reexport using TransportMaps
 @reexport using Distributions
 @reexport using DifferentiationInterface
@@ -85,7 +89,12 @@ abstract type AbstractHPCScheduler end
 
 abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
 
+abstract type AbstractAcquisitionFunction end
+abstract type AbstractGaussianProcessAcquisitionFunction <: AbstractAcquisitionFunction end
+
 # Types
+export AbstractAcquisitionFunction
+export AbstractGaussianProcessAcquisitionFunction
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
@@ -103,6 +112,7 @@ export UQModel
 
 # Structs
 export AdvancedLineSampling
+export AdaptiveGaussianProcess
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -111,10 +121,14 @@ export BoxBehnken
 export CentralComposite
 export CentralFiniteDifferences
 export CloughPenzien
+export DeviationNumber
 export DoubleLoop
 export EmpiricalPSD
 export ExternalModel
 export SlurmInterface
+export ExpectedFeasibility
+export ExpectedImprovement
+export ExpectedImprovementForGlobalFit
 export Extractor
 export FaureSampling
 export FORM
@@ -122,9 +136,11 @@ export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianMixtureModel
+export GaussianProcess
 export GaussQuadrature
 export HaltonSampling
 export HermiteBasis
+export IdentityTransformChoice
 export ImportanceSampling
 export Interval
 export IntervalVariable
@@ -141,6 +157,9 @@ export LineSampling
 export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
+export MaximumLikelihoodEstimation
+export MaximinDistance
+export MaximumVariance
 export Model
 export MonomialBasis
 export MonteCarlo
@@ -152,6 +171,7 @@ export PolynomialChaosExpansion
 export PolyharmonicRadialBasis
 export PolyharmonicSpline
 export ProbabilityBox
+export ProbabilityOfImprovement
 export RadialBasedImportanceSampling
 export GaussianRadialBasis
 export RandomVariable
@@ -161,6 +181,7 @@ export ShinozukaDeodatis
 export SobolSampling
 export Solver
 export SpectralRepresentation
+export StandardNormalTransformChoice
 export StochasticProcessModel
 export SubSetInfinity
 export SubSetInfinityAdaptive
@@ -170,7 +191,9 @@ export TransportMap
 export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
-export UQTargetDensity
+export UnitRangeTransformChoice
+export UpperConfidenceBound
+export ZScoreTransformChoice
 
 # Methods
 export bayesianupdating
@@ -190,6 +213,7 @@ export mapfromdensity
 export mapfromsamples
 export mean
 export multivariate_indices
+export optimize_hyperparameters
 export pdf
 export periodogram
 export polynomialchaos
@@ -206,6 +230,7 @@ export to_physical_space!
 export to_standard_normal_space
 export to_standard_normal_space!
 export variancediagnostic
+export with_gaussian_noise
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
@@ -239,7 +264,13 @@ include("models/model.jl")
 include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
-include("models//slicingmodel.jl")
+include("models/slicingmodel.jl")
+include("models/gp/standardization.jl")
+include("models/gp/parameterization.jl")
+include("models/gp/hyperparametertuning.jl")
+include("models/gp/gaussianprocess.jl")
+include("models/gp/adaptivegaussianprocess.jl")
+include("models/gp/gp_acquisitionfunction.jl")
 include("models/ipm.jl")
 include("models/models.jl")
 
