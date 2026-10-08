@@ -1,7 +1,8 @@
 using UncertaintyQuantification
+using QuasiMonteCarlo
 
 mc = MonteCarlo(10^4)
-LHC = LatinHypercubeSampling(10^4)
+LHC = QuasiMonteCarloSampling(1024, LatinHypercubeSample())
 ss = SubSetSimulation(2000, 0.1, 10, Uniform(-0.2, 0.2))
 ss_infinity = SubSetInfinity(2000, 0.1, 10, 0.5)
 ss_infinity_adaptive = SubSetInfinityAdaptive(2000, 0.1, 10, 10)
