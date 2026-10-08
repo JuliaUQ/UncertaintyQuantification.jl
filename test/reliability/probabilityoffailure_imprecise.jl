@@ -199,7 +199,7 @@ end
 
     # QuasiMonteCarloSampling Samples to fit IPM
     data = UncertaintyQuantification.sample(
-        [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
+        [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-1, 2), :x3)],
         QuasiMonteCarloSampling(150, HaltonSample()),
     )
 

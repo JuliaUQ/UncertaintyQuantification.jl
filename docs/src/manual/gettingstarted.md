@@ -32,7 +32,7 @@ samples = sample(x, 100) # sample(x, MonteCarlo(100))
 return nothing # hide
 ```
 
-The `sample` method returns a `DataFrame` with the samples in a single column. When sampling from a `Vector` of random variables these individual columns are automatically merged into one unified `DataFrame`. By default, this will use standard Monte Carlo simulation to obtain the samples. Alternatively, various Quasi-Monte Carlo methods can be used instead. View the chapter [Simulations](@ref) for details.
+The `sample` method returns a `DataFrame` with the samples in a single column. When sampling from a `Vector` of random variables these individual columns are automatically merged into one unified `DataFrame`. By default, this will use standard Monte Carlo simulation to obtain the samples. Alternatively, various Quasi-Monte Carlo methods can be used instead. View the chapter [Quasi Monte Carlo](@ref) for details.
 
 ```@example rv
 using QuasiMonteCarlo
