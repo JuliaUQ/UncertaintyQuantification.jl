@@ -25,7 +25,7 @@
     @test lo(2.0) == 2.0
 end
 
-@testitem "IntervalVariable" setup = [TestSetup] begin
+@testitem "IntervalVariable" setup = [TestSetup, QMC] begin
     name = :l
     lb = 0.14
     ub = 0.16

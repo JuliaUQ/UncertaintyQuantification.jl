@@ -1,7 +1,7 @@
-@testset "IntervalPredictorModel" begin
+@testitem "IntervalPredictorModel" setup = [TestSetup, QMC] begin
     N = 150
 
-    data = sample(RandomVariable(Uniform(-5.5, 5.5), :x), HaltonSampling(N))
+    data = UncertaintyQuantification.sample(RandomVariable(Uniform(-5.5, 5.5), :x), QuasiMonteCarloSampling(N, HaltonSample()))
 
     verify = copy(data)
 
@@ -36,7 +36,7 @@
     @test reliability(ipm, 0.1548) ≈ 0.01 atol = 0.001
 end
 
-@testset "Interval propagation IPM" begin
+@testitem "Interval propagation IPM" setup = [TestSetup, QMC] begin
     X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1)), :X1)
     X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
     X3 = RandomVariable(Normal(0, 1), :X3)
@@ -45,14 +45,14 @@ end
     inputs = [X1, X2, X3, X4]
     models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, :g)
 
-    data_ipm = sample(
+    data_ipm = UncertaintyQuantification.sample(
         [
             RandomVariable(Normal(1.5, 1), :X1),
             RandomVariable(Uniform(-1.5, 2), :X2),
             X3,
             X4,
         ],
-        HaltonSampling(150),
+        QuasiMonteCarloSampling(150, HaltonSample()),
     )
 
     evaluate!(models, data_ipm)
@@ -60,7 +60,7 @@ end
     b = MonomialBasis(2, 3)
     ipm = IntervalPredictorModel(data_ipm, :g, b, [:X1, :X2, :X3])
 
-    df = sample(inputs, 500)
+    df = UncertaintyQuantification.sample(inputs, 500)
 
     propagate_intervals!(ipm, df)
 
@@ -68,7 +68,7 @@ end
 
     inputs = [RandomVariable.(Normal(), [:X1, :X2, :X3])..., X4]
 
-    df = sample(inputs, 500)
+    df = UncertaintyQuantification.sample(inputs, 500)
 
     propagate_intervals!(ipm, df)
 

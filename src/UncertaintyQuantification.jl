@@ -54,7 +54,6 @@ abstract type AbstractBasis end
 
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
-abstract type AbstractQuasiMonteCarlo <: AbstractMonteCarlo end
 
 """
 	AbstractBayesianMethod
@@ -92,7 +91,6 @@ export AbstractDesignOfExperiments
 export AbstractMonteCarlo
 export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
-export AbstractQuasiMonteCarlo
 export AbstractSimulation
 export AbstractTransportMap
 export Copula
@@ -116,14 +114,12 @@ export EmpiricalPSD
 export ExternalModel
 export SlurmInterface
 export Extractor
-export FaureSampling
 export FORM
 export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianMixtureModel
 export GaussQuadrature
-export HaltonSampling
 export HermiteBasis
 export ImportanceSampling
 export Interval
@@ -132,8 +128,6 @@ export IntervalPredictorModel
 export JointDistribution
 export KanaiTajimi
 export LaplaceEstimateBayesian
-export LatinHypercubeSampling
-export LatticeRuleSampling
 export LeastSquares
 export WeightedApproximateFetekePoints
 export LegendreBasis
@@ -158,7 +152,6 @@ export RandomVariable
 export RandomSlicing
 export ResponseSurface
 export ShinozukaDeodatis
-export SobolSampling
 export Solver
 export SpectralRepresentation
 export StochasticProcessModel
@@ -171,6 +164,7 @@ export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
 export UQTargetDensity
+export QuasiMonteCarloSampling
 
 # Methods
 export bayesianupdating
@@ -179,6 +173,7 @@ export count_rvs
 export dimensions
 export distribution_parameters
 export doe_samples
+export double_samples
 export evaluate
 export evaluate!
 export gradient
