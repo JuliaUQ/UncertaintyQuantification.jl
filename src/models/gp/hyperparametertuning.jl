@@ -56,8 +56,8 @@ end
 
 objective(
     f::PriorGP,
-    x::Union{RowVecs{<:Real}, Vector{<:Real}},
-    y::Vector{<:Real},
+    x::Union{AbstractMatrix{<:Real}},
+    y::AbstractVector{<:Real},
     ::MaximumLikelihoodEstimation
 ) = -logpdf(f(x), y)
 
@@ -65,7 +65,7 @@ _initializer(θ) = θ .+ 0.5 .* randn(length(θ))
 
 function optimize_hyperparameters(
         gp::PriorGP,
-        x::Union{RowVecs{<:Real}, Vector{<:Real}},
+        x::Union{Matrix{<:Real}, Vector{<:Real}},
         y::Vector{<:Real},
         mle::MaximumLikelihoodEstimation
     )
