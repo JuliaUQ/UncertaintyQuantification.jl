@@ -1,4 +1,4 @@
-using UncertaintyQuantification, DataFrames, Plots, ColorSchemes
+using UncertaintyQuantification, DataFrames, Plots, ColorSchemes, QuasiMonteCarlo
 using UncertaintyQuantification: lo, hi
 
 X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(0, 2), :σ => 4)), :X1)
@@ -12,7 +12,7 @@ model = Model(limitstate, :g)
 
 inputs = [X1; X2]
 
-@time samples = sample(inputs, SobolSampling(1000))
+@time samples = UncertaintyQuantification.sample(inputs, QuasiMonteCarloSampling(1024, SobolSample()))
 
 propagate_intervals!(model, samples)
 
@@ -22,7 +22,7 @@ safe = lo.(gs) .>= 0
 fail = hi.(gs) .<= 0
 unsure = lo.(gs) .<= 0 .&& 0 .<= hi.(gs)
 
-N_grid = 1000
+N_grid = 1024
 
 xs_physical = range(-15, 12, length = N_grid)
 ys_physical = range(-10, 10, length = N_grid)
@@ -49,7 +49,7 @@ X2_ = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 
 
 inputs2 = [X1_, X2_]
 
-ss = SubSetInfinity(1000, 0.1, 10, 0.5)
+ss = SubSetInfinity(1024, 0.1, 10, 0.5)
 @time pf_ss, outputs_ss1, outputs_ss2 = probability_of_failure(limitstate, inputs2, RandomSlicing(ss))
 
 samples_lo = outputs_ss1[2]

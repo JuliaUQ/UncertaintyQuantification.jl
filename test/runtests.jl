@@ -2,7 +2,6 @@ using Copulas
 using DataFrames
 using Distributed
 using HCubature
-using HypothesisTests
 using InteractiveUtils
 using LinearAlgebra: norm
 using ParameterHandling
@@ -19,10 +18,13 @@ import UncertaintyQuantification: sample
     using DataFrames
     using Distributed
     using HCubature
-    using HypothesisTests
     using InteractiveUtils
     using Random
     using StatsBase: fit, Histogram, corkendall
+end
+
+@testsnippet QMC begin
+    using QuasiMonteCarlo
 end
 
 @testsnippet ReadWriteUtil begin

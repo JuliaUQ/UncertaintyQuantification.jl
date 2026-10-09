@@ -1,4 +1,4 @@
-using UncertaintyQuantification, Plots
+using UncertaintyQuantification, Plots, QuasiMonteCarlo
 
 x = RandomVariable.(Uniform(-1, 1), [:x1, :x2])
 
@@ -12,8 +12,8 @@ p = 8
 Ψ = PolynomialChaosBasis([LegendreBasis(), LegendreBasis()], p)
 
 # Estimation by least squares
-ls_n = 1000
-ls = LeastSquares(SobolSampling(ls_n))
+ls_n = 1024
+ls = LeastSquares(QuasiMonteCarloSampling(ls_n, SobolSample()))
 pceLS, samples, mse = polynomialchaos(x, model, Ψ, :y, ls)
 
 println("LS Mean: $(mean(pceLS))")
@@ -22,7 +22,7 @@ println("LS Mean Squared Error: $mse")
 println("--------------------------")
 
 # Estimation by WAFP
-wafp = WeightedApproximateFetekePoints(SobolSampling(ls_n))
+wafp = WeightedApproximateFetekePoints(QuasiMonteCarloSampling(ls_n, SobolSample()))
 pceWAFP, samples, mse = polynomialchaos(x, model, Ψ, :y, wafp)
 
 println("WAFP Mean: $(mean(pceWAFP))")
