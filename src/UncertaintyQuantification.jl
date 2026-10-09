@@ -221,6 +221,7 @@ export quadrature_weights
 export rand
 export reliability
 export sample
+export sample!
 export sobolindices
 export to_physical_space!
 export to_standard_normal_space

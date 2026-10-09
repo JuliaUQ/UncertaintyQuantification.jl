@@ -35,24 +35,27 @@ himmelblau = Model(
 
 #===
 We start with the same initial Gaussian process surrogate as in the *regular* GP regression
-example. Hence, we use the same initial design and same optimizer.
+example. We pass the design positionally and specify `mean`, `kernel`, and
+`normalize` as keywords. With `normalize = true`, the input distributions define
+the transformation to standard normal space.
 ===#
 
 design = LatinHypercubeSampling(80)
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
-gp_prior = GP(mean_f, kernel)
-input_transform = ZScoreTransformChoice()
 optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 
+#md using Random #hide
+#md Random.seed!(42) #hide
 initial_gp = GaussianProcess(
-    gp_prior,
     x,
     himmelblau,
+    design,
     :y;
-    experimental_design = design,
-    input_transform = input_transform,
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
     optimizer = optimizer
 )
 #md nothing # hide
@@ -60,16 +63,21 @@ initial_gp = GaussianProcess(
 #===
 Next, we update the initial GP using a selected learning function and a set number of
 additional points used to refine the initial GP. We use the [`MaximinDistance`](@ref)
-acquisition function and select `20` additional points.
+acquisition function and select `20` additional points, drawing `1000` candidates
+at each iteration.
 ===#
 
 learning_function = MaximinDistance()
 n_added_points = 20
+candidate_sampling = MonteCarlo(1000)
 #md nothing # hide
 
 #===
-We refine the GP using [`AdaptiveGaussianProcess`](@ref) which we pass our initial GP, the
-`learning_function` and `n_added_points`.
+We pass the fitted GP, inputs, model, acquisition function, and number of adaptive
+iterations to [`AdaptiveGaussianProcess`](@ref). The returned model is a regular
+`GaussianProcess` and retains the initial input transformation. We use
+`deepcopy(initial_gp)` because refinement appends rows to the GP's training data,
+and we want to preserve the initial model for comparison.
 ===#
 
 adaptive_gp = AdaptiveGaussianProcess(
@@ -78,6 +86,7 @@ adaptive_gp = AdaptiveGaussianProcess(
     himmelblau,
     learning_function,
     n_added_points;
+    candidate_sampling = candidate_sampling,
     optimizer = optimizer
 )
 #md nothing # hide

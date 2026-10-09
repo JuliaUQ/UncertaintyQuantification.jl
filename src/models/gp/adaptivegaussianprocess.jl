@@ -1,43 +1,44 @@
 """
     AdaptiveGaussianProcess(
-        gp::GP,
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points,
-        n_design_points = 10,
-        experimental_design = LatinHypercubeSampling(n_design_points);
-        kwargs...
+        input, model, design, output::Symbol, acquisition_function, n_added_points::Int,
+        input_names::Vector{Symbol} = wrap(names(input)); kwargs...
     )
 
-Fit a Gaussian-process surrogate from an initial experimental design, then
-adaptively enrich its training data with points selected by
-`acquisition_function`.
+Fit a [`GaussianProcess`](@ref) from an initial experimental design, then
+adaptively enrich its training data. At each iteration, sample candidates from
+`input`, select one with `acquisition_function`, evaluate `model`, and refit the
+GP. Return the final fitted `GaussianProcess`.
 
-At each adaptive iteration, candidate points are sampled from `input`, the
-acquisition function selects one candidate, `model` is evaluated at that
-point, and the Gaussian process is refitted using the enlarged training set.
+The initial input transformation is retained during refitting. Training data
+remain in physical space and outputs remain on their original scale. Duplicate
+training rows are not added, so fewer than `n_added_points` rows may be appended.
 
 # Arguments
-- `gp`: Prior Gaussian process specifying the mean function and kernel.
-- `input`: Input variable or variables used for the initial design and
-  candidate sampling.
-- `model`: Expensive model evaluated at selected adaptive points.
-- `output`: Name of the model output approximated by the surrogate.
-- `acquisition_function`: Learning function used to rank candidate points.
-- `n_added_points`: Number of adaptively selected training points.
-- `n_design_points`: Number of points in the initial experimental design.
-- `experimental_design`: Sampling/design method for the initial training data.
+- `input`: A `UQInput` or vector of inputs for the initial design and candidates.
+- `model`: A `UQModel` or vector of models evaluated at selected points.
+- `design`: An `AbstractMonteCarlo` or `AbstractDesignOfExperiments` specifying
+  the sampling method and number of initial points.
+- `output`: Name of the model output to approximate.
+- `acquisition_function`: An `AbstractGaussianProcessAcquisitionFunction`,
+  such as `MaximumVariance()`, used to select a candidate.
+- `n_added_points`: Number of adaptive iterations.
+- `input_names`: GP input columns. Defaults to all names from `input`.
 
 # Keyword Arguments
-- `input_transform`: Transformation applied to GP input features.
-- `output_transform`: Transformation applied to the GP response.
-- `σ²`: Observation-noise variance.
-- `learn_noise`: Whether to infer the observation-noise variance.
-- `learn_hyperparameters`: Whether to optimize GP hyperparameters on each fit.
-- `candidate_sampling`: Monte Carlo sampling method used for acquisition candidates.
-- `optimizer`: Hyperparameter-optimization strategy.
+- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
+- `normalize`: Whether to map inputs to standard normal space using their
+  distributions. Defaults to `true`; `false` uses physical-space inputs.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
+- `learn_noise`: Whether to optimize the noise variance along with the other
+  hyperparameters. Defaults to `false`; only takes effect when
+  `learn_hyperparameters = true`.
+- `learn_hyperparameters`: Whether to optimize hyperparameters on each fit.
+  Defaults to `true`.
+- `optimizer`: Hyperparameter-optimization strategy. Defaults to
+  `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
+- `candidate_sampling`: Monte Carlo method for sampling candidates at each
+  adaptive iteration. Defaults to `MonteCarlo(100_000)`.
 
 # Examples
 ```jldoctest
@@ -45,31 +46,27 @@ julia> x = RandomVariable(Uniform(-2, 2), :x);
 
 julia> model = Model(df -> sin.(df.x), :y);
 
-julia> prior = GP(ZeroMean(), SqExponentialKernel());
-
-julia> surrogate = AdaptiveGaussianProcess(
-           prior,
-           x,
-           model,
-           :y,
-           MaximumVariance(),
-           5,
+julia> gp = AdaptiveGaussianProcess(
+           x, model, LatinHypercubeSampling(6), :y, MaximumVariance(), 2;
+           mean = ZeroMean(), kernel = SqExponentialKernel(),
+           candidate_sampling = MonteCarlo(100), learn_hyperparameters = false,
        );
+
+julia> gp isa GaussianProcess && nrow(gp.data) == 8
+true
 ```
 """
 function AdaptiveGaussianProcess(
-        gp::GP,
         input::Union{UQInput, Vector{<:UQInput}},
         model::Union{UQModel, Vector{<:UQModel}},
+        design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments},
         output::Symbol,
         acquisition_function::AbstractGaussianProcessAcquisitionFunction,
         n_added_points::Int,
-        n_design_points::Int = 10,
-        experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments} = LatinHypercubeSampling(
-            n_design_points
-        );
-        input_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice = IdentityTransformChoice(),
+        input_names::Vector{Symbol} = wrap(names(input));
+        mean::AbstractGPs.MeanFunction = ZeroMean(),
+        kernel::Kernel = SqExponentialKernel(),
+        normalize::Bool = true,
         σ²::Float64 = 1.0e-10,
         learn_noise::Bool = false,
         learn_hyperparameters::Bool = true,
@@ -79,13 +76,10 @@ function AdaptiveGaussianProcess(
         ),
     )
     gp_model = GaussianProcess(
-        gp,
-        input,
-        model,
-        output;
-        experimental_design = experimental_design,
-        input_transform = input_transform,
-        output_transform = output_transform,
+        input, model, design, output, input_names;
+        mean = mean,
+        kernel = kernel,
+        normalize = normalize,
         σ² = σ²,
         learn_noise = learn_noise,
         learn_hyperparameters = learn_hyperparameters,
@@ -93,91 +87,65 @@ function AdaptiveGaussianProcess(
     )
 
     return AdaptiveGaussianProcess(
-        gp_model,
-        input,
-        model,
-        acquisition_function,
-        n_added_points,
+        gp_model, input, model, acquisition_function, n_added_points;
         candidate_sampling = candidate_sampling,
         optimizer = optimizer,
-        σ² = σ²,
-        learn_noise = learn_noise,
-        learn_hyperparameters = learn_hyperparameters
-    )
-end
-
-"""
-    AdaptiveGaussianProcess(
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points,
-        n_design_points = 10,
-        experimental_design = LatinHypercubeSampling(n_design_points);
-        mean_fct = ZeroMean(),
-        kernel = SqExponentialKernel(),
-        kwargs...
-    )
-
-Construct and adapt a Gaussian-process surrogate using a zero-mean,
-squared-exponential prior by default. Use `mean_fct` and `kernel` to choose a
-different prior.
-"""
-function AdaptiveGaussianProcess(
-        input::Union{UQInput, Vector{<:UQInput}},
-        model::Union{UQModel, Vector{<:UQModel}},
-        output::Symbol,
-        acquisition_function::AbstractGaussianProcessAcquisitionFunction,
-        n_added_points::Int,
-        n_design_points::Int = 10,
-        experimental_design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments} = LatinHypercubeSampling(
-            n_design_points
-        );
-        mean_fct::AbstractGPs.MeanFunction = ZeroMean(),
-        kernel::Kernel = SqExponentialKernel(),
-        input_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        σ²::Float64 = 1.0e-10,
-        learn_noise::Bool = false,
-        learn_hyperparameters::Bool = true,
-        candidate_sampling::AbstractMonteCarlo = MonteCarlo(100_000),
-        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(
-            Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false)
-        ),
-    )
-
-    return AdaptiveGaussianProcess(
-        GP(mean_fct, kernel),
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points,
-        n_design_points,
-        experimental_design;
-        input_transform = input_transform,
-        output_transform = output_transform,
         σ² = σ²,
         learn_noise = learn_noise,
         learn_hyperparameters = learn_hyperparameters,
-        candidate_sampling = candidate_sampling,
-        optimizer = optimizer,
     )
 end
 
 """
     AdaptiveGaussianProcess(
-        gp_model,
-        input,
-        model,
-        acquisition_function,
-        n_added_points;
+        gp_model::GaussianProcess, input, model, acquisition_function, n_added_points::Int;
         kwargs...
     )
 
-Adapt an already-fitted `GaussianProcess` by evaluating `model` at
-`n_added_points` selected from candidates sampled from `input`.
+Refine an already-fitted [`GaussianProcess`](@ref) by selecting candidates
+sampled from `input`, evaluating `model`, and refitting after each selection.
+Return the final fitted GP, retaining the initial input names and transformation.
+The training DataFrame in `gp_model.data` is mutated as points are appended;
+use `deepcopy(gp_model)` to preserve the original model and its data.
+
+# Arguments
+- `gp_model`: Fitted GP supplying the initial training data and prior.
+- `input`: A `UQInput` or vector of inputs used to sample candidates.
+- `model`: A `UQModel` or vector of models supplying outputs at selected points.
+- `acquisition_function`: An `AbstractGaussianProcessAcquisitionFunction`
+  used to select a candidate.
+- `n_added_points`: Number of adaptive iterations. Duplicate training rows are
+  not added. With `0`, return `gp_model` unchanged.
+
+# Keyword Arguments
+- `candidate_sampling`: Candidate sampling method. Defaults to `MonteCarlo(100_000)`.
+- `optimizer`: Hyperparameter-optimization strategy. Defaults to
+  `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
+- `σ²`: Nonnegative observation-noise variance used when refitting. Defaults
+  to `gp_model.σ²`.
+- `learn_noise`: Whether to optimize the noise variance. Defaults to `false`;
+  only takes effect when `learn_hyperparameters = true`.
+- `learn_hyperparameters`: Whether to optimize hyperparameters on each refit.
+  Defaults to `true`.
+
+# Examples
+```jldoctest
+julia> x = RandomVariable(Uniform(-2, 2), :x);
+
+julia> model = Model(df -> sin.(df.x), :y);
+
+julia> initial_gp = GaussianProcess(
+           x, model, LatinHypercubeSampling(6), :y; learn_hyperparameters = false,
+       );
+
+julia> refined_gp = AdaptiveGaussianProcess(
+           deepcopy(initial_gp), x, model, MaximumVariance(), 2;
+           candidate_sampling = MonteCarlo(100), learn_hyperparameters = false,
+       );
+
+julia> (nrow(initial_gp.data), nrow(refined_gp.data))
+(6, 8)
+```
 """
 function AdaptiveGaussianProcess(
         gp_model::GaussianProcess,
@@ -210,30 +178,73 @@ end
 
 """
     AdaptiveGaussianProcess(
-        gp,
-        data,
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points;
-        kwargs...
+        data::DataFrame, input, model, output::Symbol, acquisition_function, n_added_points::Int,
+        input_names::Vector{Symbol} = propertynames(data[:, Not(output)]); kwargs...
     )
 
-Fit the initial surrogate from `data` with the specified prior `gp`, then
-adaptively add points selected from candidates sampled from `input`. The
-`model` supplies the expensive response at each selected point.
+Fit an initial [`GaussianProcess`](@ref) from `data`, then adaptively refine it
+using candidates sampled from `input` and evaluated by `model`. Return the final
+fitted GP. New training rows are appended to `data`; pass `copy(data)` to preserve
+it. Duplicate training rows are not added.
+
+# Arguments
+- `data`: Initial training data containing input and output columns.
+- `input`: A `UQInput` or vector of inputs used to sample candidates.
+- `model`: A `UQModel` or vector of models evaluated at selected points.
+- `output`: Name of the output column to approximate.
+- `acquisition_function`: An `AbstractGaussianProcessAcquisitionFunction`
+  used to select a candidate.
+- `n_added_points`: Number of adaptive iterations.
+- `input_names`: GP input columns. Defaults to all columns in `data` except
+  `output`; specify this argument to exclude metadata or other outputs.
+
+# Keyword Arguments
+- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
+- `normalize`: Whether to standardize input columns using the initial data's
+  means and standard deviations. Defaults to `true`. The transformation is
+  retained during adaptive refits; `false` uses inputs without transformation.
+  Outputs remain on their original scale.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
+- `learn_noise`: Whether to optimize the noise variance along with the other
+  hyperparameters. Defaults to `false`; only takes effect when
+  `learn_hyperparameters = true`.
+- `learn_hyperparameters`: Whether to optimize hyperparameters on each fit.
+  Defaults to `true`.
+- `optimizer`: Hyperparameter-optimization strategy. Defaults to
+  `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
+- `candidate_sampling`: Monte Carlo method for sampling candidates at each
+  adaptive iteration. Defaults to `MonteCarlo(100_000)`.
+
+# Examples
+```jldoctest
+julia> x = RandomVariable(Uniform(-2, 2), :x);
+
+julia> model = Model(df -> sin.(df.x), :y);
+
+julia> data = DataFrame(x = [-1.5, 0.0, 1.5], y = sin.([-1.5, 0.0, 1.5]));
+
+julia> gp = AdaptiveGaussianProcess(
+           copy(data), x, model, :y, MaximumVariance(), 2, [:x];
+           normalize = false, candidate_sampling = MonteCarlo(100),
+           learn_hyperparameters = false,
+       );
+
+julia> (nrow(data), nrow(gp.data), gp.transform === nothing)
+(3, 5, true)
+```
 """
 function AdaptiveGaussianProcess(
-        gp::GP,
         data::DataFrame,
         input::Union{UQInput, Vector{<:UQInput}},
         model::Union{UQModel, Vector{<:UQModel}},
         output::Symbol,
         acquisition_function::AbstractGaussianProcessAcquisitionFunction,
-        n_added_points::Int;
-        input_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice = IdentityTransformChoice(),
+        n_added_points::Int,
+        input_names::Vector{Symbol} = propertynames(data[:, Not(output)]);
+        mean::AbstractGPs.MeanFunction = ZeroMean(),
+        kernel::Kernel = SqExponentialKernel(),
+        normalize::Bool = true,
         σ²::Float64 = 1.0e-10,
         learn_noise::Bool = false,
         learn_hyperparameters::Bool = true,
@@ -243,11 +254,10 @@ function AdaptiveGaussianProcess(
         ),
     )
     gp_model = GaussianProcess(
-        gp,
-        data,
-        output;
-        input_transform = input_transform,
-        output_transform = output_transform,
+        data, output, input_names;
+        mean = mean,
+        kernel = kernel,
+        normalize = normalize,
         σ² = σ²,
         learn_noise = learn_noise,
         learn_hyperparameters = learn_hyperparameters,
@@ -255,71 +265,12 @@ function AdaptiveGaussianProcess(
     )
 
     return AdaptiveGaussianProcess(
-        gp_model,
-        input,
-        model,
-        acquisition_function,
-        n_added_points;
+        gp_model, input, model, acquisition_function, n_added_points;
         candidate_sampling = candidate_sampling,
         optimizer = optimizer,
         σ² = σ²,
         learn_noise = learn_noise,
         learn_hyperparameters = learn_hyperparameters,
-    )
-end
-
-"""
-    AdaptiveGaussianProcess(
-        data,
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points;
-        mean_fct = ZeroMean(),
-        kernel = SqExponentialKernel(),
-        kwargs...
-    )
-
-Fit the initial surrogate from `data`, then adaptively add points selected
-from candidates sampled from `input`. Use `mean_fct` and `kernel` to specify
-the initial GP prior; `model` is required to evaluate newly selected points.
-"""
-function AdaptiveGaussianProcess(
-        data::DataFrame,
-        input::Union{UQInput, Vector{<:UQInput}},
-        model::Union{UQModel, Vector{<:UQModel}},
-        output::Symbol,
-        acquisition_function::AbstractGaussianProcessAcquisitionFunction,
-        n_added_points::Int;
-        mean_fct::AbstractGPs.MeanFunction = ZeroMean(),
-        kernel::Kernel = SqExponentialKernel(),
-        input_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        output_transform::AbstractTransformChoice = IdentityTransformChoice(),
-        σ²::Float64 = 1.0e-10,
-        learn_noise::Bool = false,
-        learn_hyperparameters::Bool = true,
-        candidate_sampling::AbstractMonteCarlo = MonteCarlo(100_000),
-        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(
-            Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false)
-        ),
-    )
-
-    return AdaptiveGaussianProcess(
-        GP(mean_fct, kernel),
-        data,
-        input,
-        model,
-        output,
-        acquisition_function,
-        n_added_points;
-        input_transform = input_transform,
-        output_transform = output_transform,
-        σ² = σ²,
-        learn_noise = learn_noise,
-        learn_hyperparameters = learn_hyperparameters,
-        candidate_sampling = candidate_sampling,
-        optimizer = optimizer,
     )
 end
 
@@ -331,34 +282,19 @@ function _refit_gp(
         learn_noise::Bool,
         learn_hyperparameters::Bool,
     )
-    # fit Gaussian process to new data
-    σ² = check_gp_input(σ², learn_noise)
+    # Only add points that are not already in the training data.
+    unique_new_data = antijoin(new_data, gp.data; on = names(new_data))
+    append!(gp.data, unique_new_data)
 
-    # Only add point if it is not in df
-    unique_new_data = antijoin(new_data, gp.training_data; on = names(new_data))
-    append!(gp.training_data, unique_new_data)
-
-    # transform data
-    x = transform(gp.training_data, gp.input_transformer)
-    y = transform(gp.training_data, gp.output_transformer)
-
-    if learn_hyperparameters
-        _gp = optimize_hyperparameters(
-            PriorGP(gp.posterior.prior, σ², learn_noise), x, y, optimizer
-        )
-        σ² = _gp.σ²
-
-        posterior_gp = posterior(_gp(x), y)
-    else
-        posterior_gp = posterior(gp.posterior.prior(x, σ²), y)
-    end
-
-    return GaussianProcess(
-        posterior_gp,
-        gp.output,
-        σ²,
-        gp.input_transformer,
-        gp.output_transformer,
-        gp.training_data,
+    x = transform(gp.data[:, gp.inputs], gp.transform)
+    y = vec(gp.data[:, gp.output])
+    posterior_gp, σ² = _fit_gp(
+        gp.posterior.prior, x, y;
+        σ² = σ²,
+        learn_noise = learn_noise,
+        learn_hyperparameters = learn_hyperparameters,
+        optimizer = optimizer,
     )
+
+    return GaussianProcess(posterior_gp, gp.output, gp.inputs, σ², gp.transform, gp.data)
 end

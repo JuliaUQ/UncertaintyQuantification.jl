@@ -11,32 +11,25 @@ design = LatinHypercubeSampling(80)
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
-gp_prior = GP(mean_f, kernel)
-
 using Optim
 
 optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 
-input_transform = ZScoreTransformChoice()
-
 gp_model = GaussianProcess(
-    gp_prior,
     x,
     himmelblau,
+    design,
     :y;
-    experimental_design = design,
-    input_transform = input_transform,
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
     optimizer = optimizer
 )
 
 test_data = sample(x, 1000)
 evaluate!(gp_model, test_data; mode = :mean_and_var)
-
-test_data = sample(x, 1000)
-evaluate!(gp_model, test_data)
 evaluate!(himmelblau, test_data)
-
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
-println("MSE is:  $mse")
+println("MSE (GP):  $mse")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

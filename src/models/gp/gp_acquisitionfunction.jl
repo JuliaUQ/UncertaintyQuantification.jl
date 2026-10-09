@@ -77,7 +77,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ei::Expect
     evaluate!(gp, candidates; mode = :mean_and_var)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
-    f_best = minimum(gp.training_data[:, gp.output])
+    f_best = minimum(gp.data[:, gp.output])
 
     improvement = f_best .- μ .- ei.ξ
     z = improvement ./ σ
@@ -111,7 +111,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, poi::Proba
     evaluate!(gp, candidates; mode = :mean_and_var)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
-    f_best = minimum(gp.training_data[:, gp.output])
+    f_best = minimum(gp.data[:, gp.output])
 
     z = (f_best .- μ .- poi.ξ) ./ σ
     pi_values = cdf.(Normal(), z)
@@ -279,7 +279,7 @@ struct MaximinDistance <: AbstractGaussianProcessAcquisitionFunction end
 
 function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::MaximinDistance)
     input = propertynames(candidates)
-    X = Matrix(gp.training_data[:, input])
+    X = Matrix(gp.data[:, input])
     Xc = Matrix(candidates[:, input])
 
     distances = [minimum(norm(Xc[i, :] - X[j, :]) for j in axes(X, 1)) for i in axes(Xc, 1)]
@@ -307,9 +307,9 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::Expected
 
     μ = candidates[:, mean_col]
     σ² = candidates[:, var_col]
-    X = Matrix(gp.training_data[:, input])
+    X = Matrix(gp.data[:, input])
     Xc = Matrix(candidates[:, input])
-    y = gp.training_data[:, gp.output]
+    y = gp.data[:, gp.output]
 
     nearest = [argmin([norm(Xc[i, :] - X[j, :]) for j in axes(X, 1)]) for i in axes(Xc, 1)]
     eigf = abs2.(μ .- y[nearest]) .+ σ²

@@ -12,22 +12,22 @@ design = LatinHypercubeSampling(80)
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
-gp_prior = GP(mean_f, kernel)
-input_transform = ZScoreTransformChoice()
 optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 
 initial_gp = GaussianProcess(
-    gp_prior,
     x,
     himmelblau,
+    design,
     :y;
-    experimental_design = design,
-    input_transform = input_transform,
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
     optimizer = optimizer
 )
 
 learning_function = MaximinDistance()
 n_added_points = 20
+candidate_sampling = MonteCarlo(1000)
 
 adaptive_gp = AdaptiveGaussianProcess(
     deepcopy(initial_gp),
@@ -35,6 +35,7 @@ adaptive_gp = AdaptiveGaussianProcess(
     himmelblau,
     learning_function,
     n_added_points;
+    candidate_sampling = candidate_sampling,
     optimizer = optimizer
 )
 

@@ -255,12 +255,15 @@ To define a prior GP we use [`AbstractGPs.jl`](https://juliagaussianprocesses.gi
 
 ```@example gaussianprocess
 using UncertaintyQuantification
+using Random # hide
+Random.seed!(42) # hide
 
+mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
-gp = GP(0.0, kernel); nothing # hide
+gp = GP(mean_f, kernel); nothing # hide
 ```
 
-Note that the definition of a prior GP is handled by `UncertaintyQuantification` if no prior GP is specified. The construction of a `GaussianProcess` is flexible. Mean functions, kernels and many other parameters can be specified later directly in the constructor of the `GaussianProcess`.
+This `GP` object illustrates the underlying prior. The [`GaussianProcess`](@ref) constructors create that prior internally from the `mean` and `kernel` keywords, which default to `ZeroMean()` and `SqExponentialKernel()`. Pass these components directly when fitting a surrogate.
 
 #### Posterior Gaussian Process
 
@@ -309,11 +312,13 @@ K(\hat{X}, \hat{X}) \rightarrow K(\hat{X}, \hat{X}) + \sigma^2_{e}I.
 
 The computation of the posterior predictive distribution generalizes straightforwardly to multiple input locations, providing both the posterior mean, which can serve as a regression estimate of the unknown function, and the posterior variances, which quantify the uncertainty at each point. Because the posterior is multivariate Gaussian, one can also sample function realizations at specified locations to visualize possible functions consistent with the observed data.
 
-To construct a posterior GP, we need to define training data in form of a `DataFrame`. Constructing a `GaussianProcess` model will then automatically compute the posterior GP to predict requested the modeled output $y$ and by default it will also optimize the hyperparameters. If this is not desired, the input `learn_hyperparameters=false` can be set.
+To fit a GP from observed data, supply a `DataFrame` and the output column name. The constructor optimizes the hyperparameters by default and fits the posterior used to predict $y$. Set `learn_hyperparameters = false` to keep the specified prior hyperparameters fixed.
 
-The following creates a standard GP with mean function `ConstMean()`, kernel `SqExponentialKernel()`, and directly optimizes the hyperparameters. Note that while `ConstMean(0.0)` and `ZeroMean()` provide the same zero-mean prior GP, using `ConstMean()` also allows for optimization of the mean.
+The optional third positional argument selects the GP input columns, for example `GaussianProcess(df, :y, [:x]; ...)`. By default, all columns except the output are used. With `normalize = true` (the default), this data-based constructor standardizes input columns using their training-data means and standard deviations. The same transformation is applied during prediction; outputs remain on their original scale. Use `normalize = false` to disable input normalization.
+
+The following fits a GP with mean function `ConstMean(0.0)` and a scaled `SqExponentialKernel()`. While `ConstMean(0.0)` and `ZeroMean()` initially provide the same zero mean, `ConstMean(0.0)` allows the constant to be optimized.
 We also equip the GP with small observation noise $\sigma^2$, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization, but it is not optimized by default.
-To specify different mean functions and/or kernels, either construct a GP manually beforehand, or use them as inputs.
+Specify the prior using `mean` and `kernel`, and set `learn_noise = true` to also optimize the observation-noise variance. Noise learning only takes effect when `learn_hyperparameters = true`.
 
 ```@example gaussianprocess
 using DataFrames # hide
@@ -321,21 +326,23 @@ x = collect(range(0, 10, 10))
 y = sin.(x) + 0.3 * cos.(2 .* x)
 df = DataFrame(x = x, y = y)
 
-mean_fct = ConstMean(0.0)
+mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel() ∘ ScaleTransform(3.0)
-
-gp_prior = GP(mean_fct, kernel)
 
 σ² = 1e-5
 
-# these are equivalent
-gp_model = GaussianProcess(gp_prior, df, :y; σ²=σ²)
-gp_model = GaussianProcess(df, :y; σ²=σ², mean_fct=mean_fct, kernel=kernel)
-# providing the input learn_noise=true also optimizes the data noise
-gp_model = GaussianProcess(df, :y; σ²=σ², mean_fct=mean_fct, kernel=kernel, learn_noise=true); nothing # hide
+gp_model = GaussianProcess(
+    df, :y;
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
+    σ² = σ²,
+    learn_noise = true,
+)
+nothing # hide
 ```
 
-Now we can use our GP model to predict at new input locations `x_test`:
+Now we can use our GP model to predict at new input locations `x_test`. The supported evaluation modes are `:mean` (default), `:var`, and `:mean_and_var`. They write the predictive mean to `:y_mean`, the variance to `:y_var`, or both. Predictive variance includes the observation-noise variance `gp_model.σ²`:
 
 ```@example gaussianprocess
 using Plots # hide
@@ -361,6 +368,49 @@ savefig(p, "posterior-gp.svg"); nothing # hide
 
 ![Fitted Gaussian process](posterior-gp.svg)
 
+#### Sampling the posterior GP
+
+Use [`sample!`](@ref) to draw realizations of the fitted GP at a collection of input
+locations. The third positional argument is the number of samples (default `1`).
+For output `:y`, each draw is stored in a column named `:y_sample_1`, `:y_sample_2`,
+and so on. Each column is one joint draw across all locations, preserving the
+posterior correlations between points. The draws include observation noise with
+variance `gp_model.σ²` and remain on the original output scale.
+
+For the same one-dimensional example, we draw five realizations and plot them
+alongside the predictive mean, a band of two predictive standard deviations,
+and the training observations:
+
+```@example gaussianprocess
+Random.seed!(42)
+sample_data = DataFrame(x = collect(range(0, 10; length = 100)))
+n_samples = 5
+sample!(gp_model, sample_data, n_samples)
+evaluate!(gp_model, sample_data; mode = :mean_and_var)
+
+sample_columns = [Symbol("y_sample_", i) for i in 1:n_samples]
+p_samples = plot(
+    sample_data.x, Matrix(sample_data[:, sample_columns]);
+    label = permutedims(["Sample $i" for i in 1:n_samples]),
+    linewidth = 1.2, alpha = 0.8, xlabel = "x", ylabel = "y",
+)
+plot!(
+    p_samples, sample_data.x, sample_data.y_mean;
+    ribbon = 2 .* sqrt.(sample_data.y_var), fillalpha = 0.15,
+    color = :black, linewidth = 2, label = "GP mean ± 2σ",
+)
+scatter!(p_samples, df.x, df.y; color = :black, markersize = 4, label = "Training data")
+savefig(p_samples, "posterior-gp-samples.svg"); nothing # hide
+```
+
+![Posterior GP samples](posterior-gp-samples.svg)
+
+Repeated calls replace sample columns with matching names and leave other columns
+unchanged. `Random.seed!` makes the draws reproducible. Joint sampling factors a
+covariance matrix over the requested locations; a moderate plotting grid keeps
+this affordable. Nearly coincident points can cause numerical difficulties if
+the observation-noise variance is too small.
+
 #### Hyperparameter optimization
 
 GP models typically contain hyperparameters in their mean functions $m(x; \theta_m)$ and covariance kernel functions $k(x, x'; \theta_k)$. The observation noise variance $\sigma^2_{e}$ is also considered a hyperparameter related to the kernel. The choice of hyperparameters strongly affects the quality of the posterior GP.
@@ -379,8 +429,10 @@ For numerical reasons, the logarithm of the marginal likelihood is typically use
 
 `UncertaintyQuantification.jl` provides a default optimizer for the hyperparameters based on the [`MaximumLikelihoodEstimation`](@ref) constructor.
 
-```
-optimizer::AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))
+```julia
+optimizer = MaximumLikelihoodEstimation(
+    Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false)
+)
 ```
 
 If other options are desired, a different optimizer can be constructed based on [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). The script below shows the difference between an optimized and unoptimized GP.
@@ -389,23 +441,25 @@ If other options are desired, a different optimizer can be constructed based on 
 using Optim
 
 optimization = MaximumLikelihoodEstimation(
-                Optim.LBFGS(),
-                Optim.Options(; iterations=10, show_trace=false)
-            )
+    Optim.LBFGS(),
+    Optim.Options(; iterations = 10, show_trace = false)
+)
 
-gp_model = GaussianProcess(df, :y;
-                           σ²=σ²,
-                           mean_fct=mean_fct,
-                           kernel=kernel,
-                           optimizer=optimization
-                           )
+gp_model = GaussianProcess(
+    df, :y;
+    σ² = σ²,
+    mean = mean_f,
+    kernel = kernel,
+    optimizer = optimization,
+)
 
-gp_model_unoptimized = GaussianProcess(df, :y;
-                            σ²=σ²,
-                            mean_fct=mean_fct,
-                            kernel=kernel,
-                            learn_hyperparameters=false
-                           )
+gp_model_unoptimized = GaussianProcess(
+    df, :y;
+    σ² = σ²,
+    mean = mean_f,
+    kernel = kernel,
+    learn_hyperparameters = false,
+)
 
 prediction = DataFrame(:x => x_test)
 prediction_unopt = DataFrame(:x => x_test)
@@ -428,9 +482,9 @@ savefig(p, "posterior-gp-opt.svg"); nothing # hide
 
 ![Optimized Gaussian process](posterior-gp-opt.svg)
 
-Internally, `MaximumLikelihoodEstimation()` defaults to using [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer that performs 100 optimization steps with standard optimization hyperparameters as defined [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/). Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
+Internally, `MaximumLikelihoodEstimation()` uses the [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer with up to 100 iterations per run and five additional randomized restarts by default. The `restarts` keyword controls the number of additional runs. Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
 
-During optimization, GP hyperparameters $\theta_m, \theta_k$ and $\sigma^2_{e}$ are automatically extracted and updated.
+During optimization, GP hyperparameters $\theta_m$ and $\theta_k$ are automatically extracted and updated. The noise variance $\sigma^2_{e}$ is updated only when `learn_noise = true`.
 
 We support the automatic extraction of hyperparameters from mean functions provided by [`AbstractGPs.jl`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/api/#Mean-functions), with the exception of:
 
@@ -438,13 +492,13 @@ We support the automatic extraction of hyperparameters from mean functions provi
 
 Kernel functions are defined with the kernels and transformations provided by [`KernelFunctions.jl`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/). For similar reasons as with `CustomMean`, we do not extract potential function hyperparameters from the following kernels or transforms:
 
-- Transforms defined with custom functions [`FunctionTransform`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/transform/#KernelFunctions.FunctionTransform),
-- The [`GibbsKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#KernelFunctions.GibbsKernel), which models a kernel lengthscale parameter with the help of a function.
+- Transforms defined with custom functions [`FunctionTransform`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/transform/#KernelFunctions.FunctionTransform).
 
 Further, GP models containing the following kernels are not supported for hyperparameter optimization currently:
 
 - Multi-output kernels [`MOKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#Multi-output-Kernels),
-- Neural kernel networks [`NeuralKernelNetwork`].
+- Neural kernel networks `NeuralKernelNetwork`,
+- The [`GibbsKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#KernelFunctions.GibbsKernel), whose lengthscale is defined by a function.
 
 ## Adaptive Gaussian Process Regression
 
@@ -454,8 +508,8 @@ regression instead starts from a small initial design and iteratively enriches t
 data: at each iteration a set of candidate points is sampled from the input space, an
 **acquisition function** (also called a *learning function*) scores every candidate, the most
 promising candidate is evaluated with the true (expensive) model, and the GP is refitted with
-the enlarged training set. This is repeated for a fixed number of iterations, or until the
-acquisition function's own convergence criterion is met.
+the enlarged training set. `AdaptiveGaussianProcess` performs the specified number of
+adaptive iterations; it does not stop early based on an acquisition function's convergence criterion.
 
 The [`AdaptiveGaussianProcess`](@ref) function drives this loop. It first constructs (or
 accepts) an initial [`GaussianProcess`](@ref), then calls `evaluate!` on the supplied `model`
@@ -463,53 +517,71 @@ for each newly selected point.
 
 ```@example adaptivegp
 using UncertaintyQuantification # hide
+using Random # hide
+Random.seed!(42) # hide
 
 x = RandomVariable(Uniform(-10, 10), :x1)
 model = Model(df -> sin.(df.x1) .* df.x1 .^ 2, :y)
 
 mean_f = ConstMean(0.0)
 kernel = Matern52Kernel()
-gp_prior = GP(mean_f, kernel)
-
 n_design_points = 10
+design = LatinHypercubeSampling(n_design_points)
 n_added_points = 5
 
 adaptive_gp = AdaptiveGaussianProcess(
-    gp_prior,
     x,
     model,
+    design,
     :y,
     MaximumVariance(),
-    n_added_points,
-    n_design_points,
+    n_added_points;
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
+    candidate_sampling = MonteCarlo(1000),
 )
 nothing # hide
 ```
 
-As with [`GaussianProcess`](@ref), the initial `n_design_points` are sampled with an
-`experimental_design` (`LatinHypercubeSampling` by default), while the `n_added_points`
-adaptively selected candidates are drawn from `candidate_sampling`, a Monte Carlo sampling
-scheme (`MonteCarlo(100_000)` by default). Hyperparameters can be re-optimized after every
-added point via `learn_hyperparameters` (default `true`).
+As with `GaussianProcess(x, model, design, :y; ...)`, the `design` positional argument
+specifies the sampling method and number of initial points. Here, it draws ten points
+with Latin hypercube sampling. The `candidate_sampling` keyword controls the candidates
+sampled at each adaptive iteration: this example uses `MonteCarlo(1000)`, while the
+default is `MonteCarlo(100_000)`. Hyperparameters are re-optimized after every added point
+unless `learn_hyperparameters = false`.
 
-The resulting `adaptive_gp` is a regular [`GaussianProcess`](@ref) and can be evaluated as usual:
+For constructors that sample from input distributions, `normalize = true` maps the inputs
+to standard normal space using those distributions. The transformation is retained during
+adaptive refits, and `adaptive_gp.data` stores the training data in physical space.
+The optional vector of input names follows `n_added_points` in the adaptive constructor.
+
+You can also start from existing data with
+`AdaptiveGaussianProcess(data, x, model, :y, acquisition_function, n_added_points; ...)`,
+or refine a fitted GP with
+`AdaptiveGaussianProcess(gp_model, x, model, acquisition_function, n_added_points; ...)`.
+The data-based constructor uses the initial data's means and standard deviations for
+normalization. Refinement appends rows to the supplied training data; pass `copy(data)`
+or `deepcopy(gp_model)` to preserve the original. Duplicate training rows are not appended.
+
+The resulting `adaptive_gp` is a regular [`GaussianProcess`](@ref) and can be evaluated as usual. The plotting grid excludes the uniform distribution endpoints, which would map to infinite values in standard normal space:
 
 ```@example adaptivegp
-using DataFrames 
+using DataFrames
 using Plots
 
-test_data = DataFrame(x1 = -10:0.1:10)
+test_data = DataFrame(x1 = -9.9:0.1:9.9)
 evaluate!(adaptive_gp, test_data; mode = :mean_and_var)
 evaluate!(model, test_data)
 
 p = plot(test_data.x1, test_data.y_mean; ribbon = 2 .* sqrt.(test_data.y_var), label = "GP mean ± 2σ", xlabel = "x₁", ylabel = "y", color = :blue, alpha = 0.5)
 plot!(p, test_data.x1, test_data.y; label = "True function", color = :red, linestyle = :dash)
-scatter!(p, adaptive_gp.training_data.x1[1:n_design_points], adaptive_gp.training_data.y[1:n_design_points]; label = "Initial design", color = :black)
-scatter!(p, adaptive_gp.training_data.x1[(n_design_points + 1):end], adaptive_gp.training_data.y[(n_design_points + 1):end]; label = "Adaptively added") 
+scatter!(p, adaptive_gp.data.x1[1:n_design_points], adaptive_gp.data.y[1:n_design_points]; label = "Initial design", color = :black)
+scatter!(p, adaptive_gp.data.x1[(n_design_points + 1):end], adaptive_gp.data.y[(n_design_points + 1):end]; label = "Adaptively added")
 savefig(p, "adaptive_gp_example.svg"); nothing # hide
 ```
 
-# ![Adaptive GP](adaptive_gp_example.svg)
+![Adaptive GP](adaptive_gp_example.svg)
 
 ### Acquisition Functions
 

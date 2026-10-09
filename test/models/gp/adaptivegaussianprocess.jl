@@ -11,42 +11,42 @@
     # small candidate set keeps the tests fast
     candidate_sampling = MonteCarlo(200)
 
-    prior = GP(ConstMean(0.0), SqExponentialKernel())
+    prior_mean = ConstMean(0.0)
+    kernel = SqExponentialKernel()
 
     # Initial design used by the DataFrame-based constructors
     data = sample(input, design)
     evaluate!(model, data)
 
-    @testset "GP prior + UQInput" begin
+    @testset "Custom prior + UQInput" begin
 
         gp = AdaptiveGaussianProcess(
-            prior, input, model, :y, acquisition_function, n_added_points,
-            n_design_points, design;
+            input, model, design, :y, acquisition_function, n_added_points;
+            mean = prior_mean,
+            kernel = kernel,
             candidate_sampling = candidate_sampling,
         )
 
         @test gp isa GaussianProcess
-        @test size(gp.training_data, 1) == n_design_points + n_added_points
+        @test size(gp.data, 1) == n_design_points + n_added_points
         @test gp.output == :y
     end
 
     @testset "Default prior + UQInput" begin
 
         gp_default = AdaptiveGaussianProcess(
-            input, model, :y, acquisition_function, n_added_points,
-            n_design_points, design;
+            input, model, design, :y, acquisition_function, n_added_points;
             candidate_sampling = candidate_sampling,
         )
 
         @test gp_default isa GaussianProcess
-        @test size(gp_default.training_data, 1) == n_design_points + n_added_points
+        @test size(gp_default.data, 1) == n_design_points + n_added_points
     end
 
     @testset "Pre-fit GaussianProcess" begin
         gp_model = GaussianProcess(
-            input, model, :y;
-            experimental_design = design,
-            mean_fct = ZeroMean(),
+            input, model, design, :y;
+            mean = ZeroMean(),
             kernel = SqExponentialKernel(),
         )
 
@@ -56,25 +56,27 @@
         )
 
         @test gp isa GaussianProcess
-        @test size(gp.training_data, 1) == n_design_points + n_added_points
+        @test size(gp.data, 1) == n_design_points + n_added_points
 
         # n_added_points = 0 should return the training data unchanged
         gp_unchanged = AdaptiveGaussianProcess(
             gp_model, input, model, acquisition_function, 0;
             candidate_sampling = candidate_sampling,
         )
-        @test size(gp_unchanged.training_data, 1) == n_design_points + n_added_points
+        @test size(gp_unchanged.data, 1) == n_design_points + n_added_points
     end
 
-    @testset "GP prior + DataFrame" begin
+    @testset "Custom prior + DataFrame" begin
 
         gp = AdaptiveGaussianProcess(
-            prior, copy(data), input, model, :y, acquisition_function, n_added_points;
+            copy(data), input, model, :y, acquisition_function, n_added_points;
+            mean = prior_mean,
+            kernel = kernel,
             candidate_sampling = candidate_sampling,
         )
 
         @test gp isa GaussianProcess
-        @test size(gp.training_data, 1) == n_design_points + n_added_points
+        @test size(gp.data, 1) == n_design_points + n_added_points
         @test gp.output == :y
     end
 
@@ -86,19 +88,21 @@
         )
 
         gp_explicit = AdaptiveGaussianProcess(
-            prior, copy(data), input, model, :y, acquisition_function, n_added_points;
+            copy(data), input, model, :y, acquisition_function, n_added_points;
+            mean = prior_mean,
+            kernel = kernel,
             candidate_sampling = candidate_sampling,
         )
 
         @test gp_default isa GaussianProcess
-        @test size(gp_default.training_data, 1) == n_design_points + n_added_points
+        @test size(gp_default.data, 1) == n_design_points + n_added_points
+        @test size(gp_explicit.data, 1) == n_design_points + n_added_points
     end
 
     @testset "Not learn hyperparameters" begin
         gp_model = GaussianProcess(
-            input, model, :y;
-            experimental_design = design,
-            mean_fct = ConstMean(0.0),
+            input, model, design, :y;
+            mean = ConstMean(0.0),
             kernel = MaternKernel()
         )
 
@@ -118,6 +122,66 @@
         @test trend_initial == trend_adaptive
         @test kernel_initial == kernel_adaptive
 
+    end
+
+    @testset "Normalization and input selection" begin
+        inputs = [Parameter(2.0, :p), input]
+        models = [
+            Model(df -> df.p .* sin.(df.x1), :intermediate),
+            Model(df -> df.intermediate .+ 1, :y),
+        ]
+        initial_data = sample(inputs, design)
+        evaluate!(models, initial_data)
+
+        for normalize in (true, false), from_data in (true, false)
+            gp = if from_data
+                AdaptiveGaussianProcess(
+                    copy(initial_data), inputs, models, :y, acquisition_function,
+                    n_added_points, [:x1];
+                    normalize = normalize,
+                    mean = ConstMean(1.0),
+                    kernel = MaternKernel(),
+                    learn_hyperparameters = false,
+                    candidate_sampling = candidate_sampling,
+                )
+            else
+                AdaptiveGaussianProcess(
+                    inputs, models, design, :y, acquisition_function,
+                    n_added_points, [:x1];
+                    normalize = normalize,
+                    mean = ConstMean(1.0),
+                    kernel = MaternKernel(),
+                    learn_hyperparameters = false,
+                    candidate_sampling = candidate_sampling,
+                )
+            end
+
+            @test gp.inputs == [:x1]
+            @test (gp.transform === nothing) == !normalize
+            @test size(gp.data, 1) == n_design_points + n_added_points
+            @test all(gp.data.p .== 2.0)
+            @test gp.data.y ≈ 2 .* sin.(gp.data.x1) .+ 1
+            @test gp.posterior.prior.mean.c == 1.0
+            predictions = copy(gp.data)
+            evaluate!(gp, predictions)
+            @test predictions.y_mean ≈ gp.data.y atol = 1.0e-5
+        end
+    end
+
+    @testset "Refit preserves transformation and ignores duplicates" begin
+        gp = GaussianProcess(copy(data), :y; learn_hyperparameters = false)
+        original_transform = gp.transform
+        new_data = DataFrame(x1 = [15.0])
+        evaluate!(model, new_data)
+        gp = UncertaintyQuantification._refit_gp(
+            gp, new_data, MaximumLikelihoodEstimation(), gp.σ², false, false
+        )
+        @test gp.transform === original_transform
+        @test size(gp.data, 1) == n_design_points + 1
+        gp = UncertaintyQuantification._refit_gp(
+            gp, new_data, MaximumLikelihoodEstimation(), gp.σ², false, false
+        )
+        @test size(gp.data, 1) == n_design_points + 1
     end
 
 end

@@ -13,10 +13,6 @@ Pages = ["gaussianprocesses.md"]
 ```@docs
 GaussianProcess
 MaximumLikelihoodEstimation
-IdentityTransformChoice
-ZScoreTransformChoice
-UnitRangeTransformChoice
-StandardNormalTransformChoice
 MaximumVariance
 ExpectedImprovement
 ProbabilityOfImprovement
@@ -31,5 +27,6 @@ ExpectedImprovementForGlobalFit
 
 ```@docs
 AdaptiveGaussianProcess
-evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
+evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean)
+sample!(gp::GaussianProcess, data::DataFrame, n_samples::Int)
 ```

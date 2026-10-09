@@ -199,3 +199,31 @@ end
     @test :y_var in propertynames(df)
 
 end
+
+@testitem "GP posterior sampling" begin
+    using DataFrames
+    using Random
+
+    training = DataFrame(x = [0.0, 1.0, 2.0], y = [10.0, 11.0, 14.0])
+    gp = GaussianProcess(
+        copy(training), :y;
+        mean = ConstMean(10.0), σ² = 1.0e-3, learn_hyperparameters = false,
+    )
+    locations = DataFrame(x = [0.5, 1.5])
+
+    # The training inputs have mean 1 and standard deviation 1.
+    Random.seed!(42)
+    expected = rand(gp.posterior([-0.5 0.5], gp.σ²), 2)
+    Random.seed!(42)
+    @test sample!(gp, locations, 2) === nothing
+    @test propertynames(locations) == [:x, :y_sample_1, :y_sample_2]
+    @test Matrix(locations[:, [:y_sample_1, :y_sample_2]]) ≈ expected
+    @test locations.x == [0.5, 1.5]
+    @test gp.data == training
+
+    second_draw = copy(locations.y_sample_2)
+    Random.seed!(123)
+    @test sample!(gp, locations) === nothing
+    @test locations.y_sample_1 != expected[:, 1]
+    @test locations.y_sample_2 == second_draw
+end

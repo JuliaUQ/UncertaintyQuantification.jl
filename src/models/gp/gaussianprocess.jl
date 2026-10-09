@@ -48,33 +48,49 @@ function check_gp_input(σ²::Float64, learn_noise::Bool)
 end
 
 """
-    GaussianProcess(data::DataFrame, output::Symbol; kwargs...)
+    GaussianProcess(
+        data::DataFrame, output::Symbol,
+        inputs::Vector{Symbol} = propertynames(data[:, Not(output)]); kwargs...
+    )
 
-Constructs a `GaussianProcess` model with the specified data and output variable.
+Fit a Gaussian-process surrogate to the input and output columns in `data`.
+The returned model stores the fitted posterior, selected input names, noise
+variance, input transformation, and training data in `posterior`, `inputs`,
+`σ²`, `transform`, and `data`, respectively. The output is kept on its original
+scale. The training DataFrame is stored by reference.
 
 # Arguments
-- `data`: A `DataFrame` containing the input and output data.
-- `output`: The output variable for the Gaussian process.
+- `data`: Training data containing the input columns and observed output.
+- `output`: Name of the output column to approximate.
+- `inputs`: Input columns, in the order used by the GP. Defaults to all columns
+  except `output`; specify this argument to exclude metadata or other outputs.
 
 # Keyword Arguments
-- `mean_fct`: The mean function for the Gaussian process. Defaults to `ZeroMean`.
-- `kernel`: The kernel for the Gaussian process. Defaults to `SqExponentialKernel`.
-- `input_transform`: The transformation to apply to the input variables. Defaults to `IdentityTransformChoice`.
-- `output_transform`: The transformation to apply to the output variables. Defaults to `IdentityTransformChoice`.
-- `σ²`: The noise variance. Defaults to 1.0e-10.
-- `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
-- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
-- `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
+- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
+- `normalize`: Whether to standardize each input column using its training-data
+  mean and standard deviation. Defaults to `true`. The fitted transformation is
+  reused for predictions; `false` uses the inputs without transformation.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
+- `learn_noise`: Whether to optimize the noise variance along with the other
+  hyperparameters. Defaults to `false`; only takes effect when
+  `learn_hyperparameters = true`.
+- `learn_hyperparameters`: Whether to optimize the prior hyperparameters.
+  Defaults to `true`.
+- `optimizer`: Hyperparameter-optimization strategy. Defaults to
+  `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
 
 # Examples
 ```jldoctest
-julia> mean_fct = ConstMean(0.0);
+julia> data = DataFrame(x = [0.0, 1.0, 2.0], y = [0.0, 1.0, 4.0], id = 1:3);
 
-julia> kernel = SqExponentialKernel();
+julia> gp = GaussianProcess(
+           data, :y, [:x]; mean = ConstMean(0.0), kernel = SqExponentialKernel(),
+           σ² = 1.0e-3, learn_hyperparameters = false,
+       );
 
-julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
-
-julia> gp_model = GaussianProcess(data, :y; mean_fct = mean_fct, kernel = kernel, σ² = 1.0e-3);
+julia> gp.inputs == [:x] && gp.output == :y && nrow(gp.data) == 3
+true
 ```
 """
 function GaussianProcess(
@@ -148,38 +164,55 @@ function _fit_gp(
 end
 
 """
-    GaussianProcess(input::Union{UQInput, Vector{<:UQInput}}, model::Union{UQModel, Vector{<:UQModel}}, output::Symbol; kwargs...)
+    GaussianProcess(
+        inputs, models, design, output::Symbol,
+        input_names::Vector{Symbol} = wrap(names(inputs)); kwargs...
+    )
 
-Constructs a `GaussianProcess` model with the specified input, model, and output.
+Sample an initial experimental design, evaluate `models` at those points, and
+fit a Gaussian-process surrogate for `output`. Training data are stored in
+physical space in the returned model's `data` field. The output is kept on its
+original scale.
 
 # Arguments
-- `input`: The input variable(s) for the Gaussian process.
-- `model`: The model(s) to be used for the Gaussian process.
-- `output`: The output variable for the Gaussian process.
+- `inputs`: A `UQInput` or vector of inputs defining the sampling distributions
+  and parameters.
+- `models`: A `UQModel` or vector of models evaluated on the sampled data.
+- `design`: An `AbstractMonteCarlo` or `AbstractDesignOfExperiments` specifying
+  the sampling method and number of initial points, e.g. `LatinHypercubeSampling(10)`.
+- `output`: Name of the model output to approximate.
+- `input_names`: Input columns, in the order used by the GP. Defaults to all
+  names from `inputs`.
 
 # Keyword Arguments
-- `n_design_points`: Number of design points to sample from the input space. Defaults to 10.
-- `experimental_design`: The strategy utilized for sampling the input variables. Defaults to `LatinHypercubeSampling`.
-- `mean_fct`: The mean function for the Gaussian process. Defaults to `ZeroMean`.
-- `kernel`: The kernel for the Gaussian process. Defaults to `SqExponentialKernel`.
-- `input_transform`: The transformation to apply to the input variables. Defaults to `IdentityTransformChoice`.
-- `output_transform`: The transformation to apply to the output variables. Defaults to `IdentityTransformChoice`.
-- `σ²`: The noise variance. Defaults to 0.0.
-- `learn_noise`: Whether to learn the noise variance. Defaults to `false`.
-- `learn_hyperparameters`: Whether to learn the hyperparameters. Defaults to `true`.
-- `optimizer`: The optimization algorithm used to learn the hyperparameters. Defaults to `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations=100, show_trace=false))`.
+- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
+- `normalize`: Whether to map the inputs to standard normal space using their
+  distributions. Defaults to `true`. The same transformation is applied during
+  prediction; `false` uses physical-space inputs directly.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
+- `learn_noise`: Whether to optimize the noise variance along with the other
+  hyperparameters. Defaults to `false`; only takes effect when
+  `learn_hyperparameters = true`.
+- `learn_hyperparameters`: Whether to optimize the prior hyperparameters.
+  Defaults to `true`.
+- `optimizer`: Hyperparameter-optimization strategy. Defaults to
+  `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
 
 # Examples
 ```jldoctest
-julia> begin # hide
-           mean_fct = ConstMean(0.0)
-           kernel = SqExponentialKernel()
-           x = RandomVariable(Uniform(0, 5), :x)
-           model = Model(df -> sin.(df.x), :y)
-           design = LatinHypercubeSampling(10)
-           gp_model = GaussianProcess(x, model, :y; experimental_design = design, mean_fct = mean_fct, kernel = kernel)
-           nothing # hide
-       end # hide
+julia> x = RandomVariable(Uniform(0, 5), :x);
+
+julia> model = Model(df -> sin.(df.x), :y);
+
+julia> gp = GaussianProcess(
+           x, model, LatinHypercubeSampling(10), :y;
+           mean = ConstMean(0.0), kernel = SqExponentialKernel(),
+           learn_hyperparameters = false,
+       );
+
+julia> gp.inputs == [:x] && nrow(gp.data) == 10
+true
 ```
 """
 function GaussianProcess(
@@ -230,42 +263,48 @@ function GaussianProcess(
 end
 
 """
-    evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean, n_samples::Int = 1)
+    evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean)
 
-Evaluates a fitted [`GaussianProcess`](@ref) model at the specified input locations.
+Evaluate a fitted [`GaussianProcess`](@ref) at the input locations in `data`,
+append or replace prediction columns in `data`, and return `nothing`. Input
+columns are selected using `gp.inputs` and transformed using `gp.transform`.
+Predictions are on the original output scale; predictive variances include
+`gp.σ²` observation noise.
 
 # Arguments
-- `gp`: Trained Gaussian process model to be evaluated.
-- `data`: A `DataFrame` containing the input locations at which predictions are computed.
+- `gp`: Fitted Gaussian-process model.
+- `data`: Prediction locations containing the columns named in `gp.inputs`.
 
 # Keyword Arguments
-- `mode`: A `Symbol` specifying the type of output to return.
-    Supported options are:
-    - `:mean` - predictive mean (default)
-    - `:var` - predictive variance
-    - `:mean_and_var` - both mean and variance
-    - `:sample` - random samples from the predictive distribution
-- `n_samples`: Number of samples to draw when `mode = :sample`. Ignored otherwise.
-    (Note: Sampling can be unstable when input locations are very close together, leading to numerical issues in the covariance matrix.)
+- `mode`: Prediction columns to write, using `gp.output` as the name prefix:
+  - `:mean`: Predictive mean in `<output>_mean` (default).
+  - `:var`: Predictive variance in `<output>_var`.
+  - `:mean_and_var`: Both prediction columns.
+  Other modes raise an `ArgumentError`.
+
+Use [`sample!`](@ref) to draw joint samples from the predictive distribution.
 
 # Examples
 ```jldoctest
-julia> gp = GP(0.0, SqExponentialKernel());
+julia> data = DataFrame(x = [0.0, 1.0, 2.0], y = [0.0, 1.0, 4.0]);
 
-julia> data = DataFrame(x = 1:10, y = [1, 4, 10, 15, 24, 37, 50, 62, 80, 101]);
+julia> gp = GaussianProcess(data, :y; σ² = 1.0e-3, learn_hyperparameters = false);
 
-julia> gp_model = GaussianProcess(gp, data, :y; σ² = 1.0e-3);
+julia> predictions = DataFrame(x = [0.5, 1.5]);
 
-julia> df = DataFrame(x = [0.5, 1.5, 2.5, 5.5, 8.5]);
+julia> evaluate!(gp, predictions; mode = :mean_and_var);
 
-julia> evaluate!(gp_model, df; mode = :mean_and_var);
+julia> propertynames(predictions) == [:x, :y_mean, :y_var]
+true
+
+julia> all(isfinite, predictions.y_mean) && all(>=(0), predictions.y_var)
+true
 ```
 """
 function evaluate!(
         gp::GaussianProcess,
         data::DataFrame;
         mode::Symbol = :mean,
-        n_samples::Int = 1
     )
     x = transform(data[:, gp.inputs], gp.transform)
     finite_projection = gp.posterior(x, gp.σ²)
@@ -291,6 +330,67 @@ function evaluate!(
     return nothing
 end
 
+"""
+    sample!(gp::GaussianProcess, data::DataFrame, n_samples::Int = 1)
+
+Draw `n_samples` independent realizations from the fitted GP's joint posterior
+predictive distribution at the input locations in `data`. Each realization
+contains correlated values across the rows of `data` and is written to a column
+named `<output>_sample_<i>`, where `<output>` is `gp.output` and `i` starts at 1.
+Return `nothing`.
+
+Inputs are selected in `gp.inputs` order and transformed using `gp.transform`.
+Samples are on the original output scale and include observation noise with
+variance `gp.σ²`. Existing sample columns with the same names are replaced;
+other columns are left unchanged. The fitted posterior is not modified.
+
+# Arguments
+- `gp`: Fitted [`GaussianProcess`](@ref).
+- `data`: Prediction locations containing the columns named in `gp.inputs`.
+- `n_samples`: Nonnegative number of realizations to draw. Defaults to `1`;
+  `0` adds no columns.
+
+Sampling uses Julia's default random-number generator; use `Random.seed!` for
+reproducibility. Drawing joint samples requires factoring a covariance matrix
+whose size is the number of rows in `data`. Very close or repeated locations
+can cause numerical difficulties when the observation-noise variance is too small.
+
+# Examples
+```jldoctest
+julia> training = DataFrame(x = [0.0, 1.0, 2.0], y = [0.0, 1.0, 4.0]);
+
+julia> gp = GaussianProcess(training, :y; σ² = 1.0e-3, learn_hyperparameters = false);
+
+julia> draws = DataFrame(x = [0.5, 1.5]);
+
+julia> sample!(gp, draws, 2);
+
+julia> propertynames(draws) == [:x, :y_sample_1, :y_sample_2]
+true
+
+julia> all(isfinite, Matrix(draws[:, [:y_sample_1, :y_sample_2]]))
+true
+```
+"""
+function sample!(
+        gp::GaussianProcess,
+        data::DataFrame,
+        n_samples::Int = 1
+    )
+
+    x = transform(data[:, gp.inputs], gp.transform)
+    finite_projection = gp.posterior(x, gp.σ²)
+
+    samples = rand(finite_projection, n_samples)
+    cols = [Symbol(string(gp.output, "_sample_", i)) for i in 1:n_samples]
+    foreach(
+        (col, sample) -> data[!, col] = sample,
+        cols, eachcol(samples)
+    )
+
+    return nothing
+end
+
 function transform(data::DataFrame, dt::ZScoreTransform)
     return StatsBase.transform(dt, permutedims(Matrix(data)))
 end
@@ -300,4 +400,8 @@ function transform(data::DataFrame, dt::Vector{<:UQInput})
     to_standard_normal_space!(dt, df)
     return permutedims(Matrix(df))
     return StatsBase.transform(dt, permutedims(Matrix(data)))
+end
+
+function transform(data::DataFrame, ::Nothing)
+    return permutedims(Matrix(data))
 end

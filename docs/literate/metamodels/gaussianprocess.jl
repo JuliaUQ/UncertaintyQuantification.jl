@@ -3,12 +3,12 @@
 
 ## Himmelblau's Function
 
-In this example, we will model the following test function (known as Himmelblau's function) in the range ``x1, x2 ∈ [-5, 5]`` with a Gaussian process (GP) regression model.
+In this example, we will model the following test function (known as Himmelblau's function) in the range ``x_1, x_2 ∈ [-5, 5]`` with a Gaussian process (GP) regression model.
 
 It is defined as:
 
  ```math
-f(x1, x2) = (x1^2 + x2 - 11)^2 + (x1 + x2^2 - 7)^2.
+f(x_1, x_2) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2.
 ```
 ===#
 # ![](himmelblau.svg)
@@ -26,23 +26,21 @@ himmelblau = Model(
 #md nothing # hide
 
 #===
-Next, we chose a experimental design. In this example, we are using a `LatinHyperCube` design from which we draw 80 samples to train our model:
+Next, we choose an experimental design. Here, `LatinHypercubeSampling(80)` specifies both the sampling method and the number of training points:
 ===#
 
 design = LatinHypercubeSampling(80)
 
 #===
-After that, we construct a prior GP model. Here we assume a constant mean of 0.0 and a squared exponential kernel with automatic relevance determination (ARD).
-We also assume a small Gaussian noise term in the observations for numerical stability:
+Next, we choose the prior mean and kernel, which we will pass directly to the constructor. Here we use a constant mean of 0.0 and a squared exponential kernel.
+The constructor adds a small observation-noise variance (`σ² = 1.0e-10` by default) for numerical stability:
 ===#
 
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
-gp_prior = GP(mean_f, kernel)
-
 #===
-Next, we set up an optimizer used in the log marginal likelihood maximization to find the optimal hyperparameters of our GP model. Here we use the Adam optimizer from the `Optim.jl` package with a learning rate of 0.005 and run it for 10 iterations.:
+Next, we set up an optimizer used in the log marginal likelihood maximization to find the optimal hyperparameters of our GP model. Here we use the Adam optimizer from the `Optim.jl` package with a learning rate of 0.005 and run it for 10 iterations:
 ===#
 using Optim
 
@@ -50,59 +48,55 @@ optimizer = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options
 #md nothing # hide
 
 #===
-Finally, we define an input standardization (here a z-score transform). While not strictly necessary for this example, standardization can help finding good hyperparameters.
-Note that we can also define an output transform to scale the output for training the GP. When evaluating the GP model, the input will be automatically transformed with the fitted standardization.
-The output will be transformed back to the original scale automatically as well.
-===#
+The constructor takes the input random variables, model, design, and output symbol as positional arguments. The prior is specified with the `mean` and `kernel` keywords.
+With `normalize = true` (the default), this constructor maps the inputs to standard normal space using their distributions. Predictions apply the same transformation automatically, while training data and outputs remain in physical space.
+Set `normalize = false` to use physical-space inputs directly. When constructing a GP from a `DataFrame` instead, `normalize = true` standardizes input columns using their training-data means and standard deviations.
 
-input_transform = ZScoreTransformChoice()
-#md nothing # hide
-
-#===
-The GP regression model is now constructed by calling the `GaussianProcess` constructor with the prior GP, the input random variables, the model, the output symbol, the experimental design, and the optional input and output transform choices.
-The construction then samples the experimental design, evaluates the model at the sampled points, standardizes the input and output data, and constructs the posterior GP.
+Here, both input variables are used as GP features. An optional vector of input names after `:y` can select the feature columns explicitly, for example `[:x1, :x2]`.
 ===#
 #md using Random #hide
 #md Random.seed!(42) #hide
 
 gp_model = GaussianProcess(
-    gp_prior,
     x,
     himmelblau,
+    design,
     :y;
-    experimental_design = design,
-    input_transform = input_transform,
+    mean = mean_f,
+    kernel = kernel,
+    normalize = true,
     optimizer = optimizer
 )
 #md nothing # hide
 
 #===
-The GP regression model uses finite projections of the fitted posterior GP to make predictions. As of now, the hyperparameters of the GP might not be optimal.
-We can find optimal hyperparameters through maximizing the log marginal likelihood of observing the training data under the posterior GP.
+The constructor optimizes the hyperparameters by maximizing the log marginal likelihood, then fits the posterior used for predictions. Set `learn_hyperparameters = false` to keep the specified prior hyperparameters fixed.
 ===#
 
 #===
 To evaluate the `GaussianProcess`, use `evaluate!(gp::GaussianProcess, data::DataFrame)` with the `DataFrame` containing the points you want to evaluate.
-The evaluation of a GP is not unique, and we can choose to evaluate the mean prediction, the prediction variance, a combination of both, or draw samples from the posterior distribution.
+We can evaluate the predictive mean, variance, or both. The predictions are written to columns named after the output, here `:y_mean` and `:y_var`.
 The default is to evaluate the mean prediction.
 We can specify the evaluation mode via the `mode` keyword argument. Supported options are:
 - `:mean` - predictive mean (default)
 - `:var` - predictive variance
 - `:mean_and_var` - both mean and variance
-- `:sample` - random samples from the predictive distribution
 ===#
 
 test_data = sample(x, 1000)
 evaluate!(gp_model, test_data; mode = :mean_and_var)
+evaluate!(himmelblau, test_data)
+mse = mean((test_data.y .- test_data.y_mean) .^ 2)
+println("MSE (GP):  $mse")
 
 #===
-The mean prediction of our model in this case has an mse of about 65 and looks like this in comparison to the original:
+The plots below compare the predicted surface with the original function. We use a grid inside the input domain, excluding the endpoints of the uniform distributions because they map to infinite values in standard normal space:
 ===#
 
 #md using Plots #hide
 #md using DataFrames #hide
-#md a = range(-5, 5; length=200) #hide
-#md b = range(-5, 5; length=200) #hide
+#md a = range(-5, 5; length=202)[2:end-1] #hide
+#md b = range(-5, 5; length=202)[2:end-1] #hide
 #md A = repeat(collect(a)', length(b), 1) #hide
 #md B = repeat(collect(b), 1, length(a)) #hide
 #md df = DataFrame(x1 = vec(A), x2 = vec(B)) #hide
@@ -122,15 +116,7 @@ The mean prediction of our model in this case has an mse of about 65 and looks l
 # ![](gp-mean-comparison.svg)
 
 #===
-Note that the mse in comparison to the response surface model (with an mse of about 1e-26) is significantly higher.
-However, the GP model also provides a measure of uncertainty in its predictions via the predictive variance.
+The MSE depends on the experimental design and fitted hyperparameters. The GP also provides predictive variance, including observation noise, as a measure of uncertainty:
 ===#
 
 # ![](gp-variance.svg)
-
-#jl test_data = sample(x, 1000)
-#jl evaluate!(gp_model, test_data)
-#jl evaluate!(himmelblau, test_data)
-
-#jl mse = mean((test_data.y .- test_data.y_mean) .^ 2)
-#jl println("MSE is:  $mse")

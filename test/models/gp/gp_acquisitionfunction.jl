@@ -10,7 +10,7 @@
 
     gp = GaussianProcess(
         data, :y;
-        mean_fct = ConstMean(0.0),
+        mean = ConstMean(0.0),
         kernel = SqExponentialKernel(),
         learn_hyperparameters = true,
     )
