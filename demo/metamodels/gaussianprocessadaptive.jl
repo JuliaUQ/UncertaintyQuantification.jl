@@ -1,14 +1,15 @@
 using UncertaintyQuantification
+using QuasiMonteCarlo
 using Plots
 using DataFrames
-using Optim # hide
+using Optim
 
 x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 himmelblau = Model(
     df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y
 )
 
-design = LatinHypercubeSampling(80)
+design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
@@ -39,7 +40,7 @@ adaptive_gp = AdaptiveGaussianProcess(
     optimizer = optimizer
 )
 
-test_data = sample(x, LatinHypercubeSampling(1000))
+test_data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(1000, LatinHypercubeSample()))
 test_data_adaptive = deepcopy(test_data)
 evaluate!(initial_gp, test_data; mode = :mean)
 evaluate!(himmelblau, test_data)

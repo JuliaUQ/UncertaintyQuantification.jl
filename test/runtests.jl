@@ -54,8 +54,6 @@ end
 
 include("models/model.jl")
 include("models/gp/parameterization.jl")
-include("models/gp/gp_acquisitionfunction.jl")
-include("models/gp/adaptivegaussianprocess.jl")
 include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")

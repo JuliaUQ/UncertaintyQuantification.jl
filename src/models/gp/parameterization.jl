@@ -247,6 +247,7 @@ struct PriorGP{T <: GP, Tn <: Real}
 end
 
 (gp::PriorGP)(x) = gp.gp(x, gp.σ²)
+(gp::PriorGP)(x::AbstractMatrix) = gp.gp(x, gp.σ²; obsdim = 2)
 
 extract_parameters(f::PriorGP) = begin
     f.learn_noise ? (

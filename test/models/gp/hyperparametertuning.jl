@@ -28,7 +28,7 @@ end
 
     x_test = [collect(range(0, stop = 5, length = 50)) collect(range(0, stop = 5, length = 50))]
     y_test = sin.(x_test[:, 1]) + cos.(x_test[:, 2])
-    likelihood_no_opt = logpdf(gp_nonopt(permutedims(x_test)), y_test)
-    likelihood_opt = logpdf(gp_opt(permutedims(x_test)), y_test)
+    likelihood_no_opt = logpdf(gp_nonopt(permutedims(x_test); obsdim = 2), y_test)
+    likelihood_opt = logpdf(gp_opt(permutedims(x_test); obsdim = 2), y_test)
     @test likelihood_opt > likelihood_no_opt
 end

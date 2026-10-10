@@ -159,7 +159,7 @@ function _fit_gp(
         return posterior(_gp(x), y), σ²
     else
         # gp has to be called with noise since it is an AbstractGPs.GP object, not a PriorGP object
-        return posterior(gp(x, σ²), y), σ²
+        return posterior(gp(x, σ²; obsdim = 2), y), σ²
     end
 end
 
@@ -179,7 +179,7 @@ original scale.
   and parameters.
 - `models`: A `UQModel` or vector of models evaluated on the sampled data.
 - `design`: An `AbstractMonteCarlo` or `AbstractDesignOfExperiments` specifying
-  the sampling method and number of initial points, e.g. `LatinHypercubeSampling(10)`.
+  the sampling method and number of initial points, e.g. `QuasiMonteCarloSampling(10, LatinHypercubeSample())`.
 - `output`: Name of the model output to approximate.
 - `input_names`: Input columns, in the order used by the GP. Defaults to all
   names from `inputs`.
@@ -201,12 +201,14 @@ original scale.
 
 # Examples
 ```jldoctest
+julia> using QuasiMonteCarlo
+
 julia> x = RandomVariable(Uniform(0, 5), :x);
 
 julia> model = Model(df -> sin.(df.x), :y);
 
 julia> gp = GaussianProcess(
-           x, model, LatinHypercubeSampling(10), :y;
+           x, model, QuasiMonteCarloSampling(10, LatinHypercubeSample()), :y;
            mean = ConstMean(0.0), kernel = SqExponentialKernel(),
            learn_hyperparameters = false,
        );
@@ -307,7 +309,7 @@ function evaluate!(
         mode::Symbol = :mean,
     )
     x = transform(data[:, gp.inputs], gp.transform)
-    finite_projection = gp.posterior(x, gp.σ²)
+    finite_projection = gp.posterior(x, gp.σ²; obsdim = 2)
 
     if mode === :mean
         μ = mean(finite_projection)
@@ -379,7 +381,7 @@ function sample!(
     )
 
     x = transform(data[:, gp.inputs], gp.transform)
-    finite_projection = gp.posterior(x, gp.σ²)
+    finite_projection = gp.posterior(x, gp.σ²; obsdim = 2)
 
     samples = rand(finite_projection, n_samples)
     cols = [Symbol(string(gp.output, "_sample_", i)) for i in 1:n_samples]

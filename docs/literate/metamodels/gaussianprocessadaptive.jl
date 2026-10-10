@@ -14,14 +14,16 @@ as a test function.
 ===#
 
 #md using UncertaintyQuantification # hide
+#md using QuasiMonteCarlo # hide
 #md using Plots # hide
 #md using DataFrames # hide
 #md using Optim # hide
 
 #jl using UncertaintyQuantification
+#jl using QuasiMonteCarlo
 #jl using Plots
 #jl using DataFrames
-#jl using Optim # hide
+#jl using Optim
 
 #===
 First, define the probabilistic input and the expensive model to approximate.
@@ -34,13 +36,13 @@ himmelblau = Model(
 #md nothing # hide
 
 #===
-We start with the same initial Gaussian process surrogate as in the *regular* GP regression
+We start with the same initial Gaussian process surrogate as in the _regular_ GP regression
 example. We pass the design positionally and specify `mean`, `kernel`, and
 `normalize` as keywords. With `normalize = true`, the input distributions define
 the transformation to standard normal space.
 ===#
 
-design = LatinHypercubeSampling(80)
+design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
@@ -98,7 +100,7 @@ We compare the MSE of the initial GP and the refined GP.
 We start with the initial GP:
 ===#
 
-test_data = sample(x, LatinHypercubeSampling(1000))
+test_data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(1000, LatinHypercubeSample()))
 test_data_adaptive = deepcopy(test_data)
 evaluate!(initial_gp, test_data; mode = :mean)
 evaluate!(himmelblau, test_data)

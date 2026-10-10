@@ -8,11 +8,11 @@ himmelblau = Model(
 
 design = FullFactorial([5, 5])
 
-training_data = sample(x, design)
+training_data = UncertaintyQuantification.sample(x, design)
 evaluate!(himmelblau, training_data)
 rs = ResponseSurface(training_data, :y, 4)
 
-test_data = sample(x, 1000)
+test_data = UncertaintyQuantification.sample(x, 1000)
 evaluate!(rs, test_data)
 
 p_data = test_data[:, [:x1, :x2]]

@@ -1,4 +1,5 @@
 using UncertaintyQuantification
+using QuasiMonteCarlo
 
 x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 
@@ -6,7 +7,7 @@ himmelblau = Model(
     df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y
 )
 
-design = LatinHypercubeSampling(80)
+design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
 
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
@@ -26,7 +27,7 @@ gp_model = GaussianProcess(
     optimizer = optimizer
 )
 
-test_data = sample(x, 1000)
+test_data = UncertaintyQuantification.sample(x, 1000)
 evaluate!(gp_model, test_data; mode = :mean_and_var)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)

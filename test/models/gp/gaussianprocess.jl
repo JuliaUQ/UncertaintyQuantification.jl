@@ -1,4 +1,6 @@
 @testsnippet GPSetup begin
+    import UncertaintyQuantification: sample
+
     function create_test_data(n_samples::Int, lower::Real, upper::Real, dim::Int)
         data = lower .+ (upper - lower) .* rand(n_samples, dim)
         df = DataFrame()
@@ -66,7 +68,7 @@ end
     )
 end
 
-@testitem "1D GP from inputs" setup = [TestSetup, GPSetup] begin
+@testitem "1D GP from inputs" setup = [TestSetup, GPSetup, QMC] begin
     lower = 0
     upper = 5
     n = 10
@@ -83,7 +85,7 @@ end
     mean = ConstMean(0.0)
     kernel = SqExponentialKernel()
 
-    design = LatinHypercubeSampling(10)
+    design = QuasiMonteCarloSampling(10, LatinHypercubeSample())
 
     gp = GaussianProcess(
         xrv, model, design, :y, [:x1];
@@ -174,7 +176,7 @@ end
     @test :y_var in propertynames(df)
 end
 
-@testitem "2D GP from inputs" setup = [TestSetup, GPSetup] begin
+@testitem "2D GP from inputs" setup = [TestSetup, GPSetup, QMC] begin
     σ² = 1.0e-5
     n = 10
     mean = ConstMean(0.0)
@@ -186,7 +188,7 @@ end
     )
 
     gp = GaussianProcess(
-        xrv, model, LatinHypercubeSampling(n), :y, [:x1, :x2];
+        xrv, model, QuasiMonteCarloSampling(n, LatinHypercubeSample()), :y, [:x1, :x2];
         σ² = σ²,
         mean = mean,
         kernel = kernel,
@@ -213,7 +215,7 @@ end
 
     # The training inputs have mean 1 and standard deviation 1.
     Random.seed!(42)
-    expected = rand(gp.posterior([-0.5 0.5], gp.σ²), 2)
+    expected = rand(gp.posterior([-0.5 0.5], gp.σ²; obsdim = 2), 2)
     Random.seed!(42)
     @test sample!(gp, locations, 2) === nothing
     @test propertynames(locations) == [:x, :y_sample_1, :y_sample_2]

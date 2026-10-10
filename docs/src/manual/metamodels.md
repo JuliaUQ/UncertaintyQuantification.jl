@@ -382,7 +382,7 @@ alongside the predictive mean, a band of two predictive standard deviations,
 and the training observations:
 
 ```@example gaussianprocess
-Random.seed!(42)
+Random.seed!(42) # hide
 sample_data = DataFrame(x = collect(range(0, 10; length = 100)))
 n_samples = 5
 sample!(gp_model, sample_data, n_samples)
@@ -518,7 +518,7 @@ for each newly selected point.
 ```@example adaptivegp
 using UncertaintyQuantification # hide
 using Random # hide
-Random.seed!(42) # hide
+using QuasiMonteCarlo #hide
 
 x = RandomVariable(Uniform(-10, 10), :x1)
 model = Model(df -> sin.(df.x1) .* df.x1 .^ 2, :y)
@@ -526,7 +526,7 @@ model = Model(df -> sin.(df.x1) .* df.x1 .^ 2, :y)
 mean_f = ConstMean(0.0)
 kernel = Matern52Kernel()
 n_design_points = 10
-design = LatinHypercubeSampling(n_design_points)
+design = QuasiMonteCarloSampling(n_design_points, LatinHypercubeSample())
 n_added_points = 5
 
 adaptive_gp = AdaptiveGaussianProcess(
@@ -556,21 +556,18 @@ to standard normal space using those distributions. The transformation is retain
 adaptive refits, and `adaptive_gp.data` stores the training data in physical space.
 The optional vector of input names follows `n_added_points` in the adaptive constructor.
 
-You can also start from existing data with
-`AdaptiveGaussianProcess(data, x, model, :y, acquisition_function, n_added_points; ...)`,
-or refine a fitted GP with
+You can also refine a fitted GP with
 `AdaptiveGaussianProcess(gp_model, x, model, acquisition_function, n_added_points; ...)`.
-The data-based constructor uses the initial data's means and standard deviations for
-normalization. Refinement appends rows to the supplied training data; pass `copy(data)`
+ Refinement appends rows to the supplied training data; pass `copy(data)`
 or `deepcopy(gp_model)` to preserve the original. Duplicate training rows are not appended.
 
-The resulting `adaptive_gp` is a regular [`GaussianProcess`](@ref) and can be evaluated as usual. The plotting grid excludes the uniform distribution endpoints, which would map to infinite values in standard normal space:
+The resulting `adaptive_gp` is a regular [`GaussianProcess`](@ref) and can be evaluated as usual.
 
 ```@example adaptivegp
 using DataFrames
 using Plots
 
-test_data = DataFrame(x1 = -9.9:0.1:9.9)
+test_data = DataFrame(x1 = -10:0.1:10)
 evaluate!(adaptive_gp, test_data; mode = :mean_and_var)
 evaluate!(model, test_data)
 

@@ -17,6 +17,7 @@ Analogue to the response surface example, we create an array of random variables
 ===#
 
 using UncertaintyQuantification
+using QuasiMonteCarlo
 
 x = RandomVariable.(Uniform(-5, 5), [:x1, :x2])
 
@@ -26,10 +27,10 @@ himmelblau = Model(
 #md nothing # hide
 
 #===
-Next, we choose an experimental design. Here, `LatinHypercubeSampling(80)` specifies both the sampling method and the number of training points:
+Next, we choose an experimental design. Here, `QuasiMonteCarloSampling(80, LatinHypercubeSample())` specifies both the sampling method and the number of training points:
 ===#
 
-design = LatinHypercubeSampling(80)
+design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
 
 #===
 Next, we choose the prior mean and kernel, which we will pass directly to the constructor. Here we use a constant mean of 0.0 and a squared exponential kernel.
@@ -83,7 +84,7 @@ We can specify the evaluation mode via the `mode` keyword argument. Supported op
 - `:mean_and_var` - both mean and variance
 ===#
 
-test_data = sample(x, 1000)
+test_data = UncertaintyQuantification.sample(x, 1000)
 evaluate!(gp_model, test_data; mode = :mean_and_var)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
