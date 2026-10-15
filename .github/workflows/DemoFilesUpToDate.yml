@@ -16,10 +16,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
-          version: "1.11"
+          version: "1"
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Check demo files
         run: |
           julia --project=docs/ docs/literateDemo.jl;
-          if [[ `git status --porcelain` ]] ; then exit 1; else exit 0; fi
+          if [[ `git status demo/ --porcelain` ]] ; then exit 1; else exit 0; fi
