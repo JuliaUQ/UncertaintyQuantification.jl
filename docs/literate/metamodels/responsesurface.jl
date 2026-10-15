@@ -68,11 +68,11 @@ That functions degree is set as an Integer in the constructor.
 #md # !!! note
 #md #     The choice of the degree and the design and its parameters may be crucial to obtaining a sufficient model.
 
-training_data = sample(x, design)
+training_data = UncertaintyQuantification.sample(x, design)
 evaluate!(himmelblau, training_data)
 rs = ResponseSurface(training_data, :y, 4)
 
-test_data = sample(x, 1000)
+test_data = UncertaintyQuantification.sample(x, 1000)
 evaluate!(rs, test_data)
 
 #===
