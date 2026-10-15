@@ -1,208 +1,16 @@
 @testsnippet GPSetup begin
     import UncertaintyQuantification: sample
 
-    function create_test_data(n_samples::Int, lower::Real, upper::Real, dim::Int)
-        data = lower .+ (upper - lower) .* rand(n_samples, dim)
-        df = DataFrame()
-        for i in 1:dim
-            name = Symbol("x$i")
-            df[!, name] = data[:, i]
-        end
-        return df
+    function R²(y_true, y_pred)
+        ss_res = sum((y_true .- y_pred) .^ 2)
+        ss_tot = sum((y_true .- mean(y_true)) .^ 2)
+        return 1.0 - ss_res / ss_tot
     end
-end
-
-@testitem "1D GP from data" setup = [TestSetup, GPSetup] begin
-    lower = 0
-    upper = 5
-    n = 10
-
-    x = collect(range(lower, stop = upper, length = n))
-    y = sin.(x)
-    data = DataFrame(:x1 => x, :y => y)
-    mean = ConstMean(0.0)
-    kernel = SqExponentialKernel()
-    gp = GaussianProcess(
-        data, :y;
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
-
-    @test gp.σ² == 0.0
-
-    gp = GaussianProcess(
-        data, :y;
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = true
-    )
-
-    @test gp.σ² > 0.0
-
-    df_mean = create_test_data(n, lower, upper, 1)
-    df_var = create_test_data(n, lower, upper, 1)
-    df_mean_var = create_test_data(n, lower, upper, 1)
-
-    evaluate!(gp, df_mean; mode = :mean)
-    evaluate!(gp, df_var; mode = :var)
-    evaluate!(gp, df_mean_var; mode = :mean_and_var)
-    @test :y_mean in propertynames(df_mean)
-    @test !(:y_var in propertynames(df_mean))
-    @test :y_var in propertynames(df_var)
-    @test !(:y_mean in propertynames(df_var))
-    @test :y_mean in propertynames(df_mean_var)
-    @test :y_var in propertynames(df_mean_var)
-
-    @test_throws ArgumentError evaluate!(gp, df_mean; mode = :error)
-
-    @test_throws DomainError GaussianProcess(
-        data, :y;
-        normalize = true,
-        σ² = -1.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
-end
-
-@testitem "1D GP from inputs" setup = [TestSetup, GPSetup, QMC] begin
-    lower = 0
-    upper = 5
-    n = 10
-
-    xrv = [Parameter(1.5, :p), RandomVariable(Uniform(lower, upper), :x1)]
-    xrv_single = RandomVariable(Uniform(lower, upper), :x1)
-    model = Model(
-        df -> df.p .* sin.(df.x1), :y
-    )
-    model_single = Model(
-        df -> 1.5 .* sin.(df.x1), :y
-    )
-
-    mean = ConstMean(0.0)
-    kernel = SqExponentialKernel()
-
-    design = QuasiMonteCarloSampling(10, LatinHypercubeSample())
-
-    gp = GaussianProcess(
-        xrv, model, design, :y, [:x1];
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
-    @test gp.σ² == 0.0
-
-    gp = GaussianProcess(
-        xrv_single, model_single, design, :y;
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
-
-    @test gp.σ² == 0.0
-
-    gp = GaussianProcess(
-        xrv, model, design, :y, [:x1];
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = true
-    )
-
-    @test gp.σ² > 0.0
-
-
-    gp = GaussianProcess(
-        xrv_single, model_single, design, :y;
-        σ² = 0.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = true
-    )
-
-    @test gp.σ² > 0.0
-
-    df_mean = sample(xrv, n)
-    df_var = sample(xrv, n)
-    df_mean_var = sample(xrv, n)
-    evaluate!(gp, df_mean; mode = :mean)
-    evaluate!(gp, df_var; mode = :var)
-    evaluate!(gp, df_mean_var; mode = :mean_and_var)
-    @test :y_mean in propertynames(df_mean)
-    @test !(:y_var in propertynames(df_mean))
-    @test :y_var in propertynames(df_var)
-    @test !(:y_mean in propertynames(df_var))
-    @test :y_mean in propertynames(df_mean_var)
-    @test :y_var in propertynames(df_mean_var)
-
-    @test_throws DomainError GaussianProcess(
-        xrv, model, design, :y;
-        σ² = -1.0,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
 
 end
 
-@testitem "2D GP from data" setup = [TestSetup, GPSetup] begin
-    lower = 0
-    upper = 5
-    σ² = 1.0e-5
-    n = 10
-    mean = ConstMean(0.0)
-    kernel = SqExponentialKernel()
 
-    x = [collect(range(lower, stop = upper, length = n)) collect(range(lower, stop = upper, length = n))]
-    y = sin.(x[:, 1]) + cos.(x[:, 2])
-    data = DataFrame(:x1 => x[:, 1], :x2 => x[:, 2], :y => y)
-
-    gp = GaussianProcess(
-        data, :y;
-        σ² = σ²,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = true
-    )
-
-    df = create_test_data(n, lower, upper, 2)
-    evaluate!(gp, df; mode = :mean_and_var)
-    @test :y_mean in propertynames(df)
-    @test :y_var in propertynames(df)
-end
-
-@testitem "2D GP from inputs" setup = [TestSetup, GPSetup, QMC] begin
-    σ² = 1.0e-5
-    n = 10
-    mean = ConstMean(0.0)
-    kernel = SqExponentialKernel()
-
-    xrv = [Parameter(1.5, :p), RandomVariable(Uniform(0, 5), :x1), RandomVariable(Uniform(0, 5), :x2)]
-    model = Model(
-        df -> df.p .* sin.(df.x1) + df.p .* cos.(df.x2), :y
-    )
-
-    gp = GaussianProcess(
-        xrv, model, QuasiMonteCarloSampling(n, LatinHypercubeSample()), :y, [:x1, :x2];
-        σ² = σ²,
-        mean = mean,
-        kernel = kernel,
-        learn_noise = false
-    )
-
-    df = sample(xrv, n)
-    evaluate!(gp, df; mode = :mean_and_var)
-    @test :y_mean in propertynames(df)
-    @test :y_var in propertynames(df)
-
-end
-
-@testitem "GP posterior sampling" begin
+@testitem "GaussianProcess Posterior Sampling" begin
     using DataFrames
     using Random
 
@@ -228,4 +36,138 @@ end
     @test sample!(gp, locations) === nothing
     @test locations.y_sample_1 != expected[:, 1]
     @test locations.y_sample_2 == second_draw
+end
+
+@testitem "GaussianProcess 1D Inputs" setup = [TestSetup, GPSetup, QMC] begin
+
+    inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
+
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
+
+    gp = GaussianProcess(
+        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y, [:x];
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_hyperparameters = false
+    )
+
+    verify_true = sample(inputs, 100)
+    verify_gp = verify_true[:, [:x]]
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+end
+
+@testitem "GaussianProcess
+ 1D Samples" setup = [TestSetup, GPSetup, QMC] begin
+
+    inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
+
+    data = sample(inputs, (QuasiMonteCarloSampling(200, HaltonSample())))
+    evaluate!(model, data)
+
+    gp = GaussianProcess(
+        data[1:100, :], :y, [:x];
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_hyperparameters = false
+    )
+
+    verify_true = data[101:200, :]
+    verify_gp = verify_true[:, [:x]]
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    verify_true = sample(inputs, 100)
+    verify_gp = verify_true[:, [:x]]
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+
+end
+
+
+@testitem "GaussianProcess
+ 2D Inputs" setup = [TestSetup, GPSetup, QMC] begin
+    inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
+    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), :y)
+
+    gp = GaussianProcess(
+        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_hyperparameters = false
+    )
+
+    verify_true = sample(inputs, 100)
+    verify_gp = copy(verify_true)
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+end
+
+@testitem "GaussianProcess
+ 2D Data" setup = [TestSetup, GPSetup, QMC] begin
+    inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
+    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), :y)
+
+    data = sample(inputs, (QuasiMonteCarloSampling(200, HaltonSample())))
+    evaluate!(model, data)
+
+    gp = GaussianProcess(
+        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_hyperparameters = false
+    )
+
+    verify_true = data[101:200, :]
+    verify_gp = copy(verify_true)
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+end
+
+@testitem "GaussianProcess
+ Learn Noise" setup = [TestSetup, GPSetup, QMC] begin
+
+    inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
+    model = Model(df -> df.a .* sin.(df.b .* df.x) .+ randn(size(df, 1)), :y)
+
+    gp = GaussianProcess(
+        inputs, model, QuasiMonteCarloSampling(200, HaltonSample())
+        , :y, [:x];
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_noise = true
+    )
+
+    @test gp.σ² ≈ 1.0 rtol = 0.2
+
+    gp = GaussianProcess(
+        inputs, model, MonteCarlo(10)
+        , :y, [:x];
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5
+        ,
+        learn_noise = false
+    )
+
+    @test gp.σ² == 1.0e-5
 end
