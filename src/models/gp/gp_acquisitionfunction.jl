@@ -48,7 +48,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::MaximumV
     candidates = copy(candidates)
     _, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :var)
+    evaluate!(gp, candidates; variance = true, mean = false)
     ind = argmax(candidates[:, var_col])
     return candidates[[ind], Cols(input)]
 end
@@ -74,7 +74,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ei::Expect
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
     f_best = minimum(gp.data[:, gp.output])
@@ -108,7 +108,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, poi::Proba
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
     f_best = minimum(gp.data[:, gp.output])
@@ -142,7 +142,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ucb::Upper
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
 
@@ -177,7 +177,7 @@ function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, d
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
 
@@ -228,7 +228,7 @@ function _find_next_point_stopping(
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
 
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
 
@@ -303,7 +303,7 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::Expected
     input = propertynames(candidates)
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
-    evaluate!(gp, candidates; mode = :mean_and_var)
+    evaluate!(gp, candidates; variance = true)
 
     μ = candidates[:, mean_col]
     σ² = candidates[:, var_col]

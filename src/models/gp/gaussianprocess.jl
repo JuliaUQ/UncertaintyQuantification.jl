@@ -306,28 +306,26 @@ true
 function evaluate!(
         gp::GaussianProcess,
         data::DataFrame;
-        mode::Symbol = :mean,
+        mean::Bool = true,
+        variance::Bool = false
     )
+    if !mean && ! variance
+        # nothing to do, return immediately
+        return nothing
+    end
     x = transform(data[:, gp.inputs], gp.transform)
     finite_projection = gp.posterior(x, gp.σ²; obsdim = 2)
 
-    if mode === :mean
-        μ = mean(finite_projection)
+    if mean
+        μ = AbstractGPs.mean(finite_projection)
         col = Symbol(string(gp.output, "_mean"))
         data[!, col] = μ
-    elseif mode === :var
+    end
+
+    if variance
         σ² = var(finite_projection)
         col = Symbol(string(gp.output, "_var"))
         data[!, col] = σ²
-    elseif mode === :mean_and_var
-        μ = mean(finite_projection)
-        σ² = var(finite_projection)
-        col_mean = Symbol(string(gp.output, "_mean"))
-        col_var = Symbol(string(gp.output, "_var"))
-        data[!, col_mean] = μ
-        data[!, col_var] = σ²
-    else
-        throw(ArgumentError("Unknown `GaussianProcess` evaluation mode: $mode"))
     end
     return nothing
 end

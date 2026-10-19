@@ -22,7 +22,7 @@
 
     function mean_and_std(gp, candidates)
         df = copy(candidates)
-        evaluate!(gp, df; mode = :mean_and_var)
+        evaluate!(gp, df; variance = true)
         return df[:, :y_mean], sqrt.(df[:, :y_var])
     end
 end
