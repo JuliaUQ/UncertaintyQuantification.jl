@@ -375,19 +375,15 @@ true
 function sample!(
         gp::GaussianProcess,
         data::DataFrame,
-        n_samples::Int = 1
+        n::Int = 1
     )
 
     x = transform(data[:, gp.inputs], gp.transform)
     finite_projection = gp.posterior(x, gp.σ²; obsdim = 2)
 
-    samples = rand(finite_projection, n_samples)
-    cols = [Symbol(string(gp.output, "_sample_", i)) for i in 1:n_samples]
-    foreach(
-        (col, sample) -> data[!, col] = sample,
-        cols, eachcol(samples)
-    )
+    samples = rand(finite_projection, n)
 
+    data[!, gp.output] .= collect(eachrow(samples))
     return nothing
 end
 
