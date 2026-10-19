@@ -407,3 +407,10 @@ end
 function transform(data::DataFrame, ::Nothing)
     return permutedims(Matrix(data))
 end
+
+function logpdf(gp::GaussianProcess, data::DataFrame)
+    x = transform(data[:, gp.inputs], gp.transform)
+    y = data[:, gp.output]
+
+    return logpdf(gp.posterior(x, gp.σ²; obsdim = 2), y)
+end
