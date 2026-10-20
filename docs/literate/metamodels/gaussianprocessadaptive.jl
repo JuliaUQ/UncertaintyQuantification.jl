@@ -102,14 +102,14 @@ We start with the initial GP:
 
 test_data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(1000, LatinHypercubeSample()))
 test_data_adaptive = deepcopy(test_data)
-evaluate!(initial_gp, test_data; mode = :mean)
+evaluate!(initial_gp, test_data)
 evaluate!(himmelblau, test_data)
 
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (initial GP):  $mse")
 
 # Then, we also evaluate the adaptively refined GP at the same test set:
-evaluate!(adaptive_gp, test_data_adaptive; mode = :mean)
+evaluate!(adaptive_gp, test_data_adaptive)
 evaluate!(himmelblau, test_data_adaptive)
 
 mse_adap = mean((test_data_adaptive.y .- test_data_adaptive.y_mean) .^ 2)
