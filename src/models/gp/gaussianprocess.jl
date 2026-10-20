@@ -294,7 +294,7 @@ julia> gp = GaussianProcess(data, :y; σ² = 1.0e-3, learn_hyperparameters = fal
 
 julia> predictions = DataFrame(x = [0.5, 1.5]);
 
-julia> evaluate!(gp, predictions; mode = :mean_and_var);
+julia> evaluate!(gp, predictions; variance = true);
 
 julia> propertynames(predictions) == [:x, :y_mean, :y_var]
 true
@@ -365,10 +365,10 @@ julia> draws = DataFrame(x = [0.5, 1.5]);
 
 julia> sample!(gp, draws, 2);
 
-julia> propertynames(draws) == [:x, :y_sample_1, :y_sample_2]
+julia> length(draws.y[1]) == 2
 true
 
-julia> all(isfinite, Matrix(draws[:, [:y_sample_1, :y_sample_2]]))
+julia> all(isfinite, hcat(draws.y...))
 true
 ```
 """

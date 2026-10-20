@@ -85,7 +85,7 @@ We can specify the evaluation mode via the `mode` keyword argument. Supported op
 ===#
 
 test_data = UncertaintyQuantification.sample(x, 1000)
-evaluate!(gp_model, test_data; mode = :mean_and_var)
+evaluate!(gp_model, test_data; variance = true)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (GP):  $mse")
@@ -101,7 +101,7 @@ The plots below compare the predicted surface with the original function. We use
 #md A = repeat(collect(a)', length(b), 1) #hide
 #md B = repeat(collect(b), 1, length(a)) #hide
 #md df = DataFrame(x1 = vec(A), x2 = vec(B)) #hide
-#md evaluate!(gp_model, df; mode=:mean_and_var) #hide
+#md evaluate!(gp_model, df; variance=true) #hide
 #md evaluate!(himmelblau, df) #hide
 #md gp_mean = reshape(df[:, :y_mean], length(b), length(a)) #hide
 #md gp_var = reshape(df[:, :y_var], length(b), length(a)) #hide
