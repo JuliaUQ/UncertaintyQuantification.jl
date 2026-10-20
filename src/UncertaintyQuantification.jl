@@ -219,6 +219,7 @@ export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
+export refine!
 export reliability
 export sample
 export sample!
