@@ -27,7 +27,6 @@ initial_gp = GaussianProcess(
 )
 
 learning_function = MaximinDistance()
-n_added_points = 20
 candidate_sampling = MonteCarlo(1000)
 
 adaptive_gp = AdaptiveGaussianProcess(
@@ -35,10 +34,10 @@ adaptive_gp = AdaptiveGaussianProcess(
     x,
     himmelblau,
     learning_function,
-    n_added_points;
-    candidate_sampling = candidate_sampling,
+    candidate_sampling;
     optimizer = optimizer
 )
+refine!(adaptive_gp, 20)
 
 test_data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(1000, LatinHypercubeSample()))
 test_data_adaptive = deepcopy(test_data)
