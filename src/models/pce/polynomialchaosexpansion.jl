@@ -174,14 +174,14 @@ function polynomialchaos(
 
     pces = PolynomialChaosExpansion[]
 
+    # Weighted basis evaluations, computed once and shared by all outputs
+    WA = Matrix{Float64}(undef, size(nodes, 1), length(Ψ.α))
+    for (i, x) in enumerate(eachrow(nodes))
+        WA[i, :] .= weights[i] .* evaluate(Ψ, collect(x))
+    end
+
     for output in outputs
-        y = mapreduce(
-            (x, w, f) -> f * w * evaluate(Ψ, collect(x)),
-            +,
-            eachrow(nodes),
-            weights,
-            samples[:, output],
-        )
+        y = WA' * samples[:, output]
         pce = PolynomialChaosExpansion(y, Ψ, output, random_inputs)
         push!(pces, pce)
     end
