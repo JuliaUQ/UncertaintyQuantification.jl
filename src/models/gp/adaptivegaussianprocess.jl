@@ -89,16 +89,16 @@ function AdaptiveGaussianProcess(
         model::Union{UQModel, Vector{<:UQModel}},
         design::AbstractMonteCarlo,
         output::Symbol,
-        acquisition_function::AbstractGaussianProcessAcquisitionFunction=MaximumVariance(),
-        input_names=wrap(names(input));
-        candidate_sampling=MonteCarlo(100_000),
-        σ²=1e-5,
-        learn_noise=false,
-        learn_hyperparameters=true,
+        acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance(),
+        input_names = wrap(names(input));
+        candidate_sampling = MonteCarlo(100_000),
+        σ² = 1.0e-5,
+        learn_noise = false,
+        learn_hyperparameters = true,
         mean::AbstractGPs.MeanFunction = ZeroMean(),
         kernel::Kernel = SqExponentialKernel(),
         normalize::Bool = true,
-        optimizer::UncertaintyQuantification.AbstractHyperparameterOptimization=MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
+        optimizer::UncertaintyQuantification.AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
     )
 
     gp = GaussianProcess(
@@ -107,13 +107,13 @@ function AdaptiveGaussianProcess(
         design,
         output,
         input_names;
-        mean=mean,
-        kernel=kernel,
-        normalize=normalize,
-        σ²=σ²,
-        learn_noise=learn_noise,
-        learn_hyperparameters=learn_hyperparameters,
-        optimizer=optimizer
+        mean = mean,
+        kernel = kernel,
+        normalize = normalize,
+        σ² = σ²,
+        learn_noise = learn_noise,
+        learn_hyperparameters = learn_hyperparameters,
+        optimizer = optimizer
     )
     return AdaptiveGaussianProcess(gp, input, model, acquisition_function, candidate_sampling, learn_noise, learn_hyperparameters, optimizer)
 end
@@ -132,7 +132,7 @@ The fitted model is changed in place; the function returns `nothing`. Passing
 - `agp`: Adaptive Gaussian process to refine.
 - `n`: Number of adaptive iterations. Defaults to `1`.
 """
-function refine!(agp::AdaptiveGaussianProcess, n::Int=1)
+function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
     for i in 1:n
         candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
         next_point = _find_next_point(agp.gp, candidates, agp.acquisition_function)
@@ -144,11 +144,14 @@ function refine!(agp::AdaptiveGaussianProcess, n::Int=1)
 
         @debug "added point" iteration = i point = NamedTuple(next_point[1, :])
     end
+    return
 end
 
 """
-    evaluate!(agp::AdaptiveGaussianProcess, data::DataFrame;
-              mean::Bool = true, variance::Bool = false)
+    evaluate!(
+        agp::AdaptiveGaussianProcess, data::DataFrame;
+        mean::Bool = true, variance::Bool = false
+    )
 
 Evaluate the Gaussian process contained in `agp` at the input locations in
 `data`, writing requested predictions to `data` and returning `nothing`.
@@ -170,7 +173,7 @@ function evaluate!(
         variance::Bool = false
     )
 
-    return evaluate!(gp.gp, data; mean=mean, variance=variance)
+    return evaluate!(gp.gp, data; mean = mean, variance = variance)
 end
 
 """

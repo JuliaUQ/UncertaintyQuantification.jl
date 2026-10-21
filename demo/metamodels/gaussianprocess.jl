@@ -28,7 +28,7 @@ gp_model = GaussianProcess(
 )
 
 test_data = UncertaintyQuantification.sample(x, 1000)
-evaluate!(gp_model, test_data; mode = :mean_and_var)
+evaluate!(gp_model, test_data; variance = true)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (GP):  $mse")
