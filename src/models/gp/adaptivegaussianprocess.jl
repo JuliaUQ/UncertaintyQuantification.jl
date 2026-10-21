@@ -118,6 +118,19 @@ function AdaptiveGaussianProcess(
     return AdaptiveGaussianProcess(gp, input, model, acquisition_function, candidate_sampling, learn_noise, learn_hyperparameters, optimizer)
 end
 
+function AdaptiveGaussianProcess(
+        gp::GaussianProcess,
+        input::Union{UQInput, Vector{<:UQInput}},
+        model::Union{UQModel, Vector{<:UQModel}},
+        acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance(),
+        candidate_sampling = MonteCarlo(100_000);
+        learn_noise = false,
+        learn_hyperparameters = true,
+        optimizer::UncertaintyQuantification.AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
+    )
+    return AdaptiveGaussianProcess(gp, input, model, acquisition_function, candidate_sampling, learn_noise, learn_hyperparameters, optimizer)
+end
+
 """
     refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
 

@@ -533,13 +533,13 @@ adaptive_gp = AdaptiveGaussianProcess(
     model,
     design,
     :y,
-    MaximumVariance(),
-    n_added_points;
+    MaximumVariance(),;
     mean = mean_f,
     kernel = kernel,
     normalize = true,
     candidate_sampling = MonteCarlo(1000),
 )
+refine!(adaptive_gp, n_added_points)
 nothing # hide
 ```
 
@@ -572,8 +572,8 @@ evaluate!(model, test_data)
 
 p = plot(test_data.x1, test_data.y_mean; ribbon = 2 .* sqrt.(test_data.y_var), label = "GP mean ± 2σ", xlabel = "x₁", ylabel = "y", color = :blue, alpha = 0.5)
 plot!(p, test_data.x1, test_data.y; label = "True function", color = :red, linestyle = :dash)
-scatter!(p, adaptive_gp.data.x1[1:n_design_points], adaptive_gp.data.y[1:n_design_points]; label = "Initial design", color = :black)
-scatter!(p, adaptive_gp.data.x1[(n_design_points + 1):end], adaptive_gp.data.y[(n_design_points + 1):end]; label = "Adaptively added")
+scatter!(p, adaptive_gp.gp.data.x1[1:n_design_points], adaptive_gp.gp.data.y[1:n_design_points]; label = "Initial design", color = :black)
+scatter!(p, adaptive_gp.gp.data.x1[(n_design_points + 1):end], adaptive_gp.gp.data.y[(n_design_points + 1):end]; label = "Adaptively added")
 savefig(p, "adaptive_gp_example.svg"); nothing # hide
 ```
 

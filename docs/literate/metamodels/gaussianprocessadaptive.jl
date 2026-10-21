@@ -70,7 +70,6 @@ at each iteration.
 ===#
 
 learning_function = MaximinDistance()
-n_added_points = 20
 candidate_sampling = MonteCarlo(1000)
 #md nothing # hide
 
@@ -87,10 +86,10 @@ adaptive_gp = AdaptiveGaussianProcess(
     x,
     himmelblau,
     learning_function,
-    n_added_points;
-    candidate_sampling = candidate_sampling,
+    candidate_sampling;
     optimizer = optimizer
 )
+refine!(adaptive_gp, 20)
 #md nothing # hide
 
 #===

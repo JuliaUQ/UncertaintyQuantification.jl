@@ -402,6 +402,16 @@ function transform(data::DataFrame, ::Nothing)
     return permutedims(Matrix(data))
 end
 
+"""
+    logpdf(gp::GaussianProcess, data::DataFrame)
+
+Evaluate the joint posterior predictive log density of the output values in
+`data` at the input locations in the same `DataFrame`.
+
+# Arguments
+- `gp`: Gaussian process to compute the density for.
+- `data`: DataFrame containing the input and output values.
+"""
 function logpdf(gp::GaussianProcess, data::DataFrame)
     x = transform(data[:, gp.inputs], gp.transform)
     y = data[:, gp.output]

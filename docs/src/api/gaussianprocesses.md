@@ -21,12 +21,17 @@ DeviationNumber
 ExpectedFeasibility
 MaximinDistance
 ExpectedImprovementForGlobalFit
+AdaptiveGaussianProcess
 ```
 
 ## Functions
 
 ```@docs
-AdaptiveGaussianProcess
-evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean)
-sample!(gp::GaussianProcess, data::DataFrame, n_samples::Int)
+evaluate!(gp::GaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
+sample!(gp::GaussianProcess, data::DataFrame, n::Int=1)
+logpdf(gp::GaussianProcess, data::DataFrame)
+evaluate!(gp::AdaptiveGaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
+sample!(gp::AdaptiveGaussianProcess, data::DataFrame, n::Int=1)
+refine!(gp::AdaptiveGaussianProcess, n::Int)
+logpdf(gp::AdaptiveGaussianProcess, data::DataFrame)
 ```
