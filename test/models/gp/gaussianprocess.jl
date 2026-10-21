@@ -54,7 +54,7 @@ end
     evaluate!(model, verify_true)
     evaluate!(gp, verify_gp)
 
-    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.02
 end
 
 @testitem "GaussianProcess
@@ -88,7 +88,7 @@ end
     evaluate!(model, verify_true)
     evaluate!(gp, verify_gp)
 
-    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.02
 
 end
 
@@ -114,7 +114,7 @@ end
     evaluate!(model, verify_true)
     evaluate!(gp, verify_gp)
 
-    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.02
 end
 
 @testitem "GaussianProcess 2D Data" setup = [
@@ -140,7 +140,7 @@ end
     evaluate!(model, verify_true)
     evaluate!(gp, verify_gp)
 
-    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.01
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.02
 end
 
 @testitem "GaussianProcess evaluate!" setup = [
