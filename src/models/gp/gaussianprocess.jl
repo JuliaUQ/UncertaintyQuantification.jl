@@ -265,24 +265,20 @@ function GaussianProcess(
 end
 
 """
-    evaluate!(gp::GaussianProcess, data::DataFrame; mode::Symbol = :mean)
+    evaluate!(gp::GaussianProcess, data::DataFrame; mean::Bool = true, variance::Bool = false)
 
-Evaluate a fitted [`GaussianProcess`](@ref) at the input locations in `data`,
-append or replace prediction columns in `data`, and return `nothing`. Input
-columns are selected using `gp.inputs` and transformed using `gp.transform`.
-Predictions are on the original output scale; predictive variances include
-`gp.σ²` observation noise.
+Evaluate a [`GaussianProcess`](@ref) at the input locations in `data`,
+append or replace prediction columns in `data`, and return `nothing`.
 
 # Arguments
-- `gp`: Fitted Gaussian-process model.
-- `data`: Prediction locations containing the columns named in `gp.inputs`.
+- `gp`: Gaussian-process model.
+- `data`: Prediction locations containing the columns in `gp.inputs`.
 
 # Keyword Arguments
-- `mode`: Prediction columns to write, using `gp.output` as the name prefix:
-  - `:mean`: Predictive mean in `<output>_mean` (default).
-  - `:var`: Predictive variance in `<output>_var`.
-  - `:mean_and_var`: Both prediction columns.
-  Other modes raise an `ArgumentError`.
+- `mean`: Write the predictive mean to the column `<output>_mean`.
+  Defaults to `true`.
+- `variance`: Write the predictive variance to the column `<output>_var`.
+  Defaults to `false`.
 
 Use [`sample!`](@ref) to draw joint samples from the predictive distribution.
 
@@ -331,27 +327,23 @@ function evaluate!(
 end
 
 """
-    sample!(gp::GaussianProcess, data::DataFrame, n_samples::Int = 1)
+    sample!(gp::GaussianProcess, data::DataFrame, n::Int = 1)
 
-Draw `n_samples` independent realizations from the fitted GP's joint posterior
+Draw `n` independent realizations from the GP's joint posterior
 predictive distribution at the input locations in `data`. Each realization
-contains correlated values across the rows of `data` and is written to a column
-named `<output>_sample_<i>`, where `<output>` is `gp.output` and `i` starts at 1.
-Return `nothing`.
-
-Inputs are selected in `gp.inputs` order and transformed using `gp.transform`.
-Samples are on the original output scale and include observation noise with
-variance `gp.σ²`. Existing sample columns with the same names are replaced;
-other columns are left unchanged. The fitted posterior is not modified.
+contains correlated values across the rows of `data`; row `i` of `data` is
+assigned the vector of its `n` sample values in the column `gp.output`,
+replacing any existing values in that column. Return `nothing`.
 
 # Arguments
-- `gp`: Fitted [`GaussianProcess`](@ref).
-- `data`: Prediction locations containing the columns named in `gp.inputs`.
-- `n_samples`: Nonnegative number of realizations to draw. Defaults to `1`;
-  `0` adds no columns.
+- `gp`: [`GaussianProcess`](@ref).
+- `data`: Prediction locations containing the columns in `gp.inputs`.
+- `n`: Number of realizations to draw. Defaults to `1`.
 
-Sampling uses Julia's default random-number generator; use `Random.seed!` for
-reproducibility. Drawing joint samples requires factoring a covariance matrix
+Only the `gp.output` column of `data` is modified; other columns are left
+unchanged. The fitted posterior is not modified.
+
+Drawing joint samples requires factoring a covariance matrix
 whose size is the number of rows in `data`. Very close or repeated locations
 can cause numerical difficulties when the observation-noise variance is too small.
 

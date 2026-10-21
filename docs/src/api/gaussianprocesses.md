@@ -12,16 +12,8 @@ Pages = ["gaussianprocesses.md"]
 
 ```@docs
 GaussianProcess
-MaximumLikelihoodEstimation
-MaximumVariance
-ExpectedImprovement
-ProbabilityOfImprovement
-UpperConfidenceBound
-DeviationNumber
-ExpectedFeasibility
-MaximinDistance
-ExpectedImprovementForGlobalFit
 AdaptiveGaussianProcess
+MaximumLikelihoodEstimation
 ```
 
 ## Functions
@@ -30,8 +22,21 @@ AdaptiveGaussianProcess
 evaluate!(gp::GaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
 sample!(gp::GaussianProcess, data::DataFrame, n::Int=1)
 logpdf(gp::GaussianProcess, data::DataFrame)
-evaluate!(gp::AdaptiveGaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
-sample!(gp::AdaptiveGaussianProcess, data::DataFrame, n::Int=1)
-refine!(gp::AdaptiveGaussianProcess, n::Int)
-logpdf(gp::AdaptiveGaussianProcess, data::DataFrame)
+evaluate!(agp::AdaptiveGaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
+sample!(agp::AdaptiveGaussianProcess, data::DataFrame, n::Int=1)
+refine!(agp::AdaptiveGaussianProcess, n::Int)
+logpdf(agp::AdaptiveGaussianProcess, data::DataFrame)
+```
+
+## Aqcuisition Functions
+
+```@docs
+MaximumVariance
+ExpectedImprovement
+ProbabilityOfImprovement
+UpperConfidenceBound
+DeviationNumber
+ExpectedFeasibility
+MaximinDistance
+ExpectedImprovementForGlobalFit
 ```
