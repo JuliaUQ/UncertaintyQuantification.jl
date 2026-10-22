@@ -591,7 +591,7 @@ refer to [fuhg2021state](@cite).
 `UncertaintyQuantification.jl` provides the following acquisition functions to adapatively
 refine GP regression models; we separate them by there main area of application:
 
-### General active learning
+#### General active learning
 
 Goal: improve the global fit of the GP
 
@@ -613,7 +613,7 @@ Goal: improve the global fit of the GP
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \left[\mu(\mathbf{x}) - \hat{f}_{i(\mathbf{x})}\right]^2 + \sigma^2(\mathbf{x}).
 ```
 
-### Bayesian optimization
+#### Bayesian optimization
 
 Goal: refine the global minimum ``\hat{f}_{\text{best}} = \min_i \hat{f}_i``
 
@@ -643,7 +643,7 @@ where ``\Phi`` and ``\phi`` are the standard normal cdf and pdf, respectively (`
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmin}}\ \mu(\mathbf{x}) - \kappa\, \sigma(\mathbf{x}).
 ```
 
-### Reliability analysis
+#### Reliability analysis
 
 Goal: refine the limit-state surface ``g(\mathbf{x}) = \tau`` (typically, ``\tau = 0``):
 
