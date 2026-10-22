@@ -240,18 +240,12 @@ function GaussianProcess(
 
     evaluate!(models, data)
 
-    transform = nothing
-    if normalize
-        to_standard_normal_space!(inputs, data)
-        transform = inputs
-    end
+    dt = normalize ? RandomVariable{<:UnivariateDistribution}[
+            i for i in inputs if i.name in input_names
+        ] : nothing
 
-    x = permutedims(Matrix(data[:, input_names]))
+    x = transform(data[:, input_names], dt)
     y = vec(data[:, output])
-
-    if normalize
-        to_physical_space!(inputs, data)
-    end
 
     gp, σ² = _fit_gp(
         gp, x, y;
@@ -261,7 +255,7 @@ function GaussianProcess(
         optimizer = optimizer
     )
 
-    return GaussianProcess(gp, output, input_names, σ², transform, data)
+    return GaussianProcess(gp, output, input_names, σ², dt, data)
 end
 
 """
@@ -383,10 +377,12 @@ function transform(data::DataFrame, dt::ZScoreTransform)
     return StatsBase.transform(dt, permutedims(Matrix(data)))
 end
 
-function transform(data::DataFrame, dt::Vector{<:UQInput})
-    df = copy(data)
-    to_standard_normal_space!(dt, df)
-    return permutedims(Matrix(df))
+function transform(data::DataFrame, dt::Vector{<:RandomVariable{<:UnivariateDistribution}})
+    Z = permutedims(Matrix(data))  # inputs × samples
+    μ = mean.(dt)
+    σ = sqrt.(var.(dt))
+
+    return (Z .- μ) ./ σ
 end
 
 function transform(data::DataFrame, ::Nothing)
