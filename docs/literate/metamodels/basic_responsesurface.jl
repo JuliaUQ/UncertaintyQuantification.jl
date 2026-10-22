@@ -17,7 +17,7 @@ A Response Surface is a structure used for modeling.
 ===#
 
 #===
-## Example
+### Example
 
 In this example, we will model the following test function (known as Himmelblau's function)
 

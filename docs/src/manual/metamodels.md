@@ -8,11 +8,11 @@ Linear basis function models are a simple class of metamodels that express the p
 y(\mathbf{x}) = \sum_{i=1}^{n} \beta_i \varphi_i(\mathbf{x}),
 ```
 
-where `\varphi_i(x)` are nonlinear basis functions that map the input space into an intermediate feature space and `\mathbf{\beta}` represents the adjustable weights. Some commonly used basis functions are introduced next.
+where ``\varphi_i(x)`` are nonlinear basis functions that map the input space into an intermediate feature space and ``\mathbf{\beta}`` represents the adjustable weights. Some commonly used basis functions are introduced next.
 
 ### Monomial Basis
 
-Monomial basis functions are defined as the powers, or products of powers in the multivariate case, of the input variables with a total degree of less than or equal to `d`. For example, the monomial basis in two variables of degree `d=3` in graded reverse lexicographic order is given by
+Monomial basis functions are defined as the powers, or products of powers in the multivariate case, of the input variables with a total degree of less than or equal to ``d``. For example, the monomial basis in two variables of degree ``d=3`` in graded reverse lexicographic order is given by
 
 ```math
 \varphi(x) = \left[1, x_2, x_1, x_2^2, x_1x_2, x_1^2, x_2^3, x_1x_2^2, x_1^2x_2, x_1^3\right]
@@ -29,7 +29,7 @@ By default the [`MonomialBasis`](@ref) includes the constant (zero degree) term.
 
 ### Radial Basis
 
-A radial basis function (RBF) is a real-valued function `\varphi(||\mathbf{x}-\mathbf{c}||)` that depends on the distance between the input `\mathbf{x}` and a fixed point `\mathbf{c}`, called a _center_. These functions are multivariate but reduce to scalar functions of the radius `r = ||\mathbf{x} - \mathbf{c}||`, hence the name **radial** basis function. The distance used is most commonly the euclidian norm. _UncertaintyQuantification_ provides two types of RBFs.
+A radial basis function (RBF) is a real-valued function ``\varphi(||\mathbf{x}-\mathbf{c}||)`` that depends on the distance between the input ``\mathbf{x}`` and a fixed point ``\mathbf{c}``, called a _center_. These functions are multivariate but reduce to scalar functions of the radius ``r = ||\mathbf{x} - \mathbf{c}||``, hence the name **radial** basis function. The distance used is most commonly the euclidian norm. _UncertaintyQuantification_ provides two types of RBFs.
 
 #### Gaussian
 
@@ -39,7 +39,7 @@ A radial basis function (RBF) is a real-valued function `\varphi(||\mathbf{x}-\m
 
 ```
 
-here, `\epsilon` is a shape parameter. Gaussian radial basis functions are exposed through the [`GaussianRadialBasis`](@ref) struct.
+here, ``\epsilon`` is a shape parameter. Gaussian radial basis functions are exposed through the [`GaussianRadialBasis`](@ref) struct.
 
 #### Polyharmonic
 
@@ -54,7 +54,7 @@ Note, that polyharmonic radial basis functions do not require a shape parameter.
 
 ### Least Squares
 
-Despite the nonlinearity of the basis functions, the model remains linear in its parameters, which allows efficient estimation of the weights using ordinary least squares. Given `m` observations `(\mathbf{x}_i, y_i)`, for `i = 1,\ldots,m` we construct the design matrix `\Phi` where each row contains the evaluated basis functions for one input:
+Despite the nonlinearity of the basis functions, the model remains linear in its parameters, which allows efficient estimation of the weights using ordinary least squares. Given ``m`` observations ``(\mathbf{x}_i, y_i)``, for ``i = 1,\ldots,m`` we construct the design matrix ``\Phi`` where each row contains the evaluated basis functions for one input:
 
 ```math
 \Phi_{ij} = \varphi_j(\mathbf{x}_i), \text{ for } i=1,\ldots,n \text{ and } j=1,\ldots,m
@@ -72,7 +72,7 @@ yielding the closed-form solution via
 \mathbf{\beta} = (\Phi^{\top}\Phi)^{-1}\Phi^{\top}\mathbf{y},
 ```
 
-where `\mathbf{y}` is the output vector.
+where ``\mathbf{y}`` is the output vector.
 
 ### Example
 
@@ -82,9 +82,9 @@ Consider the function
     y(x) = x\cos(x) ,
 ```
 
-where `x \sim U(-5, 5)`
+where ``x \sim U(-5, 5)``
 
-We use `HaltonSample` through [`QuasiMonteCarloSampling`](@ref) to sample 128 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree `d=9`.
+We use `HaltonSample` through [`QuasiMonteCarloSampling`](@ref) to sample 128 data points from the input variable, evaluate the model, and fit a [`LinearBasisFunctionModel`](@ref) using a [`MonomialBasis`](@ref) of degree ``d=9``.
 
 ```@example lbfm
 using UncertaintyQuantification # hide
@@ -136,13 +136,13 @@ An interval predictor model (IPM)[crespoIntervalPredictorModels2016](@cite) is a
     I_y(x,P) = \{y = p^T \varphi (x), p \in P\},
 ```
 
-where `\varphi(x)` is an arbitrary basis and the uncertainty set `P` is defined as
+where ``\varphi(x)`` is an arbitrary basis and the uncertainty set ``P`` is defined as
 
 ```math
     P = \{p : \underline{p} \leq p \leq \overline{p} \}.
 ```
 
-Using the _defining vertices_ of P `\underline{p}` and `\overline{p}` the IPM results as
+Using the _defining vertices_ of P ``\underline{p}`` and ``\overline{p}`` the IPM results as
 
 ```math
 I_y(x,P) = \left[\underline{y}(x,\overline{p},\underline{p}), \overline{y}(x,\overline{p},\underline{p})\right],
@@ -160,7 +160,7 @@ and
     \overline{y}(x,\overline{p},\underline{p}) = \overline{p}^T\left(\frac{\varphi(x) + |\varphi(x)|}{2}\right) + \underline{p}^T\left(\frac{\varphi(x) - |\varphi(x)|}{2}\right).
 ```
 
-Here, `\underline{y}` and `\overline{y}` are the lower and upper bounds of the IPM.
+Here, ``\underline{y}`` and ``\overline{y}`` are the lower and upper bounds of the IPM.
 
 The distance between the lower and upper bound given by
 
@@ -182,7 +182,7 @@ Consider the function
     y(x) = x^2\cos(x) - \sin(3x)\exp(-x^2) - x - \cos(x^2) +xg,
 ```
 
-where `x \sim U(-5.5, 5.5` and `g \sim N(0,1)`. We generate a data sequence of `N = 128` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
+where ``x \sim U(-5.5, 5.5`` and ``g \sim N(0,1)``. We generate a data sequence of ``N = 128`` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
 
 ```@example ipm
 using UncertaintyQuantification # hide
@@ -229,7 +229,7 @@ savefig("ipm.svg"); nothing # hide
 
 ### IPM reliability
 
-The reliability of the IPM, that is the probability that and unobserved data point `(x,y)` will fall in the interval `I_y(x,P)` can be assessed using the [`reliability`](@ref) function. The function `reliability(ipm, ϵ)` returns the confidence parameter `\beta`. Then, the reliability of the IPM is no less than `1 - \epsilon` with confidence `1 - \beta`.
+The reliability of the IPM, that is the probability that and unobserved data point ``(x,y)`` will fall in the interval ``I_y(x,P)`` can be assessed using the [`reliability`](@ref) function. The function `reliability(ipm, ϵ)` returns the confidence parameter ``\beta``. Then, the reliability of the IPM is no less than ``1 - \epsilon`` with confidence ``1 - \beta``.
 
 ```@example ipm
 1 - reliability(ipm, 0.1548)
@@ -287,9 +287,9 @@ For a new input location $x^*$ we are interested at the unknown function value $
 
 where:
 
-- `K(\hat{X}, \hat{X})` is the covariance matrix with entries `K_{ij} = k(\hat{x}_i, \hat{x}_j)`,
-- `K(\hat{X}, x^*)` is the covariance matrix with entries `K_{i1} = k(\hat{x}_i, x^*)`,
-- and `(x^*, x^*)` is the variance at the unknown input location.
+- ``K(\hat{X}, \hat{X})`` is the covariance matrix with entries ``K_{ij} = k(\hat{x}_i, \hat{x}_j)``,
+- ``K(\hat{X}, x^*)`` is the covariance matrix with entries ``K_{i1} = k(\hat{x}_i, x^*)``,
+- and ``(x^*, x^*)`` is the variance at the unknown input location.
 
 We can then obtain the posterior distribution of $f^*$ from the properties of multivariate Gaussian distributions (see, e.g. Appendix A.2 in [rasmussen2005gaussian](@cite)), by conditioning the joint Gaussian on the observed outputs $\hat{f}_i$:
 
@@ -582,10 +582,10 @@ savefig(p, "adaptive_gp_example.svg"); nothing # hide
 ### Acquisition Functions
 
 The acquisition function determines _which_ candidate point is added next, and therefore what
-the adaptive scheme optimizes for. Given the posterior mean `\mu(\mathbf{x})` and posterior
-standard deviation `\sigma(\mathbf{x})` of the current GP, the next point `\mathbf{x}^{+}`
-is chosen from the sampled candidates `\mathbf{x} \in \mathcal{X}_c` by maximizing (or
-minimizing) a criterion `a(\mathbf{x})`. For a review of various acquisition functions we
+the adaptive scheme optimizes for. Given the posterior mean ``\mu(\mathbf{x})`` and posterior
+standard deviation ``\sigma(\mathbf{x})`` of the current GP, the next point ``\mathbf{x}^{+}``
+is chosen from the sampled candidates ``\mathbf{x} \in \mathcal{X}_c`` by maximizing (or
+minimizing) a criterion ``a(\mathbf{x})``. For a review of various acquisition functions we
 refer to [fuhg2021state](@cite).
 
 `UncertaintyQuantification.jl` provides the following acquisition functions to adapatively
@@ -601,13 +601,13 @@ Goal: improve the global fit of the GP
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \sigma^2(\mathbf{x}).
 ```
 
-- [`MaximinDistance`](@ref) is a space-filling criterion that adds the candidate farthest (in input space) from every existing training point `\hat{\mathbf{x}}_i \in \hat{X}`,
+- [`MaximinDistance`](@ref) is a space-filling criterion that adds the candidate farthest (in input space) from every existing training point ``\hat{\mathbf{x}}_i \in \hat{X}``,
 
 ```math
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \min_{i} \lVert \mathbf{x} - \hat{\mathbf{x}}_i \rVert.
 ```
 
-- [`ExpectedImprovementForGlobalFit`](@ref) (EIGF) trades off the local discrepancy to the nearest training observation `\hat{f}_{i(\mathbf{x})}` (with `i(\mathbf{x}) = \operatorname{argmin}_i \lVert \mathbf{x} - \hat{\mathbf{x}}_i \rVert`) against the posterior variance,
+- [`ExpectedImprovementForGlobalFit`](@ref) (EIGF) trades off the local discrepancy to the nearest training observation ``\hat{f}_{i(\mathbf{x})}`` (with ``i(\mathbf{x}) = \operatorname{argmin}_i \lVert \mathbf{x} - \hat{\mathbf{x}}_i \rVert``) against the posterior variance,
 
 ```math
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \left[\mu(\mathbf{x}) - \hat{f}_{i(\mathbf{x})}\right]^2 + \sigma^2(\mathbf{x}).
@@ -615,9 +615,9 @@ Goal: improve the global fit of the GP
 
 ### Bayesian optimization
 
-Goal: refine the global minimum `\hat{f}_{\text{best}} = \min_i \hat{f}_i`
+Goal: refine the global minimum ``\hat{f}_{\text{best}} = \min_i \hat{f}_i``
 
-- [`ExpectedImprovement`](@ref) with exploration parameter `\xi`,
+- [`ExpectedImprovement`](@ref) with exploration parameter ``\xi``,
 
 ```math
 \mathrm{EI}(\mathbf{x}) = \left(\hat{f}_{\text{best}} - \mu(\mathbf{x}) - \xi\right) \Phi(z) + \sigma(\mathbf{x}) \phi(z), \qquad
@@ -628,7 +628,7 @@ z = \frac{\hat{f}_{\text{best}} - \mu(\mathbf{x}) - \xi}{\sigma(\mathbf{x})},
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \mathrm{EI}(\mathbf{x}),
 ```
 
-where `\Phi` and `\phi` are the standard normal cdf and pdf, respectively (`\mathrm{EI}(\mathbf{x}) = 0` if `\sigma(\mathbf{x}) = 0`).
+where ``\Phi`` and ``\phi`` are the standard normal cdf and pdf, respectively (``\mathrm{EI}(\mathbf{x}) = 0`` if ``\sigma(\mathbf{x}) = 0``).
 
 - [`ProbabilityOfImprovement`](@ref),
 
@@ -637,7 +637,7 @@ where `\Phi` and `\phi` are the standard normal cdf and pdf, respectively (`\mat
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmax}}\ \mathrm{PI}(\mathbf{x}).
 ```
 
-- [`UpperConfidenceBound`](@ref) with exploration weight `\kappa` minimizes a lower confidence bound (for a minimization objective),
+- [`UpperConfidenceBound`](@ref) with exploration weight ``\kappa`` minimizes a lower confidence bound (for a minimization objective),
 
 ```math
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmin}}\ \mu(\mathbf{x}) - \kappa\, \sigma(\mathbf{x}).
@@ -645,16 +645,16 @@ where `\Phi` and `\phi` are the standard normal cdf and pdf, respectively (`\mat
 
 ### Reliability analysis
 
-Goal: refine the limit-state surface `g(\mathbf{x}) = \tau` (typically, `\tau = 0`):
+Goal: refine the limit-state surface ``g(\mathbf{x}) = \tau`` (typically, ``\tau = 0``):
 
-- [`DeviationNumber`](@ref), the `U`-function used in AK-MCS, adds the point closest to the limit state relative to its uncertainty,
+- [`DeviationNumber`](@ref), the ``U``-function used in AK-MCS, adds the point closest to the limit state relative to its uncertainty,
 
 ```math
 \mathbf{x}^{+} = \underset{\mathbf{x} \in \mathcal{X}_c}{\operatorname{argmin}}\ U(\mathbf{x}), \qquad
 U(\mathbf{x}) = \frac{|\mu(\mathbf{x}) - \tau|}{\sigma(\mathbf{x})}.
 ```
 
-- [`ExpectedFeasibility`](@ref) (EFF) integrates the probability that the true response lies within an `\epsilon`-band `\epsilon(\mathbf{x}) = \text{epsilon\_factor} \cdot \sigma(\mathbf{x})` around the limit state,
+- [`ExpectedFeasibility`](@ref) (EFF) integrates the probability that the true response lies within an ``\epsilon``-band ``\epsilon(\mathbf{x}) = \text{epsilon\_factor} \cdot \sigma(\mathbf{x})`` around the limit state,
 
 ```math
 \begin{aligned}

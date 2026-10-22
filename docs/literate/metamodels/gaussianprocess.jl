@@ -1,7 +1,7 @@
 #===
-# Gaussian Process Regression
+## Gaussian Process Regression
 
-## Himmelblau's Function
+### Himmelblau's Function
 
 In this example, we will model the following test function (known as Himmelblau's function) in the range ``x_1, x_2 ∈ [-5, 5]`` with a Gaussian process (GP) regression model.
 

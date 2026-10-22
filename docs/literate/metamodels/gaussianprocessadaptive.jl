@@ -1,5 +1,5 @@
 #===
-# Adaptive Gaussian Process Regression
+## Adaptive Gaussian Process Regression
 
 Adaptive Gaussian process regression enriches an initial surrogate model with
 new evaluations selected by a learning function. At every iteration, the
@@ -7,7 +7,7 @@ algorithm samples candidate points, selects the most informative one according
 to the learning function, evaluates the expensive model there, and refits the
 Gaussian process.
 
-## Himmelblau's Function
+### Himmelblau's Function
 
 As in the (non-adaptive) GP example, we consider the Himmelblau function in ``x1, x2 ∈ [-5, 5]``
 as a test function.
