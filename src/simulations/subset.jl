@@ -197,13 +197,14 @@ function probability_of_failure(
         sim::AbstractSubSetSimulation,
     )
     inputs, models = wrap.([inputs, models])
+    print("\n11111\n")
 
     if isimprecise(inputs, models)
         error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
     end
 
     samples = [sample(inputs, sim)]
-
+    print("2222222222\n", typeof(models), typeof(samples[end]))
     evaluate!(models, samples[end])
 
     performance = [performancefunction(samples[end])]

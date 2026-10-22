@@ -55,7 +55,8 @@ function evaluate!(models::Vector{<:UQModel}, df::DataFrame)
     datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
     for m in models
         if isa(m, ExternalModel)
-            evaluate!(m, df; datetime = datetime)
+            print("3333333\n", typeof(m), typeof(df), typeof(datetime))
+            evaluate!(m, df, sim_folder = datetime)
         else
             evaluate!(m, df)
         end

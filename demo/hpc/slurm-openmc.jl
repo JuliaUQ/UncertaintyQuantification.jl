@@ -56,20 +56,18 @@ function limitstate(df)
     return reduce(vcat, df.TBR) .- 1
 end
 
-@time pf, σ, samples = probability_of_failure(ext, limitstate, [E, R1], MonteCarlo(5000))
-println("Probability of failure: $pf")
+# @time pf, σ, samples = probability_of_failure(ext, limitstate, [E, R1], MonteCarlo(500))
+# println("Probability of failure: $pf")
 
-using StatsBase
+# using StatsBase
 
-TBR = samples.TBR
-TBR_mean = mean(TBR)
-TBR_std = std(TBR)
-lower_quantile = quantile(TBR, 0.025)
-upper_quantile = quantile(TBR, 0.975)
-println("TBR mean: $TBR_mean, TBR std: $TBR_std, TBR 95%: [$lower_quantile, $upper_quantile]")
-
+# TBR = samples.TBR
+# TBR_mean = mean(TBR)
+# TBR_std = std(TBR)
+# lower_quantile = quantile(TBR, 0.025)
+# upper_quantile = quantile(TBR, 0.975)
+# println("TBR mean: $TBR_mean, TBR std: $TBR_std, TBR 95%: [$lower_quantile, $upper_quantile]")
 subset = SubSetInfinity(800, 0.1, 10, 0.5)
-
 @time pf, std, samples = probability_of_failure(ext, limitstate, [E, R1], subset)
 println("Probability of failure: $pf")
 

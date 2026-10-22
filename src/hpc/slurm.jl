@@ -46,22 +46,22 @@ Base.@kwdef struct SlurmInterface <: AbstractHPCScheduler
     end
 end
 
-function setup_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, datetime::String)
+function setup_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, sim_folder::String)
     return if si.batchsize == 0
-        setup_slurm_array(si, m::ExternalModel, n::Integer, datetime::String)
+        setup_slurm_array(si, m::ExternalModel, n::Integer, sim_folder::String)
     else
         for batch in 1:ceil(Integer, n / si.batchsize)
-            setup_slurm_array(si, m, n, datetime, batch)
+            setup_slurm_array(si, m, n, sim_folder, batch)
         end
     end
 end
 
-function run_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, datetime::String)
+function run_hpc_jobs(si::SlurmInterface, m::ExternalModel, n::Integer, sim_folder::String)
     return if si.batchsize == 0
-        run_slurm_array(si, m::ExternalModel, datetime::String)
+        run_slurm_array(si, m::ExternalModel, sim_folder::String)
     else
         for batch in 1:ceil(Integer, n / si.batchsize)
-            run_slurm_array(si, m, datetime, batch)
+            run_slurm_array(si, m, sim_folder, batch)
         end
     end
 end
@@ -162,7 +162,7 @@ end
 
 # Slurm interface is passed to dispatch function for slurm. Perhaps there is a more elegant solution using parametric typing.
 function run_slurm_array(
-        si::SlurmInterface, m::ExternalModel, path::String, batch::Integer = 0
+        _::SlurmInterface, m::ExternalModel, path::String, batch::Integer = 0
     )
     dirpath = joinpath(m.workdir, path)
 

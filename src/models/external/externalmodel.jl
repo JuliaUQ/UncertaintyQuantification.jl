@@ -91,18 +91,29 @@ end
 function evaluate!(
         m::ExternalModel,
         df::DataFrame;
-        datetime::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        subset_lvl = nothing,
     )
+    print("4444444444444444444444444444")
     if !isnothing(m.scheduler)
-        return evaluate!(m, df, m.scheduler; datetime = datetime)
+        return evaluate!(
+            m, df, m.scheduler; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl
+        )
     end
 
+    if sim_name
+        sim_name = "-$(sim_name)"
+    end
     n = size(df, 1)
     digits = ndigits(n)
 
     results = pmap(1:n) do i
-        path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
-
+        if subset_lvl
+            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
+        else
+            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
+        end
         makedirectory(m, df[i, :], path)
         run(m.solver, path)
         result = getresult(m, path)
@@ -122,22 +133,34 @@ function evaluate!(
         m::ExternalModel,
         df::DataFrame,
         scheduler::AbstractHPCScheduler;
-        datetime::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        subset_lvl = nothing,
     )
     n = size(df, 1)
     digits = ndigits(n)
 
     for i in 1:n
-        path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
+        if !isnothing(subset_lvl)
+            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
+        else
+            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
+        end
         makedirectory(m, df[i, :], path)
     end
 
-    setup_hpc_jobs(scheduler, m, n, datetime)
+    setup_hpc_jobs(scheduler, m, n, sim_folder)
 
-    run_hpc_jobs(scheduler, m, n, datetime)
+    run_hpc_jobs(scheduler, m, n, sim_folder)
 
     results = map(1:n) do i
-        path = joinpath(m.workdir, datetime, "sample-$(lpad(i, digits, "0"))")
+        if !isnothing(subset_lvl)
+            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
+        else
+            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
+        end
+
+
         return getresult(m, path)
     end
 
