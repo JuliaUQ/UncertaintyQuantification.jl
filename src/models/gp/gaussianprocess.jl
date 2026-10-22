@@ -387,7 +387,6 @@ function transform(data::DataFrame, dt::Vector{<:UQInput})
     df = copy(data)
     to_standard_normal_space!(dt, df)
     return permutedims(Matrix(df))
-    return StatsBase.transform(dt, permutedims(Matrix(data)))
 end
 
 function transform(data::DataFrame, ::Nothing)
