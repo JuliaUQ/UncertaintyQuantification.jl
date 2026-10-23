@@ -177,6 +177,12 @@ pre, code {
   --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
+/* Component: Uncertainty Figure */
+
+.dark .uncertainty-figure {
+  filter: invert(1);
+}
+
 /* Component: MathJax */
 
 mjx-container > svg {
