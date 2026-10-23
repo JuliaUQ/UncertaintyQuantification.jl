@@ -9,8 +9,8 @@
     model(θ)  # returns a new object with parameters applied
     This works for mean functions, kernels, transformations, and Gaussian processes.
 
-Based on two core functions, this system can extract model parameters for an optimization routine 
-and apply potentially constrained parameters to the underlying model to compute the optimization objective. 
+Based on two core functions, this system can extract model parameters for an optimization routine
+and apply potentially constrained parameters to the underlying model to compute the optimization objective.
 The two core functions are:
 
     1.  extract_parameters(obj)
@@ -252,7 +252,7 @@ end
 extract_parameters(f::PriorGP) = begin
     f.learn_noise ? (
             extract_parameters(f.gp),
-            ParameterHandling.positive(f.σ², exp, 0.0),
+            ParameterHandling.positive(f.σ², exp, 1.0e-12),
         ) :
         (extract_parameters(f.gp))
 end
