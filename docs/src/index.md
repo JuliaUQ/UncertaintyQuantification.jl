@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "Uncertainty\nQuantification.jl"
-  text: Computational methods for uncertain systems
+  text: Computational Methods for Uncertain Systems
   tagline: Propagate uncertainties, assess reliability, and calibrate models with data.
   image:
     src: /logo.svg

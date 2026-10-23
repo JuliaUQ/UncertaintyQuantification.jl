@@ -391,4 +391,4 @@ Here, the lower bound is again estimated using FORM, while we apply subset simul
      pf, out_lb, out_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], RandomSlicing(FORM(), subset))
 ```
 
-As outlined by [alvarez2018estimation], other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.
+As outlined by [alvarez2018estimation](@cite), other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.
