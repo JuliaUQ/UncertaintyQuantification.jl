@@ -108,7 +108,7 @@ function GaussianProcess(
 
     gp = GP(mean, kernel)
 
-    x = permutedims(Matrix(data[:, inputs]))
+    x = float.(permutedims(Matrix(data[:, inputs])))
     y = vec(data[:, output])
 
     transform = nothing
