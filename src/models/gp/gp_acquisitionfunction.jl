@@ -279,8 +279,8 @@ struct MaximinDistance <: AbstractGaussianProcessAcquisitionFunction end
 
 function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::MaximinDistance)
     input = propertynames(candidates)
-    X = Matrix(gp.data[:, input])
-    Xc = Matrix(candidates[:, input])
+    X = Matrix(gp.data[:, gp.inputs])
+    Xc = Matrix(candidates[:, gp.inputs])
 
     distances = [minimum(norm(Xc[i, :] - X[j, :]) for j in axes(X, 1)) for i in axes(Xc, 1)]
     ind = argmax(distances)
