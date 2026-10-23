@@ -171,7 +171,7 @@ The distance between the lower and upper bound given by
 is known as the *spread* of the IPM. The optimal defining vertices for a given data set are found by minimizing the average spread such that all data points fall into the IPM by solving the following convex constrained optimization problem.
 
 ```math
-\{\underline{p},\overline{p}\} = \underset{u,v}{\operatorname{argmax}}\{\mathbb{E}_x\left[\delta_y(x,u,v\right] : \underline{y}(x_i,v,u)\leq y_i \leq\overline{y}(x_i,v,u),u \leq v\}
+\{\underline{p},\overline{p}\} = \underset{u,v}{\operatorname{argmax}}\{\mathbb{E}_x\left[\delta_y(x,u,v)\right] : \underline{y}(x_i,v,u)\leq y_i \leq\overline{y}(x_i,v,u),u \leq v\}
 ```
 
 ### Example
@@ -182,7 +182,7 @@ Consider the function
     y(x) = x^2\cos(x) - \sin(3x)\exp(-x^2) - x - \cos(x^2) +xg,
 ```
 
-where ``x \sim U(-5.5, 5.5`` and ``g \sim N(0,1)``. We generate a data sequence of ``N = 128`` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
+where ``x \sim U(-5.5, 5.5)`` and ``g \sim N(0,1)``. We generate a data sequence of ``N = 128`` points and fit an `IntervalPredictorModel` using a [`MonomialBasis`](@ref) of sixth degree.
 
 ```@example ipm
 using UncertaintyQuantification # hide

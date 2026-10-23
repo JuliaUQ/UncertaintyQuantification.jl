@@ -118,7 +118,7 @@ jd = JointDistribution(mv, [:x, :y])
 
 ### Copulas
 
-Alternatively dependencies can be created through copulas. By using copulas, the modelling of the dependence structure is separated from the modelling of the univariate marginal distributions. The basis for copulas is given by Sklar's theorem [sklarFonctionsRepartitionDimensions1959](@cite). It states that any multivariate distribution `H` in dimensions `d \geq 2` can be separated into its marginal distributions `F_i` and a copula function `C`.
+Alternatively dependencies can be created through copulas. By using copulas, the modelling of the dependence structure is separated from the modelling of the univariate marginal distributions. The basis for copulas is given by Sklar's theorem [sklarFonctionsRepartitionDimensions1959](@cite). It states that any multivariate distribution ``H`` in dimensions ``d \geq 2`` can be separated into its marginal distributions ``F_i`` and a copula function ``C``.
 
 ```math
 H(x_1,\ldots,x_2) = C(F_1(x_1),\ldots,F_d(x_d))
@@ -151,7 +151,7 @@ An error is thrown if the dimension of the copula does not agree with the number
 
 ## Models
 
-In this section we present the models included in _UncertaintyQuantification.jl_. A model, in its most basic form, is a relationship between a set of input variables `x \in \mathbb{R}^{n_x}` and an output `y \in \mathbb{R}`. Currently, most models are assumed to return single-valued outputs. However, as seen later, the `ExternalModel` is capable of extracting an arbitrary number of outputs from a single run of an external solver.
+In this section we present the models included in _UncertaintyQuantification.jl_. A model, in its most basic form, is a relationship between a set of input variables ``x \in \mathbb{R}^{n_x}`` and an output ``y \in \mathbb{R}``. Currently, most models are assumed to return single-valued outputs. However, as seen later, the `ExternalModel` is capable of extracting an arbitrary number of outputs from a single run of an external solver.
 
 ### Model
 

@@ -21,7 +21,7 @@ The Shinozuka Deodatis Function is another PSD function and is characterized as:
 ```math
     S(\omega) = \frac{1}{4} \sigma^2 b^3 \omega^2 e^{-b \left| \omega \right|}
 ```
-This function depends on the vector ``\omega``, which is uniformly distributed from 0 to the cut-off frequency ``\omega_u`` in intervals ``delta \omega = \omega_u/N``. Here is N the number of needed terms.
+This function depends on the vector ``\omega``, which is uniformly distributed from 0 to the cut-off frequency ``\omega_u`` in intervals ``\Delta \omega = \omega_u/N``. Here is N the number of needed terms.
 
 ## Stochastic Process Generation
 
@@ -49,15 +49,15 @@ where ``\Delta t`` is the time discretisation, ``T`` is duration of the record, 
 
 ## Nyquist Frequency
 
-In the context of discretising continuous signals, the Nyquist frequency ``f_Ny`` is an essential concept. It is defined as half of the sampling frequency ``f_s``, i.e.
+In the context of discretising continuous signals, the Nyquist frequency ``f_{\mathrm{Ny}}`` is an essential concept. It is defined as half of the sampling frequency ``f_s``, i.e.
 
 ```math
-    f_Ny = \frac{f_s}{2}.
+    f_{\mathrm{Ny}} = \frac{f_s}{2}.
 ```
-Frequencies higher than ``f_Ny`` cannot be uniquely represented in the sampled signal. Instead, they appear as lower frequencies within the interval ``[0, f_Ny]``, a distortion known as *aliasing*. To avoid this effect, the sampling rate must be chosen such that the maximum frequency of the signal does not exceed the Nyquist frequency:
+Frequencies higher than ``f_{\mathrm{Ny}}`` cannot be uniquely represented in the sampled signal. Instead, they appear as lower frequencies within the interval ``[0, f_{\mathrm{Ny}}]``, a distortion known as *aliasing*. To avoid this effect, the sampling rate must be chosen such that the maximum frequency of the signal does not exceed the Nyquist frequency:
 
 ```math
-    f_max < f_Ny
+    f_{\max} < f_{\mathrm{Ny}}
 ```
 
 If the chosen parameters do not satisfy this condition, the code does not stop the computation, but issues a warning to indicate the potential occurrence of aliasing.
