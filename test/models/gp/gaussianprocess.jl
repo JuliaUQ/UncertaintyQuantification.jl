@@ -41,7 +41,36 @@ end
     model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
 
     gp = GaussianProcess(
-        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y, [:x];
+        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
+        mean = ZeroMean(),
+        kernel = SqExponentialKernel(),
+        σ² = 1.0e-5,
+        learn_hyperparameters = false
+    )
+
+    verify_true = sample(inputs, 100)
+    verify_gp = verify_true[:, [:x]]
+
+    evaluate!(model, verify_true)
+    evaluate!(gp, verify_gp)
+
+    @test R²(verify_true.y, verify_gp.y_mean) ≈ 0.99 rtol = 0.02
+    @test :x in propertynames(gp.data)
+    @test :y in propertynames(gp.data)
+    @test !(:a in propertynames(gp.data))
+    @test !(:b in propertynames(gp.data))
+end
+
+@testitem "GaussianProcess Non RV inputs" setup = [
+    GPTestSetup,
+] begin
+
+    inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
+
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
+
+    gp = GaussianProcess(
+        inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
         mean = ZeroMean(),
         kernel = SqExponentialKernel(),
         σ² = 1.0e-5,
@@ -187,7 +216,7 @@ end
 
     gp = GaussianProcess(
         inputs, model, QuasiMonteCarloSampling(200, HaltonSample())
-        , :y, [:x];
+        , :y;
         mean = ZeroMean(),
         kernel = SqExponentialKernel(),
         σ² = 1.0e-5,
@@ -198,7 +227,7 @@ end
 
     gp = GaussianProcess(
         inputs, model, MonteCarlo(10)
-        , :y, [:x];
+        , :y;
         mean = ZeroMean(),
         kernel = SqExponentialKernel(),
         σ² = 1.0e-5

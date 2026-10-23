@@ -89,8 +89,7 @@ function AdaptiveGaussianProcess(
         model::Union{UQModel, Vector{<:UQModel}},
         design::AbstractMonteCarlo,
         output::Symbol,
-        acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance(),
-        input_names = wrap(names(input));
+        acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance();
         candidate_sampling = MonteCarlo(100_000),
         σ² = 1.0e-5,
         learn_noise = false,
@@ -105,8 +104,7 @@ function AdaptiveGaussianProcess(
         input,
         model,
         design,
-        output,
-        input_names;
+        output;
         mean = mean,
         kernel = kernel,
         normalize = normalize,

@@ -50,19 +50,19 @@ end
 """
     GaussianProcess(
         data::DataFrame, output::Symbol,
-        inputs::Vector{Symbol} = propertynames(data[:, Not(output)]); kwargs...
+        input_names::Vector{Symbol} = propertynames(data[:, Not(output)]); kwargs...
     )
 
 Fit a Gaussian-process surrogate to the input and output columns in `data`.
 The returned model stores the fitted posterior, selected input names, noise
-variance, input transformation, and training data in `posterior`, `inputs`,
+variance, input transformation, and training data in `posterior`, `input_names`,
 `σ²`, `transform`, and `data`, respectively. The output is kept on its original
 scale. The training DataFrame is stored by reference.
 
 # Arguments
 - `data`: Training data containing the input columns and observed output.
 - `output`: Name of the output column to approximate.
-- `inputs`: Input columns, in the order used by the GP. Defaults to all columns
+- `input_names`: Input columns, in the order used by the GP. Defaults to all columns
   except `output`; specify this argument to exclude metadata or other outputs.
 
 # Keyword Arguments
@@ -96,7 +96,7 @@ true
 function GaussianProcess(
         data::DataFrame,
         output::Symbol,
-        inputs::Vector{Symbol} = propertynames(data[:, Not(output)]);
+        input_names::Vector{Symbol} = propertynames(data[:, Not(output)]);
         mean::AbstractGPs.MeanFunction = ZeroMean(),
         kernel::Kernel = SqExponentialKernel(),
         normalize::Bool = true,
@@ -108,7 +108,7 @@ function GaussianProcess(
 
     gp = GP(mean, kernel)
 
-    x = float.(permutedims(Matrix(data[:, inputs])))
+    x = float.(permutedims(Matrix(data[:, input_names])))
     y = vec(data[:, output])
 
     transform = nothing
@@ -130,7 +130,7 @@ function GaussianProcess(
         optimizer = optimizer
     )
 
-    return GaussianProcess(gp, output, inputs, σ², transform, data)
+    return GaussianProcess(gp, output, input_names, σ², transform, data[:,[input_names..., output]])
 
 end
 
@@ -221,8 +221,7 @@ function GaussianProcess(
         inputs::Union{<:UQInput, Vector{<:UQInput}},
         models::Union{<:UQModel, Vector{<:UQModel}},
         design::Union{AbstractMonteCarlo, AbstractDesignOfExperiments},
-        output::Symbol,
-        input_names::Vector{Symbol} = wrap(names(inputs));
+        output::Symbol;
         mean::AbstractGPs.MeanFunction = ZeroMean(),
         kernel::Kernel = SqExponentialKernel(),
         normalize::Bool = true,
@@ -231,6 +230,12 @@ function GaussianProcess(
         learn_hyperparameters::Bool = true,
         optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
     )
+
+    if !all(x -> x isa RandomVariable{<:UnivariateDistribution} || x isa Parameter, wrap(inputs))
+        throw(ArgumentError("All inputs must be of type `RandomVariable{<:UnivariateDistribution>}` or `Parameter`."))
+    end
+
+    input_names = names(filter(x -> x isa RandomVariable{<:UnivariateDistribution}, wrap(inputs)))
 
     inputs = wrap(inputs)
 
@@ -255,7 +260,7 @@ function GaussianProcess(
         optimizer = optimizer
     )
 
-    return GaussianProcess(gp, output, input_names, σ², dt, data)
+    return GaussianProcess(gp, output, input_names, σ², dt, data[:,[input_names..., output]])
 end
 
 """
