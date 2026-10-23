@@ -193,67 +193,70 @@ end
 end
 
 @testitem "IPM Reliability Double Loop" setup = [TestSetup, QMC] begin
+    # y = x1 + x2 + ϵ, with bounded noise ϵ ∈ [-0.5, 0.5] of unknown distribution.
+    # The IPM is fitted to noisy observations and should capture the noise as an
+    # interval, so its pf bounds match those of the reference with ϵ as an interval variable.
     x1 = RandomVariable(Normal(), :x1)
-    x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
-    x3 = IntervalVariable(-1, 2, :x3)
+    x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 1)), :x2)
+    ϵ = IntervalVariable(-0.5, 0.5, :ϵ)
 
-    # QuasiMonteCarloSampling Samples to fit IPM
+    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, :y)
+
+    # Noisy training data; the noise is not an input of the IPM
     data = UncertaintyQuantification.sample(
-        [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-1, 2), :x3)],
-        QuasiMonteCarloSampling(150, HaltonSample()),
+        [x1, RandomVariable(Normal(), :x2), RandomVariable(Uniform(-0.5, 0.5), :ϵ)],
+        QuasiMonteCarloSampling(200, HaltonSample()),
     )
+    evaluate!(m, data)
 
-    m1 = Model(df -> df.x1 + df.x3, :x4)
-    m2 = Model(df -> 7 .- df.x4 .^ 2 .+ df.x2, :y)
-
-    evaluate!([m1, m2], data)
-
-    b = MonomialBasis(2, 3)
-
-    ipm = IntervalPredictorModel(data, :y, b, [:x2, :x4])
+    ipm = IntervalPredictorModel(data, :y, MonomialBasis(2, 1), [:x1, :x2])
 
     pf, x_lb, x_ub = probability_of_failure(
-        [m1, m2], df -> 5.0 .- df.y, [x1, x2, x3], DoubleLoop(FORM())
+        ipm, df -> 3.0 .- df.y
+        , [x1, x2], DoubleLoop(FORM())
     )
 
-    pf_ipm, x_lb_ipm, x_ub_ipm = probability_of_failure(
-        [m1, ipm], df -> 5.0 .- df.y, [x1, x2, x3], DoubleLoop(FORM())
-    )
+    # x1 + x2 ~ N(μ, √2) and failure is x1 + x2 + ϵ > 3, worst/best case at μ + ϵ = ±1.5
+    pf_lb = cdf(Normal(), -4.5 / sqrt(2))
+    pf_ub = cdf(Normal(), -1.5 / sqrt(2))
 
-    @test pf.lb ≈ pf_ipm.lb atol = 1.0e-4
-    @test pf.ub ≈ pf_ipm.ub atol = 1.0e-4
-    @test x_lb ≈ x_lb_ipm atol = 1.0e-4
-    @test x_ub ≈ x_ub_ipm atol = 1.0e-4 broken = true
+    @test pf.lb ≈ pf_lb atol = 1.0e-4
+    @test pf.ub ≈ pf_ub atol = 1.0e-4
+
+    @test x_lb[1] ≈ -1.0 atol = 1.0e-4
+    @test x_ub[1] ≈ 1.0 atol = 1.0e-4
+
 end
 
 @testitem "IPM Reliability Random Slicing" setup = [TestSetup, QMC] begin
+    # y = x1 + x2 + ϵ, with bounded noise ϵ ∈ [-0.5, 0.5] of unknown distribution.
+    # The IPM is fitted to noisy observations and should capture the noise as an
+    # interval, so its pf bounds match those of the reference with ϵ as an interval variable.
     x1 = RandomVariable(Normal(), :x1)
-    x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2)
-    x3 = IntervalVariable(-1, 2, :x3)
+    x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 1)), :x2)
+    ϵ = IntervalVariable(-0.5, 0.5, :ϵ)
 
-    # QuasiMonteCarloSampling Samples to fit IPM
+    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, :y)
+
+    # Noisy training data; the noise is not an input of the IPM
     data = UncertaintyQuantification.sample(
-        [x1, RandomVariable(Normal(-0.5, 2), :x2), RandomVariable(Uniform(-2, 2), :x3)],
-        QuasiMonteCarloSampling(150, HaltonSample()),
+        [x1, RandomVariable(Normal(), :x2), RandomVariable(Uniform(-0.5, 0.5), :ϵ)],
+        QuasiMonteCarloSampling(200, HaltonSample()),
+    )
+    evaluate!(m, data)
+
+    ipm = IntervalPredictorModel(data, :y, MonomialBasis(2, 1), [:x1, :x2])
+
+    pf, x_lb, x_ub = probability_of_failure(
+        ipm, df -> 3.0 .- df.y
+        , [x1, x2], RandomSlicing(FORM())
     )
 
-    m1 = Model(df -> df.x1 + df.x3, :x4)
-    m2 = Model(df -> 7 .- df.x4 .^ 2 .+ df.x2, :y)
+    # x1 + x2 ~ N(μ, √2) and failure is x1 + x2 + ϵ > 3, worst/best case at μ + ϵ = ±1.5
+    pf_lb = cdf(Normal(), -4.5 / sqrt(2))
+    pf_ub = cdf(Normal(), -1.5 / sqrt(2))
 
-    evaluate!([m1, m2], data)
+    @test pf.lb ≈ pf_lb atol = 1.0e-4
+    @test pf.ub ≈ pf_ub atol = 1.0e-4
 
-    b = MonomialBasis(2, 3)
-
-    ipm = IntervalPredictorModel(data, :y, b, [:x2, :x4])
-
-    pf, _, _ = probability_of_failure(
-        [m1, m2], df -> 5.0 .- df.y, [x1, x2, x3], RandomSlicing(FORM())
-    )
-
-    pf_ipm, _, _ = probability_of_failure(
-        [m1, ipm], df -> 5.0 .- df.y, [x1, x2, x3], RandomSlicing(FORM())
-    )
-
-    @test pf.lb ≈ pf_ipm.lb atol = 1.0e-4
-    @test pf.ub ≈ pf_ipm.ub atol = 1.0e-4
 end
