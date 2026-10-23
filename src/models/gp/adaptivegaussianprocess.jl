@@ -11,7 +11,7 @@ The remaining fields store the hyperparameter-learning settings used when
 refitting. Use `evaluate!`, `sample!`, and `logpdf` to access the corresponding
 operations of the contained Gaussian process.
 """
-mutable struct AdaptiveGaussianProcess
+mutable struct AdaptiveGaussianProcess <: UQModel
     gp::GaussianProcess
     input::Union{UQInput, Vector{<:UQInput}}
     model::Union{UQModel, Vector{<:UQModel}}
