@@ -192,7 +192,7 @@ function extract_parameters(k::GammaRationalKernel)
     return (ParameterHandling.positive(k.α), γ)
 end
 function apply_parameters(k::GammaRationalKernel, θ)
-    γ = isnothing(θ[2]) ? k.γ : only(θ[2])
+    γ = isnothing(θ[2]) ? only(k.γ) : only(θ[2])
     return GammaRationalKernel(; α = only(θ[1]), γ)
 end
 
