@@ -21,10 +21,10 @@ A Response Surface is a structure used for modeling.
 
 In this example, we will model the following test function (known as Himmelblau's function)
 
-in the range ``x1, x2 ∈ [-5, 5]``. It is defined as
+in the range ``x_1, x_2 ∈ [-5, 5]``. It is defined as
 
 ```math
-f(x1, x2) = (x1^2 + x2 - 11)^2 + (x1 + x2^2 - 7)^2.
+f(x_1, x_2) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2.
 ```
 ===#
 

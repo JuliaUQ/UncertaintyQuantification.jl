@@ -108,11 +108,16 @@ The plots below compare the predicted surface with the original function. We use
 #md himmelblau_values = reshape(df[:, :y], length(b), length(a)) #hide
 #md s1 = surface(a, b, himmelblau_values; plot_title="Himmelblau's function")
 #md s2 = surface(a, b, gp_mean; plot_title="GP posterior mean")
-#md plot(s1, s2, layout = (1, 2), legend = false)
+#md c1 = contourf(a, b, himmelblau_values)
+#md c2 = contourf(a, b, gp_mean)
+#md plot(s1, s2, c1, c2, layout = (2, 2), legend = false, size=(800, 800))
 #md savefig("gp-mean-comparison.svg") # hide
 #md s3 = surface(a, b, gp_var; plot_title="GP posterior variance") # hide
 #md plot(s3, legend = false) #hide
 #md savefig("gp-variance.svg"); nothing # hide
+
+#md contourf(a, b, abs.(himmelblau_values - gp_mean);  plot_title="Absolute Error") # hide
+#md savefig("gp-mean-error.svg"); nothing # hide
 
 # ![](gp-mean-comparison.svg)
 
@@ -121,3 +126,9 @@ The MSE depends on the experimental design and fitted hyperparameters. The GP al
 ===#
 
 # ![](gp-variance.svg)
+
+#===
+Finally, we can visualize the absolute error between the mean prediction of the GP and the true Himmelblau function:
+===#
+
+# ![](gp-mean-error.svg)
