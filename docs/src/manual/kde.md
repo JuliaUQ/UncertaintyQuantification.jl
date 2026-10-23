@@ -2,7 +2,7 @@
 
 Kernel density estimation (KDE) is a non-parametric method to estimate the probability density function of a random variable through *kernel smoothing* [silvermanDensityEstimationStatistics1986](@cite).
 
-The kernel density estimate ``\hat{f}_h`` of a univariate density `f` based on a random sample ``X_1,\ldots,X_n`` is defined as
+The kernel density estimate ``\hat{f}_h`` of a univariate density ``f`` based on a random sample ``X_1,\ldots,X_n`` is defined as
 
 ```math
 \hat{f}_h(x) = n^{-1} \sum_{i=1}^n h^{-1} K \left\{\frac{x-X_i}{h}\right\},

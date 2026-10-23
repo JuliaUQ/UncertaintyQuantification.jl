@@ -160,10 +160,10 @@ println("Coefficient of variation: $(std_is/pf_is)")
 
 ### Radial Based Importance Sampling
 
-Radial based importance sampling (RBIS) [harbitzEfficientSamplingMethod1986](@cite) increases the efficiency of the Monte Carlo simulation by sampling in standard normal space and excluding a β-sphere where no failures occur from the sampling domain. Here, `β` is the reliability index obtained from a preliminary analysis like FORM. The probability of failure is then estimated as
+Radial based importance sampling (RBIS) [harbitzEfficientSamplingMethod1986](@cite) increases the efficiency of the Monte Carlo simulation by sampling in standard normal space and excluding a β-sphere where no failures occur from the sampling domain. Here, ``\beta`` is the reliability index obtained from a preliminary analysis like FORM. The probability of failure is then estimated as
 
 ```math
-p_f \approx \hat{p}_f = (1- \chi^2_k(\beta^2) \frac{1}{N} \sum_{i=1}^N \mathbb{I}[g(\boldsymbol{x}_i)],
+p_f \approx \hat{p}_f = (1- \chi^2_k(\beta^2)) \frac{1}{N} \sum_{i=1}^N \mathbb{I}[g(\boldsymbol{x}_i)],
 ```
 
 where ``\chi^2_k`` is the CDF of the Chi-squared distribution with ``k`` degrees of freedom and ``k`` is the number of random variables.
@@ -276,16 +276,16 @@ For all the SubSet algorithms, the termination criteria are either reaching the 
 
 ## Imprecise Reliability Analysis
 
-if *epistemic* uncertainty is considered in the input variables it must also be propagated through the analysis, converting the probability of failure into an interval itself. The goal of the reliability analysis is then to find the lower bound ``\underline{p}_f`` and upper bound ``\overline{p}_f`` of the probability of failure such that ``p_f \in [\underline{p}*f, \overline{p}*f]``. Formally, this can be defined as
+if *epistemic* uncertainty is considered in the input variables it must also be propagated through the analysis, converting the probability of failure into an interval itself. The goal of the reliability analysis is then to find the lower bound ``\underline{p}_f`` and upper bound ``\overline{p}_f`` of the probability of failure such that ``p_f \in [\underline{p}_f, \overline{p}_f]``. Formally, this can be defined as
 
 ```math
-    \underline{p}*f = \min*{\vartheta \in \mathbf{\theta}} \int \mathbb{I}[g(x)]f*{\mathbf{X}}(x, \vartheta) dx
+    \underline{p}_f = \min_{\vartheta \in \mathbf{\theta}} \int \mathbb{I}[g(x)]f_{\mathbf{X}}(x, \vartheta) dx
 ```
 
 and
 
 ```math
-\overline{p}*f = \max*{\vartheta \in \mathbf{\theta}} \int  \mathbb{I}[g(x)]f*{\mathbf{X}}(x, \vartheta) dx,
+\overline{p}_f = \max_{\vartheta \in \mathbf{\theta}} \int  \mathbb{I}[g(x)]f_{\mathbf{X}}(x, \vartheta) dx,
 ```
 
 where ``\theta`` represents the epistemic parameters characterizing the inputs.
@@ -333,7 +333,7 @@ where ``\Phi(x; \mu, \sigma)`` is the Gaussian CDF with mean ``\mu`` and standar
      return nothing # hide
 ```
 
-Then, the relibility analysis is again run through the  [`probability_of_failure`](@ref) function. As the final argument we we pass the inner simulation wrapped inside a [`DoubleLoop`](@ref). For this simple example we apply the first order reliability method (FORM), as this can reliably estimate the small failure probability of the lower bound which is \(\approx 7.6e-24\). The bounds on the ```p_\text{f}``` can be obtained from the output interval through `pf.lb` and `pf.ub`. The epistemic uncertainty is propagated correctly and matches the analytical solution. On top of the probability of failure, the double-loop analysis also returns the parameters that lead to the lower and upper bound. Here, they are correctly identified as ``([1,1]`` and ``[-1,2]``.
+Then, the relibility analysis is again run through the  [`probability_of_failure`](@ref) function. As the final argument we we pass the inner simulation wrapped inside a [`DoubleLoop`](@ref). For this simple example we apply the first order reliability method (FORM), as this can reliably estimate the small failure probability of the lower bound which is ``\approx 7.6 \times 10^{-24}``. The bounds on the ``p_\text{f}`` can be obtained from the output interval through `pf.lb` and `pf.ub`. The epistemic uncertainty is propagated correctly and matches the analytical solution. On top of the probability of failure, the double-loop analysis also returns the parameters that lead to the lower and upper bound. Here, they are correctly identified as ``[1,1]`` and ``[-1,2]``.
 
 ```@example reliability
      pf, x_lb, x_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], DoubleLoop(FORM()))
@@ -371,11 +371,11 @@ where ``(\alpha_X, \alpha_Y) \sim C_{XY}`` are samples of the copula between ``X
 The reliability analysis can be written as thus:
 
 ```math
-     \underline{p}*{\text{f}} = \int_U \mathbb{I}[\overline{g}(\alpha)] dC,(\alpha)
+     \underline{p}_{\text{f}} = \int_U \mathbb{I}[\overline{g}(\alpha)] \, \mathrm{d}C(\alpha),
 ```
 
 ```math
-     \overline{p}*{\text{f}} = \int_U \mathbb{I}[\underline{g}(\alpha)] dC.(\alpha)
+     \overline{p}_{\text{f}} = \int_U \mathbb{I}[\underline{g}(\alpha)] \, \mathrm{d}C(\alpha).
 ```
 
 In some sense, the two loops from the double-loop method have been reversed, where now the outer-loop handles the random (aleatory) component, and the inner-loop handles the interval propagation (epistemic). Describing the analysis this way essentially gives two separate reliability calculations, with ``\underline{g}`` and ``\overline{g}`` as the two target performance functions. Rosenblatt transformations may be used to associate a standard normal distribution to the copula $C$, and one may then use any standard reliability method to compute the performance bounds.
@@ -391,4 +391,4 @@ Here, the lower bound is again estimated using FORM, while we apply subset simul
      pf, out_lb, out_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], RandomSlicing(FORM(), subset))
 ```
 
-As outlined by [alvarez2018estimation], other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.
+As outlined by [alvarez2018estimation](@cite), other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.

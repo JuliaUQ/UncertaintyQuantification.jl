@@ -178,7 +178,7 @@ The Transitional Markov Chain Monte Carlo (TMCMC) method [chingTransitionalMarko
     P^j \propto P(Y|\theta)^{\beta_j} \cdot P(\theta),
 ```
 
-where ``j \in \{1, \ldots, m \}`` is the number of the transition step and ``\beta_j`` is a tempering parameter with ``\beta_1 < \cdots, \beta_m =1``. This enables a slow transition from the prior to the posterior distribution. An important part of the TMCMC algorithm is that the tempering parameter has to be selected as to ensure the transition is smooth and gradual. The algorithm's authors suggest choosing the parameter such that a coefficient of variation of 100% is maintained in the likelihood ``P(Y\theta_i)^{\beta_j-\beta_{j - 1}}``. At each level ``j`` the starting points for the independent Markov Chains are randomly samples (with replacement) from the current set of samples using statistical weights
+where ``j \in \{1, \ldots, m \}`` is the number of the transition step and ``\beta_j`` is a tempering parameter with ``\beta_1 < \cdots, \beta_m =1``. This enables a slow transition from the prior to the posterior distribution. An important part of the TMCMC algorithm is that the tempering parameter has to be selected as to ensure the transition is smooth and gradual. The algorithm's authors suggest choosing the parameter such that a coefficient of variation of 100% is maintained in the likelihood ``P(Y|\theta_i)^{\beta_j-\beta_{j - 1}}``. At each level ``j`` the starting points for the independent Markov Chains are randomly samples (with replacement) from the current set of samples using statistical weights
 
 ```math
 w(\theta_i) = \frac{P(Y|\theta_i)^{\beta_j-\beta_{j-1}}}{\sum_{i=1}^N P(Y|\theta_i)^{\beta_j-\beta_{j-1}}}.
