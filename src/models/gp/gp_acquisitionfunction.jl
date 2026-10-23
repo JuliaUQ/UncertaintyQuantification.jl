@@ -181,7 +181,7 @@ function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, d
     μ = candidates[:, mean_col]
     σ = sqrt.(candidates[:, var_col])
 
-    u = abs.(μ .- dn.threshold) ./ σ
+    u = [s > 0 ? abs(m - dn.threshold) / s : Inf for (m, s) in zip(μ, σ)]
     val, ind = findmin(u)
 
     return candidates[[ind], Cols(input)], (val >= dn.stopping)
