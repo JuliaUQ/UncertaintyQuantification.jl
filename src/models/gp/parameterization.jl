@@ -17,6 +17,7 @@ The two core functions are:
 
     Returns the free parameters of obj wrapped in ParameterHandling containers.
     Enforces constraints (e.g., positive or bounded) where applicable.
+    Valid parameter values on strict constraint boundaries are fixed during optimization.
     For composite objects (like a `AbstractGPs.GP`), returns a tuple of componentwise parameter sets.
     Returns nothing for objects without trainable parameters.
 
@@ -156,11 +157,14 @@ end
 extract_parameters(k::ConstantKernel) = ParameterHandling.positive(k.c)
 apply_parameters(::ConstantKernel, θ) = ConstantKernel(; c = only(θ))
 
-extract_parameters(k::GammaExponentialKernel) = ParameterHandling.bounded(k.γ, 0.0, 2.0)
-apply_parameters(::GammaExponentialKernel, θ) = GammaExponentialKernel(; γ = only(θ))
+extract_parameters(k::GammaExponentialKernel) =
+    only(k.γ) == 2 ? nothing : ParameterHandling.bounded(k.γ, 0.0, 2.0)
+apply_parameters(k::GammaExponentialKernel, θ) =
+    isnothing(θ) ? k : GammaExponentialKernel(; γ = only(θ))
 
-extract_parameters(k::FBMKernel) = ParameterHandling.bounded(k.h, 0.0, 1.0)
-apply_parameters(::FBMKernel, θ) = FBMKernel(; h = only(θ))
+extract_parameters(k::FBMKernel) =
+    only(k.h) == 0 || only(k.h) == 1 ? nothing : ParameterHandling.bounded(k.h, 0.0, 1.0)
+apply_parameters(k::FBMKernel, θ) = isnothing(θ) ? k : FBMKernel(; h = only(θ))
 
 extract_parameters(k::MaternKernel) = ParameterHandling.positive(k.ν)
 apply_parameters(::MaternKernel, θ) = MaternKernel(; ν = only(θ))
@@ -168,11 +172,14 @@ apply_parameters(::MaternKernel, θ) = MaternKernel(; ν = only(θ))
 extract_parameters(k::PeriodicKernel) = ParameterHandling.positive(k.r)
 apply_parameters(::PeriodicKernel, θ) = PeriodicKernel(; r = θ)
 
-extract_parameters(k::LinearKernel) = ParameterHandling.positive(k.c)
-apply_parameters(::LinearKernel, θ) = LinearKernel(; c = only(θ))
+extract_parameters(k::LinearKernel) =
+    iszero(k.c) ? nothing : ParameterHandling.positive(k.c)
+apply_parameters(k::LinearKernel, θ) = isnothing(θ) ? k : LinearKernel(; c = only(θ))
 
-extract_parameters(k::PolynomialKernel) = ParameterHandling.positive(k.c)
-apply_parameters(k::PolynomialKernel, θ) = PolynomialKernel(; degree = k.degree, c = only(θ))
+extract_parameters(k::PolynomialKernel) =
+    iszero(k.c) ? nothing : ParameterHandling.positive(k.c)
+apply_parameters(k::PolynomialKernel, θ) =
+    isnothing(θ) ? k : PolynomialKernel(; degree = k.degree, c = only(θ))
 
 extract_parameters(k::RationalKernel) = ParameterHandling.positive(k.α)
 apply_parameters(::RationalKernel, θ) = RationalKernel(; α = only(θ))
@@ -181,10 +188,12 @@ extract_parameters(k::RationalQuadraticKernel) = ParameterHandling.positive(k.α
 apply_parameters(::RationalQuadraticKernel, θ) = RationalQuadraticKernel(; α = only(θ))
 
 function extract_parameters(k::GammaRationalKernel)
-    return (ParameterHandling.positive(k.α), ParameterHandling.bounded(k.γ, 0.0, 2.0))
+    γ = only(k.γ) == 2 ? nothing : ParameterHandling.bounded(k.γ, 0.0, 2.0)
+    return (ParameterHandling.positive(k.α), γ)
 end
-function apply_parameters(::GammaRationalKernel, θ)
-    return GammaRationalKernel(; α = only(θ[1]), γ = only(θ[2]))
+function apply_parameters(k::GammaRationalKernel, θ)
+    γ = isnothing(θ[2]) ? k.γ : only(θ[2])
+    return GammaRationalKernel(; α = only(θ[1]), γ)
 end
 
 # kernels (see KernelFunctions.jl src/kernels)

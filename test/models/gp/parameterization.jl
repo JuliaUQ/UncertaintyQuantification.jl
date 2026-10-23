@@ -110,6 +110,29 @@ end
                 )
                 @test only(k2.α) ≈ 1.5
             end
+            @testset "Boundary-valued kernel parameters" begin
+                for k in (
+                    LinearKernel(),
+                    PolynomialKernel(; c = 0.0),
+                    GammaExponentialKernel(; γ = 2.0),
+                    FBMKernel(; h = 0.0),
+                    FBMKernel(; h = 1.0),
+                )
+                    θ = UncertaintyQuantification.extract_parameters(k)
+                    @test isnothing(θ)
+                    @test UncertaintyQuantification.apply_parameters(k, θ) === k
+                end
+
+                k = GammaRationalKernel(; α = 1.5, γ = 2.0)
+                θ = UncertaintyQuantification.extract_parameters(k)
+                @test !isnothing(θ[1])
+                @test isnothing(θ[2])
+                k2 = UncertaintyQuantification.apply_parameters(
+                    k, ParameterHandling.value(θ)
+                )
+                @test only(k2.α) ≈ 1.5
+                @test only(k2.γ) == 2.0
+            end
         end
 
         @testset "Composite kernels" begin
@@ -121,6 +144,16 @@ end
                 )
                 # first component has no params, second has c=2.0
                 @test isnothing(θ[1])
+                @test only(k2.kernels[2].c) ≈ 2.0
+            end
+            @testset "Boundary-valued kernel in composite" begin
+                k = LinearKernel() + ConstantKernel(; c = 2.0)
+                θ = UncertaintyQuantification.extract_parameters(k)
+                k2 = UncertaintyQuantification.apply_parameters(
+                    k, ParameterHandling.value(θ)
+                )
+                @test isnothing(θ[1])
+                @test only(k2.kernels[1].c) == 0.0
                 @test only(k2.kernels[2].c) ≈ 2.0
             end
             @testset "KernelProduct" begin
