@@ -65,7 +65,7 @@ end
         initial_kernel_parameter = agp.gp.posterior.prior.kernel.ν
         @test refine!(agp) === nothing
         @test nrow(agp.gp.data) == n_design_points + 1
-        @test all(agp.gp.data.p .== 2.0)
+        @test !(:p in propertynames(agp.gp.data))
         @test agp.gp.data.y ≈ 2 .* sin.(agp.gp.data.x1) .+ 1
         @test agp.gp.posterior.prior.mean.c == 1.0
         @test agp.gp.posterior.prior.kernel.ν == initial_kernel_parameter
@@ -163,4 +163,21 @@ end
     ss_res = sum((verify_true.y .- verify_gp.y_mean) .^ 2)
     ss_tot = sum((verify_true.y .- mean(verify_true.y)) .^ 2)
     @test 1.0 - ss_res / ss_tot ≈ 0.99 rtol = 0.01
+end
+
+@testitem "Adaptive Gaussian Process Acquisition Functions" setup = [TestSetup, AdaptiveGPSetup] begin
+
+    acquistion_functions = subtypes(AbstractGaussianProcessAcquisitionFunction)
+
+    for acquisition_function in acquistion_functions
+        agp = AdaptiveGaussianProcess(
+            input, model, design, :y, acquisition_function();
+            candidate_sampling = candidate_sampling,
+            learn_hyperparameters = false,
+        )
+
+        @test agp.acquisition_function === acquisition_function()
+        @test refine!(agp, 2) === nothing
+        @test nrow(agp.gp.data) == 10
+    end
 end

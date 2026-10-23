@@ -150,7 +150,7 @@ function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
 
         evaluate!(agp.model, next_point)
         agp.gp = _refit_gp(
-            agp.gp, next_point, agp.optimizer, agp.gp.σ², agp.learn_noise, agp.learn_hyperparameters
+            agp.gp, next_point[:, [agp.gp.inputs..., agp.gp.output]], agp.optimizer, agp.gp.σ², agp.learn_noise, agp.learn_hyperparameters
         )
 
         @debug "added point" iteration = i point = NamedTuple(next_point[1, :])

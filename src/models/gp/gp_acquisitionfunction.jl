@@ -307,8 +307,8 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::Expected
 
     μ = candidates[:, mean_col]
     σ² = candidates[:, var_col]
-    X = Matrix(gp.data[:, input])
-    Xc = Matrix(candidates[:, input])
+    X = Matrix(gp.data[:, gp.inputs])
+    Xc = Matrix(candidates[:, gp.inputs])
     y = gp.data[:, gp.output]
 
     nearest = [argmin([norm(Xc[i, :] - X[j, :]) for j in axes(X, 1)]) for i in axes(Xc, 1)]

@@ -130,7 +130,7 @@ function GaussianProcess(
         optimizer = optimizer
     )
 
-    return GaussianProcess(gp, output, input_names, σ², transform, data[:,[input_names..., output]])
+    return GaussianProcess(gp, output, input_names, σ², transform, data[:, [input_names..., output]])
 
 end
 
@@ -260,7 +260,7 @@ function GaussianProcess(
         optimizer = optimizer
     )
 
-    return GaussianProcess(gp, output, input_names, σ², dt, data[:,[input_names..., output]])
+    return GaussianProcess(gp, output, input_names, σ², dt, data[:, [input_names..., output]])
 end
 
 """
