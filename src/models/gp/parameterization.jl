@@ -172,7 +172,7 @@ extract_parameters(k::LinearKernel) = ParameterHandling.positive(k.c)
 apply_parameters(::LinearKernel, θ) = LinearKernel(; c = only(θ))
 
 extract_parameters(k::PolynomialKernel) = ParameterHandling.positive(k.c)
-apply_parameters(::PolynomialKernel, θ) = PolynomialKernel(; c = only(θ))
+apply_parameters(k::PolynomialKernel, θ) = PolynomialKernel(; degree = k.degree, c = only(θ))
 
 extract_parameters(k::RationalKernel) = ParameterHandling.positive(k.α)
 apply_parameters(::RationalKernel, θ) = RationalKernel(; α = only(θ))
