@@ -22,21 +22,22 @@ hero:
 
 features:
   - title: Reliability Analysis
-    details: Estimate failure probabilities with Monte Carlo and quasi Monte Carlo (Sobol, Halton), advanced line sampling, and subset simulation.
+    details: Estimate (small) failure probabilities with advanced Monte Carlo methods.
     link: /manual/reliability
-  - title: Sensitivity Analysis
-    details: Identify influential inputs using gradients and Sobol indices.
+  - title: Imprecise Probabilities
+    details: Model epistemic and mixed uncertainty using intervals and probability boxes.
+    link: /manual/gettingstarted#Imprecise-Probabilities
   - title: Metamodeling
-    details: Approximate expensive models with polyharmonic splines, response surfaces, and polynomial chaos expansions.
+    details: Approximate expensive models with surrogates.
     link: /manual/metamodels
   - title: Bayesian Updating
     details: Update uncertain model parameters using observed data and Bayesian inference.
     link: /manual/bayesianupdating
   - title: External Solvers and HPC
-    details: Connect third-party solvers by injecting random samples into input files and run analyses on HPC clusters with Slurm.
+    details: Connect third-party solvers into UQ workflows.
     link: /manual/hpc
   - title: Stochastic Dynamics
-    details: Estimate power spectral densities and generate stochastic processes for dynamic analyses.
+    details: Model and analyze dynamic systems under uncertainty.
     link: /manual/dynamics
 ---
 ```
