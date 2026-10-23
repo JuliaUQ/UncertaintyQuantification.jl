@@ -252,7 +252,7 @@ end
 extract_parameters(f::PriorGP) = begin
     f.learn_noise ? (
             extract_parameters(f.gp),
-            ParameterHandling.positive(f.σ², exp, 1.0e-6),
+            ParameterHandling.positive(f.σ², exp, 0.0),
         ) :
         (extract_parameters(f.gp))
 end
