@@ -7,9 +7,7 @@ using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
-using DifferentiationInterface
 using Dierckx
-using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -31,15 +29,17 @@ using StatsBase
 using TransportMaps
 using RecipesBase
 
-@reexport using TransportMaps
 @reexport using Distributions
 @reexport using DifferentiationInterface
 
 import Base: rand, names, copy, run, length, eltype
+import Copulas: Copula
+import DifferentiationInterface: derivative, jacobian, pullback, pushforward
 import Distributions:
-    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median,
+    kldivergence, mode, shape
 import Statistics: mean, var, std
-import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
+import TransportMaps: AbstractMapDensity, AbstractQuadratureWeights, logpdf, grad_logpdf
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -163,12 +163,10 @@ export TransportMap
 export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
-export UQTargetDensity
 export QuasiMonteCarloSampling
 
 # Methods
 export bayesianupdating
-export calc
 export count_rvs
 export dimensions
 export distribution_parameters
@@ -190,7 +188,6 @@ export periodogram
 export polynomialchaos
 export probability_of_failure
 export propagate_intervals!
-export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
@@ -198,7 +195,6 @@ export reliability
 export sample
 export sobolindices
 export to_physical_space!
-export to_standard_normal_space
 export to_standard_normal_space!
 export variancediagnostic
 
