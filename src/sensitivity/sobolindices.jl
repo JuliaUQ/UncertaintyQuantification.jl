@@ -1,6 +1,6 @@
-const _sobol_table_types = [Symbol[], Float64[], Float64[], Float64[], Float64[]]
+const _sobol_table_types = [Symbol[], Float64[], Float64[], Float64[], Float64[], Float64[]]
 const _sobol_table_header = [
-    "Variables", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError",
+    "Variables", "OutputVariance", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError",
 ]
 
 function sobolindices(
@@ -54,7 +54,7 @@ function sobolindices(
             Sₜ = total_effect(ABi[:, qty])
             σSₜ = stderror(bs)[1]
 
-            push!(indices[qty], [name, Sᵢ, σSᵢ, Sₜ, σSₜ])
+            push!(indices[qty], [name, VY[j], Sᵢ, σSᵢ, Sₜ, σSₜ])
         end
     end
     return length(outputs) > 1 ? indices : indices[outputs[1]]
@@ -64,6 +64,7 @@ function sobolindices(pce::PolynomialChaosExpansion)
     random_names = names(pce.inputs)
     indices = DataFrame()
     indices.Variables = random_names
+    indices.OutputVariance .= var(pce)
     indices.FirstOrder =
         [
         sum(pce.y[findall(α -> α[i] != 0 && sum(α) == α[i], pce.Ψ.α)] .^ 2) for

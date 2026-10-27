@@ -4,11 +4,14 @@
 
     x = RandomVariable.(Uniform(-π, π), [:x1, :x2, :x3])
 
+    ishigami_fun = (x1,x2,x3,a,b) -> sin(x1) + a * sin(x2) ^ 2 + b * x3 ^ 4 * sin(x1)
+    a1 = 7; b1 = 0.1
     ishigami1 = Model(
-        df -> sin.(df.x1) + 7 .* sin.(df.x2) .^ 2 + 0.1 .* df.x3 .^ 4 .* sin.(df.x1), :f1
+        df -> ishigami_fun.(df.x1, df.x2, df.x3, a1, b1), :f1
     )
+    a2 = 7; b2 = 0.05
     ishigami2 = Model(
-        df -> sin.(df.x1) + 7 .* sin.(df.x2) .^ 2 + 0.05 .* df.x3 .^ 4 .* sin.(df.x1), :f2
+        df -> ishigami_fun.(df.x1, df.x2, df.x3, a2, b2), :f2
     )
 
     n_mc = 10000
@@ -16,14 +19,17 @@
 
     firstorder_analytical1 = [0.3138, 0.4424, 0.0]
     totaleffect_analytical1 = [0.5574, 0.4424, 0.2436]
+    variance_analytical1 = 13.8446
 
     firstorder_analytical2 = [0.219, 0.687, 0.0]
     totaleffect_analytical2 = [0.3136, 0.687, 0.0946]
+    variance_analytical2 = 8.9169
 end
 
 @testitem "Sobol Indices: Monte Carlo" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc))
 
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
@@ -32,6 +38,7 @@ end
 @testitem "Sobol Indices: Sobol" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.SobolSample()))
 
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
@@ -40,6 +47,7 @@ end
 @testitem "Sobol Indices: Halton" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.HaltonSample()))
 
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
@@ -48,6 +56,7 @@ end
 @testitem "Latin Hypercube" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, LatinHypercubeSample()))
 
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
@@ -58,10 +67,12 @@ end
         [ishigami1, ishigami2], x, [:f1, :f2], QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.SobolSample())
     )
 
+    @test first(si[:f1].OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si[:f1].FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si[:f1].FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si[:f1].TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
 
+    @test first(si[:f2].OutputVariance) ≈ variance_analytical2 rtol = 0.05
     @test si[:f2].FirstOrder[1:2] ≈ firstorder_analytical2[1:2] rtol = 0.1
     @test si[:f2].FirstOrder[3] ≈ firstorder_analytical2[3] atol = 0.1
     @test si[:f2].TotalEffect ≈ totaleffect_analytical2 rtol = 0.1
@@ -100,6 +111,7 @@ end
 
     si = sobolindices(pce)
 
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.1
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
     @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
