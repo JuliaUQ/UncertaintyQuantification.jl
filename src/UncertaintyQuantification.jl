@@ -8,6 +8,7 @@ using CovarianceEstimation
 using DataFrames
 using Dates
 using Dierckx
+using DifferentiationInterface
 using Distributed
 using FastGaussQuadrature
 using FiniteDifferences
@@ -30,7 +31,6 @@ using TransportMaps
 using RecipesBase
 
 @reexport using Distributions
-@reexport using DifferentiationInterface
 
 import Base: rand, names, copy, run, length, eltype
 import Copulas: Copula
