@@ -7,7 +7,8 @@ function sobolindices(
         models::Vector{<:UQModel},
         inputs::Vector{<:UQInput},
         outputs::Vector{Symbol},
-        sim::AbstractMonteCarlo,
+        sim::AbstractMonteCarlo;
+        return_evaluations::Bool = false
     )
     sim_double_samples = double_samples(sim)
 
@@ -26,6 +27,12 @@ function sobolindices(
     A = samples[1:(sim.n), :]
     B = samples[(sim.n + 1):end, :]
 
+    evaluations = (
+        A = A,
+        B = B,
+        AB = Dict{Symbol,DataFrame}()
+    )
+
     fA = Matrix(A[:, outputs])
     fB = Matrix(B[:, outputs])
     fA = fA .- mean(fA; dims = 1)
@@ -38,6 +45,10 @@ function sobolindices(
         ABi[:, name] = B[:, name]
 
         evaluate!(models, ABi)
+
+        if return_evaluations
+            evaluations.AB[name] = copy(ABi)
+        end
 
         for (j, qty) in enumerate(outputs)
             ABi[:, qty] .-= mean(ABi[:, qty])
@@ -57,7 +68,12 @@ function sobolindices(
             push!(indices[qty], [name, VY[j], Sᵢ, σSᵢ, Sₜ, σSₜ])
         end
     end
-    return length(outputs) > 1 ? indices : indices[outputs[1]]
+    all_indices = length(outputs) > 1 ? indices : indices[outputs[1]]
+    if return_evaluations
+        return all_indices, evaluations
+    else
+        return all_indices
+    end
 end
 
 function sobolindices(pce::PolynomialChaosExpansion)
@@ -83,34 +99,36 @@ function sobolindices(
         models::Vector{<:UQModel},
         inputs::UQInput,
         outputs::Vector{Symbol},
-        sim::AbstractMonteCarlo,
+        sim::AbstractMonteCarlo;
+        return_evaluations::Bool = false
     )
-    return sobolindices(models, [inputs], outputs, sim)
+    return sobolindices(models, [inputs], outputs, sim; return_evaluations)
 end
 
 function sobolindices(
         models::Vector{<:UQModel},
         inputs::Vector{<:UQInput},
         outputs::Symbol,
-        sim::AbstractMonteCarlo,
+        sim::AbstractMonteCarlo;
+        return_evaluations::Bool = false
     )
-    return sobolindices(models, inputs, [outputs], sim)
+    return sobolindices(models, inputs, [outputs], sim; return_evaluations)
 end
 
 function sobolindices(
-        models::UQModel, inputs::Vector{<:UQInput}, outputs::Symbol, sim::AbstractMonteCarlo
+        models::UQModel, inputs::Vector{<:UQInput}, outputs::Symbol, sim::AbstractMonteCarlo; return_evaluations::Bool = false
     )
-    return sobolindices([models], inputs, [outputs], sim)
+    return sobolindices([models], inputs, [outputs], sim; return_evaluations)
 end
 
 function sobolindices(
-        models::Vector{<:UQModel}, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
+        models::Vector{<:UQModel}, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo; return_evaluations::Bool = false
     )
-    return sobolindices(models, [inputs], [outputs], sim)
+    return sobolindices(models, [inputs], [outputs], sim; return_evaluations)
 end
 
 function sobolindices(
-        models::UQModel, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo
+        models::UQModel, inputs::UQInput, outputs::Symbol, sim::AbstractMonteCarlo; return_evaluations::Bool = false
     )
-    return sobolindices([models], [inputs], [outputs], sim)
+    return sobolindices([models], [inputs], [outputs], sim; return_evaluations)
 end

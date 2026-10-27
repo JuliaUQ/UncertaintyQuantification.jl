@@ -35,6 +35,50 @@ end
     @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
 end
 
+@testitem "Sobol Indices: Evaluations" setup = [sobolindices] begin
+    si, evals = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc), return_evaluations=true)
+
+    @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
+    @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
+    @test si.FirstOrder[3] ≈ firstorder_analytical1[3] atol = 0.1
+    @test si.TotalEffect ≈ totaleffect_analytical1 rtol = 0.1
+
+    inputs = [:x1, :x2, :x3]
+
+    @test nrow(evals.A) == n_mc
+    @test nrow(evals.B) == n_mc
+    @test sort(collect(keys(evals.AB))) == inputs
+
+    # Compared as vectors so near-zero function values are not an issue
+    @test evals.A.f1 ≈ ishigami_fun.(evals.A.x1, evals.A.x2, evals.A.x3, a1, b1)
+    @test evals.B.f1 ≈ ishigami_fun.(evals.B.x1, evals.B.x2, evals.B.x3, a1, b1)
+
+    for input in inputs
+        ab = evals.AB[input]
+        @test nrow(ab) == n_mc
+        # Column `input` comes from B, all other inputs from A
+        @test ab[:, input] == evals.B[:, input]
+        for other in setdiff(inputs, [input])
+            @test ab[:, other] == evals.A[:, other]
+        end
+        @test ab.f1 ≈ ishigami_fun.(ab.x1, ab.x2, ab.x3, a1, b1)
+    end
+end
+
+@testitem "Sobol Indices: Evaluations multiple outputs" setup = [sobolindices] begin
+    si, evals = sobolindices(
+        [ishigami1, ishigami2], x, [:f1, :f2], MonteCarlo(n_mc), return_evaluations=true
+    )
+
+    @test first(si[:f1].OutputVariance) ≈ variance_analytical1 rtol = 0.05
+    @test first(si[:f2].OutputVariance) ≈ variance_analytical2 rtol = 0.05
+
+    for df in (evals.A, evals.B, values(evals.AB)...)
+        @test df.f1 ≈ ishigami_fun.(df.x1, df.x2, df.x3, a1, b1)
+        @test df.f2 ≈ ishigami_fun.(df.x1, df.x2, df.x3, a2, b2)
+    end
+end
+
 @testitem "Sobol Indices: Sobol" setup = [sobolindices] begin
     si = sobolindices(ishigami1, x, :f1, QuasiMonteCarloSampling(n_qmc, QuasiMonteCarlo.SobolSample()))
 
