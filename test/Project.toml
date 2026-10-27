@@ -1,4 +1,6 @@
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -11,3 +13,4 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
+TransportMaps = "6fd49bf0-03ac-4dd1-b9b3-42e511274d6e"

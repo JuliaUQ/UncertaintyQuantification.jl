@@ -369,6 +369,7 @@ The following example demonstrates Bayesian updating with transport maps using t
 ```@example transportmap
 using UncertaintyQuantification # hide
 using Plots # hide
+using TransportMaps
 
 # Define prior distribution
 prior = RandomVariable.(Uniform(-10, 10), [:x, :y])

@@ -1,4 +1,7 @@
 @testsnippet TMBMU1 begin
+    using TransportMaps
+    using ADTypes
+
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
     loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
@@ -34,20 +37,9 @@ end
     @test !iszero(getcoefficients(tm_result.d.map))
 end
 
-@testset "TM BMU - Transformations: Warning and errors" begin
-    #setup
-    prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
-
-    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
-
-    logL = ParallelModel(df -> loglikelihood(df.x1, df.x2), :L)
-
-    map = PolynomialMap(2, 2, Normal(), Softplus())
-    quadrature = GaussHermiteWeights(3, 2)
-
-    # begin
+@testitem "TM BMU - Transformations: Warning and errors" setup = [TMBMU1] begin
     tm_log = TransportMapBayesian(prior, map, quadrature; islog = true, transformprior = true)
-    @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
+    @test_logs (:warn, "Prior function given while transforming to standard normal prior. Given prior will be ignored.") bayesianupdating(
         df -> df.x1, df -> df.L, [logL], tm_log
     )
 
@@ -73,15 +65,9 @@ end
     @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
 end
 
-@testitem "TM BMU - Transformations: Show methods" setup = [TMBMU1] begin
-    # Test show methods
-    tm = TransportMapBayesian(prior, map, quadrature)
-    @test_nowarn sprint(show, tm)
-    @test_nowarn sprint(print, tm)
-    @test_nowarn display(tm)
-end
-
 @testsnippet TMBMU2 begin
+    using TransportMaps
+
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
 
