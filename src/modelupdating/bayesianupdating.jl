@@ -186,6 +186,7 @@ function bayesianupdating(
     covariance_method = LinearShrinkage(DiagonalUnitVariance(), :lw)
 
     rv_names = names(tmcmc.prior)
+    n_rv = length(rv_names)
 
     j = 0 # iteration
     βⱼ = 0.0 # tempering
@@ -219,6 +220,9 @@ function bayesianupdating(
 
         Σⱼ = tmcmc.β^2 * cov(covariance_method, Matrix(θⱼ⁺[:, rv_names]))
 
+        # creating zero-means MvNormal, since cov stays constant along MCMC chains
+        mv_normal = MvNormal(zeros(tmcmc.n), Σⱼ)
+
         # Run inner MH algorithm
 
         chain = Vector{DataFrame}(undef, tmcmc.burnin + 2)
@@ -234,20 +238,19 @@ function bayesianupdating(
         for i in 2:(tmcmc.burnin + 2)
             next = copy(chain[i - 1])
 
-            for (j, x) in enumerate(eachrow(next[:, rv_names]))
-                next[j, rv_names] = rand(MvNormal(collect(x), Σⱼ))
-            end
-
+            next[:, rv_names] = Matrix(next[:, rv_names]) .+ reshape(rand(mv_normal),(1,n_rv))
+            
             # safeguard for Inf in the prior
-            # !TODO: Find a cleaner way to do this
             idx_inf = findall(isinf, prior(next))
 
             while !isempty(idx_inf)
-                for (j, x) in zip(idx_inf, (eachrow(chain[i - 1][idx_inf, rv_names])))
-                    next[j, rv_names] = rand(MvNormal(collect(x), Σⱼ))
-                end
+                current_means = Matrix(chain[i - 1][idx_inf, rv_names])
 
-                idx_inf = findall(isinf, prior(next))
+                next[idx_inf, rv_names] = current_means .+ reshape(rand(mv_normal),(1,n_rv))
+
+                # only re-checking idx_inf candidates
+                still_inf = isinf.(prior(next[idx_inf, rv_names]))    
+                idx_inf = idx_inf[still_inf]
             end
 
             if !isempty(models)
