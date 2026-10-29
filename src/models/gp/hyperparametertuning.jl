@@ -12,14 +12,14 @@ Represents a hyperparameter optimization strategy that maximizes the log margina
 of a Gaussian process model with random restarts of the optimization.
 
 # Arguments
-- `optimizer::Optim.AbstractOptimizer`: chosen optimizer (default: `LBFGS()`)
+- `optimizer::Union{Optim.ZerothOrderOptimizer, Optim.FirstOrderOptimizer}`: chosen optimizer (default: `LBFGS()`)
 - `options::Optim.Options`: options for the optimizer (default: `Optim.Options(; iterations = 100, show_trace = false)`)
 - `backend::AbstractADType`: automatic differentiation backend (default: `AutoMooncake()`; can be `nothing` when using gradient-free optimization)
 # Keyword Arguments
 - `restarts`: Number of additional randomized optimization runs. Defaults to `5`.
 
 # Note
-You can choose from any optimizer and set of options provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/),
+You can choose from any first order (gradient-based) and zeroth order (gradient-free) optimizer and set of options provided by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/),
 such as `LBFGS()`, `Adam()`, or `ConjugateGradient()`.
 
 # Examples
@@ -33,13 +33,13 @@ MaximumLikelihoodEstimation(Adam{Float64, Float64, Flat}(0.01, 0.9, 0.999, 1.0e-
 ```
 """
 struct MaximumLikelihoodEstimation <: AbstractHyperparameterOptimization
-    optimizer::Optim.AbstractOptimizer
+    optimizer::Union{Optim.ZerothOrderOptimizer, Optim.FirstOrderOptimizer}
     options::Optim.Options
     backend::Union{AbstractADType, Nothing}
     restarts::Int
 
     function MaximumLikelihoodEstimation(
-            optimizer::Optim.AbstractOptimizer = LBFGS(),
+            optimizer::Union{Optim.ZerothOrderOptimizer, Optim.FirstOrderOptimizer} = LBFGS(),
             options::Optim.Options = Optim.Options(; iterations = 100, show_trace = false),
             backend::Union{AbstractADType, Nothing} = AutoMooncake();
             restarts::Int = 5,
@@ -73,53 +73,30 @@ function optimize_hyperparameters(
     θ₀_flat, unflatten = ParameterHandling.flatten(θ₀)
     obj = θ -> objective(model(unflatten(θ)), x, y, mle)
 
+    # Prepare once, then reuse across restarts
+    d = if mle.optimizer isa Optim.FirstOrderOptimizer
+        NLSolversBase.OnceDifferentiable(obj, θ₀_flat; autodiff = mle.backend)
+    elseif mle.optimizer isa Optim.ZerothOrderOptimizer
+        NLSolversBase.NonDifferentiable(obj, θ₀_flat)
+    end
+
     best_gp = nothing
     best_objective = Inf
 
     for restart in 0:mle.restarts
         θ_init = restart == 0 ? copy(θ₀_flat) : _initializer(θ₀_flat)
-        gp_opt = _optimize_hyperparameters(obj, model, unflatten, θ_init, mle)
-        value = objective(gp_opt, x, y, mle)
+
+        # Reset cached values and call counters; retain preparation.
+        NLSolversBase.clear!(d)
+
+        result = Optim.optimize(d, θ_init, mle.optimizer, mle.options)
+        value = Optim.minimum(result)
 
         if value < best_objective
             best_objective = value
-            best_gp = gp_opt
+            best_gp = model(unflatten(Optim.minimizer(result)))
         end
     end
 
     return best_gp
-end
-
-function _optimize_hyperparameters(
-        obj::Function,
-        model,
-        unflatten::Function,
-        θ_init::AbstractVector,
-        mle::MaximumLikelihoodEstimation,
-    )
-    if isa(mle.optimizer, Optim.FirstOrderOptimizer) ||
-            isa(mle.optimizer, Optim.SecondOrderOptimizer)
-
-        prep = DifferentiationInterface.prepare_gradient(obj, mle.backend, θ_init)
-
-        function fg!(F, G, θ)
-            value, gradient = DifferentiationInterface.value_and_gradient(
-                obj, prep, mle.backend, θ
-            )
-            G !== nothing && (G .= gradient)
-            return value
-        end
-
-        result = optimize(NLSolversBase.only_fg!(fg!), θ_init, mle.optimizer, mle.options)
-
-        return model(unflatten(result.minimizer))
-
-    elseif isa(mle.optimizer, Optim.ZerothOrderOptimizer)
-        # Gradient-free optimizer
-        result = optimize(obj, θ_init, mle.optimizer, mle.options)
-
-        return model(unflatten(result.minimizer))
-    else
-        error("Optimizer of type $(typeof(mle.optimizer)) not supported.")
-    end
 end

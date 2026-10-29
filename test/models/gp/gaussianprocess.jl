@@ -215,8 +215,7 @@ end
     model = Model(df -> df.a .* sin.(df.b .* df.x) .+ randn(size(df, 1)), :y)
 
     gp = GaussianProcess(
-        inputs, model, QuasiMonteCarloSampling(200, HaltonSample())
-        , :y;
+        inputs, model, QuasiMonteCarloSampling(200, HaltonSample()), :y;
         mean = ZeroMean(),
         kernel = SqExponentialKernel(),
         σ² = 1.0e-5,
@@ -226,12 +225,10 @@ end
     @test gp.σ² ≈ 1.0 rtol = 0.2
 
     gp = GaussianProcess(
-        inputs, model, MonteCarlo(10)
-        , :y;
-        mean = ZeroMean(),
+        inputs, model, MonteCarlo(10), :y;
+        mean = ConstMean(0.0),
         kernel = SqExponentialKernel(),
-        σ² = 1.0e-5
-        ,
+        σ² = 1.0e-5,
         learn_noise = false
     )
 
