@@ -50,13 +50,12 @@ function evaluate!(m::ParallelModel, df::DataFrame)
     return nothing
 end
 
-function evaluate!(models::Vector{<:UQModel}, df::DataFrame)
+function evaluate!(models::Vector{<:UQModel}, df::DataFrame; sim_name::String = "", sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), subset_lvl = nothing)
     # use same working directory for all external models
-    datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
     for m in models
         if isa(m, ExternalModel)
             print("3333333\n", typeof(m), typeof(df), typeof(datetime))
-            evaluate!(m, df, sim_folder = datetime)
+            evaluate!(m, df, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
         else
             evaluate!(m, df)
         end

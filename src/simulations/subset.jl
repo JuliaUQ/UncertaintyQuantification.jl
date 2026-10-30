@@ -197,15 +197,15 @@ function probability_of_failure(
         sim::AbstractSubSetSimulation,
     )
     inputs, models = wrap.([inputs, models])
-    print("\n11111\n")
-
+    print("11111111")
     if isimprecise(inputs, models)
         error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
     end
 
     samples = [sample(inputs, sim)]
-    print("2222222222\n", typeof(models), typeof(samples[end]))
-    evaluate!(models, samples[end])
+
+    # TODO give simname etc here
+    evaluate!(models, samples[end]; sim_name = "subset", subset_lvl = 1)
 
     performance = [performancefunction(samples[end])]
 
@@ -323,6 +323,7 @@ function nextlevelsamples(
         α_accept_indices = findall(α_accept)
         if any(α_accept)
             new_samples = chainsamples[α_accept, :]
+            # TODO give sim name here
             evaluate!(models, new_samples)
 
             new_samplesperformance = performancefunction(new_samples)
@@ -487,6 +488,7 @@ function conditional_sampling(
 
         to_physical_space!(inputs, chain_samples[k])
 
+        #TODO give sim name here
         evaluate!(models, chain_samples[k])
 
         chain_performance[k] = performancefunction(chain_samples[k])
