@@ -239,7 +239,7 @@ function bayesianupdating(
             next = copy(chain[i - 1])
 
             next[:, rv_names] = Matrix(next[:, rv_names]) .+ transpose(rand(mv_normal, tmcmc.n))
-            
+
             # safeguard for Inf in the prior
             idx_inf = findall(isinf, prior(next))
 
@@ -249,7 +249,7 @@ function bayesianupdating(
                 next[idx_inf, rv_names] = current_means .+ transpose(rand(mv_normal, length(idx_inf)))
 
                 # only re-checking idx_inf candidates
-                still_inf = isinf.(prior(next[idx_inf, rv_names]))    
+                still_inf = isinf.(prior(next[idx_inf, rv_names]))
                 idx_inf = idx_inf[still_inf]
             end
 
