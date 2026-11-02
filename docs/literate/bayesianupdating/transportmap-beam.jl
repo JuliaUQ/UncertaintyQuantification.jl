@@ -30,6 +30,7 @@ The goal is to infer the unknown parameters ``a`` (relative position along the b
 
 #jl using UncertaintyQuantification
 #jl using Plots
+using TransportMaps
 
 #===
 
@@ -111,7 +112,7 @@ Additionally, we define a quadrature scheme used to compute the KL-divergence, i
 Finally, we store these along with the `prior` in the [`TransportMapBayesian`](@ref) object:
 ===#
 T = PolynomialMap(2, 2)
-quadrature = GaussHermiteWeights(3, 2)
+quadrature = GaussHermiteWeights(1, 2)
 transportmap = TransportMapBayesian(prior, T, quadrature)
 
 #===
