@@ -243,7 +243,7 @@ As the IPM is an imprecise model, it can only be applied in a reliability analys
 
 ### Theoretical Background
 
-A Gaussian Process (GP) is a collection of random variables, any finite subset of which has a joint Gaussian distribution. It is fully specified by a mean function $m(x)$ and a covariance (kernel) function $k(x, x')$. In GP regression, we aim to model an unknown function $f(x)$. Before observing any data, we assume that the function $f(x)$ is distributed according to a GP:
+A Gaussian Process (GP) is a collection of random variables, any finite subset of which has a joint Gaussian distribution. It is fully specified by a mean function ``m(x)`` and a covariance (kernel) function ``k(x, x')``. In GP regression, we aim to model an unknown function ``f(x)``. Before observing any data, we assume that the function ``f(x)`` is distributed according to a GP:
 
 ```math
 f(x) \sim \mathcal{G}\mathcal{P}\left( m(x), k(x, x')  \right).
@@ -265,7 +265,7 @@ gp = GP(mean_f, kernel); nothing # hide
 
 This `GP` object illustrates the underlying prior. The [`GaussianProcess`](@ref) constructors create that prior internally from the `mean` and `kernel` keywords, which default to `ZeroMean()` and `SqExponentialKernel()`. Pass these components directly when fitting a surrogate.
 
-The composition operator `\circ` above applies the transformation to both kernel inputs `(k \circ T)(x,y) = k\bigl(T(x),T(y)\bigr)`.
+The composition operator ``\circ`` above applies the transformation to both kernel inputs ``(k \circ T)(x,y) = k\bigl(T(x),T(y)\bigr)``.
 
 #### Posterior Gaussian Process
 
@@ -275,13 +275,13 @@ The posterior GP represents the distribution of functions after incorporating ob
 \mathcal{D} = \lbrace (\hat{x}_i, \hat{f}_i) \mid i=1, \dots, N \rbrace,
 ```
 
-where $\hat{f}_i = f(\hat{x}_i)$ in the noise-free observation case, and $\hat{f}_i = f(\hat{x}_i) + e_i$ in the noisy case, with independent noise terms $e_i \sim \mathcal{N}(0, \sigma_e^2)$. Let $\hat{X} = [\hat{x}_1, \dots, \hat{x}_N]$ denote the collection of observation data locations. The corresponding mean vector and covariance matrix are:
+where ``\hat{f}_i = f(\hat{x}_i)`` in the noise-free observation case, and ``\hat{f}_i = f(\hat{x}_i) + e_i`` in the noisy case, with independent noise terms ``e_i \sim \mathcal{N}(0, \sigma_e^2)``. Let ``\hat{X} = [\hat{x}_1, \dots, \hat{x}_N]`` denote the collection of observation data locations. The corresponding mean vector and covariance matrix are:
 
 ```math
 \mu(\hat{X}) = [m(\hat{x}_1), \dots, m(\hat{x}_N)], \quad K(\hat{X}, \hat{X}) \text{ with entries } K_{ij} = k(\hat{x}_i, \hat{x}_j).
 ```
 
-For a new input location $x^*$ we are interested at the unknown function value $f^* = f(x^*)$. By the definition of a GP, the joint distribution of observed outputs $\hat{f}_i$ and the unknown $f^*$ is multivariate Gaussian:
+For a new input location ``x^*`` we are interested at the unknown function value ``f^* = f(x^*)``. By the definition of a GP, the joint distribution of observed outputs ``\hat{f}_i`` and the unknown ``f^*`` is multivariate Gaussian:
 
 ```math
 \begin{bmatrix} \hat{f}\\ f^* \end{bmatrix} = \mathcal{N}\left( \begin{bmatrix} \mu(\hat{X}) \\ m(x^*) \end{bmatrix},  \begin{bmatrix} K(\hat{X}, \hat{X}) & K(\hat{X}, x^*)\\ K(x^*, \hat{X}) & K(x^*, x^*) \end{bmatrix} \right),
@@ -293,7 +293,7 @@ where:
 - ``K(\hat{X}, x^*)`` is the covariance matrix with entries ``K_{i1} = k(\hat{x}_i, x^*)``,
 - and ``(x^*, x^*)`` is the variance at the unknown input location.
 
-We can then obtain the posterior distribution of $f^*$ from the properties of multivariate Gaussian distributions (see, e.g. Appendix A.2 in [rasmussen2005gaussian](@cite)), by conditioning the joint Gaussian on the observed outputs $\hat{f}_i$:
+We can then obtain the posterior distribution of ``f^*`` from the properties of multivariate Gaussian distributions (see, e.g. Appendix A.2 in [rasmussen2005gaussian](@cite)), by conditioning the joint Gaussian on the observed outputs ``\hat{f}_i``:
 
 ```math
 f^* \mid \hat{X}, \hat{f}, x^* \sim \mathcal{N}(\mu^*(x^*), \Sigma^*(x^*)),
@@ -314,12 +314,12 @@ K(\hat{X}, \hat{X}) \rightarrow K(\hat{X}, \hat{X}) + \sigma^2_{e}I.
 
 The computation of the posterior predictive distribution generalizes straightforwardly to multiple input locations, providing both the posterior mean, which can serve as a regression estimate of the unknown function, and the posterior variances, which quantify the uncertainty at each point. Because the posterior is multivariate Gaussian, one can also sample function realizations at specified locations to visualize possible functions consistent with the observed data.
 
-To fit a GP from observed data, supply a `DataFrame` and the output column name. The constructor optimizes the hyperparameters by default and fits the posterior used to predict $y$. Set `learn_hyperparameters = false` to keep the specified prior hyperparameters fixed.
+To fit a GP from observed data, supply a `DataFrame` and the output column name. The constructor optimizes the hyperparameters by default and fits the posterior used to predict ``y``. Set `learn_hyperparameters = false` to keep the specified prior hyperparameters fixed.
 
 The optional third positional argument selects the GP input columns, for example `GaussianProcess(df, :y, [:x]; ...)`. By default, all columns except the output are used. With `normalize = true` (the default), this data-based constructor standardizes input columns using their training-data means and standard deviations. The same transformation is applied during prediction; outputs remain on their original scale. Use `normalize = false` to disable input normalization.
 
 The following fits a GP with mean function `ConstMean(0.0)` and a scaled `SqExponentialKernel()`. While `ConstMean(0.0)` and `ZeroMean()` initially provide the same zero mean, `ConstMean(0.0)` allows the constant to be optimized.
-We also equip the GP with small observation noise $\sigma^2$, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization, but it is not optimized by default.
+We also equip the GP with small observation noise ``\sigma^2``, which has implications on the numerical stability and allows the GP to handle imprecise data. The noise can also be optimized as part of the hyperparameter optimization, but it is not optimized by default.
 Specify the prior using `mean` and `kernel`, and set `learn_noise = true` to also optimize the observation-noise variance. Noise learning only takes effect when `learn_hyperparameters = true`.
 
 ```@example gaussianprocess
@@ -414,17 +414,17 @@ the observation-noise variance is too small.
 
 #### Hyperparameter optimization
 
-GP models typically contain hyperparameters in their mean functions $m(x; \theta_m)$ and covariance kernel functions $k(x, x'; \theta_k)$. The observation noise variance $\sigma^2_{e}$ is also considered a hyperparameter related to the kernel. The choice of hyperparameters strongly affects the quality of the posterior GP.
+GP models typically contain hyperparameters in their mean functions ``m(x; \theta_m)`` and covariance kernel functions ``k(x, x'; \theta_k)``. The observation noise variance ``\sigma^2_{e}`` is also considered a hyperparameter related to the kernel. The choice of hyperparameters strongly affects the quality of the posterior GP.
 
-A common approach to selecting hyperparameters is maximum likelihood estimation (MLE) (see, e.g. [rasmussen2005gaussian](@cite)), where we maximize the likelihood of observing the training data $\mathcal{D}$ under the chosen GP prior.
+A common approach to selecting hyperparameters is maximum likelihood estimation (MLE) (see, e.g. [rasmussen2005gaussian](@cite)), where we maximize the likelihood of observing the training data ``\mathcal{D}`` under the chosen GP prior.
 
-The marginal likelihood of the observed training outputs $\hat{f}$ is:
+The marginal likelihood of the observed training outputs ``\hat{f}`` is:
 
 ```math
 p(\hat{f} \mid \hat{X}, \theta_m, \theta_k, \sigma^2_{e}) = \mathcal{N}(\hat{f} \mid \mu_{\theta_m}(\hat{X}), K_{\theta_k}(\hat{X}, \hat{X}) + \sigma^2_{e}I),
 ```
 
-where $\mu_{\theta_m}(\hat{X})$ and $K_{\theta_k}(\hat{X}, \hat{X})$ denote the parameter dependent versions of the previously defined quantities.
+where ``\mu_{\theta_m}(\hat{X})`` and ``K_{\theta_k}(\hat{X}, \hat{X})`` denote the parameter dependent versions of the previously defined quantities.
 
 For numerical reasons, the logarithm of the marginal likelihood is typically used. Maximizing the log marginal likelihood with respect to the hyperparameters then yields the parameters that best explain the observed data. After obtaining the optimal hyperparameters, the posterior GP can be constructed as described above.
 
@@ -485,7 +485,7 @@ savefig(p, "posterior-gp-opt.svg"); nothing # hide
 
 Internally, `MaximumLikelihoodEstimation()` uses the [`LBFGS`](https://julianlsolvers.github.io/Optim.jl/stable/algo/lbfgs/) optimizer with up to 100 iterations per run and five additional randomized restarts by default. The `restarts` keyword controls the number of additional runs. Note that any other first-order optimizer supported by [`Optim.jl`](https://julianlsolvers.github.io/Optim.jl/stable/), along with its corresponding hyperparameters, can also be used when constructing [`MaximumLikelihoodEstimation`](@ref).
 
-During optimization, GP hyperparameters $\theta_m$ and $\theta_k$ are automatically extracted and updated. The noise variance $\sigma^2_{e}$ is updated only when `learn_noise = true`.
+During optimization, GP hyperparameters ``\theta_m`` and ``\theta_k`` are automatically extracted and updated. The noise variance ``\sigma^2_{e}`` is updated only when `learn_noise = true`.
 
 We support the automatic extraction of hyperparameters from mean functions provided by [`AbstractGPs.jl`](https://juliagaussianprocesses.github.io/AbstractGPs.jl/stable/api/#Mean-functions), with the exception of:
 
