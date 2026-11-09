@@ -1,9 +1,9 @@
 @testsnippet TMBMU1 begin
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
-    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
+    loglikelihood = (x1, x2) -> logpdf.(Normal(), x1) + logpdf.(Normal(), x2 - x1 .^ 2)
 
-    logL = ParallelModel(df -> loglikelihood(df.x1, df.x2), :L)
+    logL = Model(df -> loglikelihood(df.x1, df.x2), :L)
 
     map = PolynomialMap(2, 2, Normal(), Softplus())
     quadrature = GaussHermiteWeights(3, 2)
@@ -38,9 +38,9 @@ end
     #setup
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
-    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1^2)
+    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1 .^ 2)
 
-    logL = ParallelModel(df -> loglikelihood(df.x1, df.x2), :L)
+    logL = Model(df -> loglikelihood(df.x1, df.x2), :L)
 
     map = PolynomialMap(2, 2, Normal(), Softplus())
     quadrature = GaussHermiteWeights(3, 2)

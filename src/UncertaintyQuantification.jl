@@ -157,7 +157,6 @@ export MaximumVariance
 export Model
 export MonomialBasis
 export MonteCarlo
-export ParallelModel
 export Parameter
 export PlackettBurman
 export PolynomialChaosBasis

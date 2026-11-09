@@ -1,10 +1,6 @@
 # Parallelisation
 
-*UncertaintyQuantification* provides several possibilities to parallelise the execution of a model. Which method to use strongly depends on the model and the available hardware. The simplest way to run a model in parallel is by using the [`ParallelModel`](@ref).
-
-## ParallelModel
-
-With the basic [`Model`](@ref) it is up to the user to implement an efficient function which returns the model responses for all samples simultaneously. Commonly, this will involve vectorized operations. For more complex or longer running models, *UncertaintyQuantification* provides a simple [`ParallelModel`](@ref). This model relies on the capabilites of the `Distributed` module, which is part of the standard library shipped with Julia. Without any present *workers*, the [`ParallelModel`](@ref) will evaluate its function in a loop for each sample. If one or more workers are present, it will automatically distribute the model evaluations. For this to work, *UncertaintyQuantification* must be loaded with the `@everywhere` macro in order to be loaded on all workers. In difference to the standard `Model` each call to the function used in the  `ParallelModel` is passed a `DataFrameRow` instead of the full `DataFrame`.
+_UncertaintyQuantification_ provides several possibilities to parallelise the execution of a model. Which method to use strongly depends on the model and the available hardware. The simplest way to run a model in parallel is passing the `distributed=true` keyword to the [`Model`]@ref constructor. If any _Distributed_ workers are present the evaluation of the rows in the `DataFrame` will be distributed among them. For this to work, _UncertaintyQuantification_ must be loaded with the `@everywhere` macro in order to be loaded on all workers. Each call to the function used in the [`Model`](@ref) is passed a `DataFrameRow` instead of the full `DataFrame`. The
 
 In the following example, we first load `Distributed` and add four local workers. A simple model is then evaluated in parallel. Finally, the workers are removed.
 
@@ -20,8 +16,7 @@ addprocs(4) # add 4 local workers
     x = RandomVariable(Normal(), :x)
     y = RandomVariable(Normal(), :y)
 
-    m = ParallelModel(df -> sqrt(df.x^2 .+ df.y^2), :z)
-
+    m = Model(df -> sqrt(df.x^2 .+ df.y^2), :z; distributed = true)
 end
 
 samples = sample([x, y], 1000)
@@ -30,7 +25,7 @@ evaluate!(m, samples)
 rmprocs(workers()) # release the local workers
 ```
 
-It is important to note, that the [`ParallelModel`](@ref) requires some overhead to distribute the function calls to the workers. Therefore it performs significantly slower than the standard [`Model`](@ref) with vectorized operations for a simple function as in this example. The method of executing a model in parallel presented above also applies to the `ExternalModel`.
+It is important to note, that the parallelisation requires some overhead to distribute the function calls to the workers. Therefore it performs significantly slower than the [`Model`](@ref) with `distributed=false` with vectorized operations for a simple function as in this example. The method of executing a model in parallel presented above also applies to the `ExternalModel`.
 
 !!! note
-    For heavier external models the use of parallel compute clusters through the [`SlurmInterface`](@ref) is recommended. See [High Performance Computing](@ref).
+For heavier external models the use of parallel compute clusters through the [`SlurmInterface`](@ref) is recommended. See [High Performance Computing](@ref).
