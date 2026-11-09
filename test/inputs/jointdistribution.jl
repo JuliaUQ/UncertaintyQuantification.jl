@@ -16,11 +16,16 @@ end
 
 @testitem "JD-Copulas: Constructor" setup = [JDSetup] begin
     @test isa(JointDistribution(copula, marginals), JointDistribution)
+    @test isa(JointDistribution(marginals), JointDistribution)
     @test isa(JointDistribution(copula, imprecise_marginals), JointDistribution)
 
     jd = JointDistribution(copula, marginals)
     @test jd.m == marginals
     @test jd.d == copula
+
+    jd = JointDistribution(marginals)
+    @test jd.m == marginals
+    @test isa(jd.d, IndependentCopula)
 
     jd = JointDistribution(copula, imprecise_marginals)
     @test jd.m == imprecise_marginals
