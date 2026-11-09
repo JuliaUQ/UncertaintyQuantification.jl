@@ -56,8 +56,7 @@ struct JointDistribution{
 
     # Copula + RandomVariable from Vector{<:RandomVariable}
     function JointDistribution(m::Vector{<:RandomVariable})
-        c = IndependentCopula(length(m))
-        return new{typeof(c), RandomVariable}(c, m)
+        return JointDistribution(IndependentCopula(length(m)), m)
     end
 
     # MultivariateDistribution + Symbol
