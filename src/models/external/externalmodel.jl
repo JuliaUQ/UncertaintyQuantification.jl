@@ -110,10 +110,8 @@ function evaluate!(
         return result
     end
 
-    results = hcat(results...)
-
     for (i, name) in enumerate(names(m.extractors))
-        df[!, name] = results[i, :]
+        df[!, name] = getindex.(results, i)
     end
     return
 end
@@ -141,10 +139,8 @@ function evaluate!(
         return getresult(m, path)
     end
 
-    results = hcat(results...)
-
     for (i, name) in enumerate(names(m.extractors))
-        df[!, name] = results[i, :]
+        df[!, name] = getindex.(results, i)
     end
     return
 end
