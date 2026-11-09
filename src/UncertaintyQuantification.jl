@@ -44,7 +44,7 @@ import Distributions:
     cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std,
     median, kldivergence, mode, shape
 import Statistics: mean, var, std
-import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf, optimize!
+import TransportMaps: AbstractMapDensity, AbstractQuadratureWeights, logpdf, grad_logpdf, optimize!
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end

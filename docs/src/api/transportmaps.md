@@ -1,5 +1,9 @@
 # Transport Maps
 
+```@meta
+CurrentModule = UncertaintyQuantification
+```
+
 Transport maps for density transformation and variational inference.
 
 ## Index
