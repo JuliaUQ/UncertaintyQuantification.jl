@@ -1,6 +1,5 @@
 module UncertaintyQuantification
 
-using ADTypes
 using Bootstrap
 using Clarabel
 using Copulas
@@ -32,8 +31,8 @@ using RecipesBase
 
 @reexport using TransportMaps
 @reexport using Distributions
-@reexport using ADTypes
 
+import ADTypes
 import Base: rand, names, copy, run, length, eltype
 import Copulas: Copula
 import DifferentiationInterface: derivative, jacobian, pullback, pushforward

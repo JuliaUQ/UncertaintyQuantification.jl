@@ -34,7 +34,7 @@ end
     @test !iszero(getcoefficients(tm_result.d.map))
 end
 
-@testset "TM BMU - Transformations: Warning and errors" begin
+@testitem "TM BMU - Transformations: Warning and errors" setup = [TestSetup] begin
     #setup
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
@@ -47,7 +47,7 @@ end
 
     # begin
     tm_log = TransportMapBayesian(prior, map, quadrature; islog = true, transformprior = true)
-    @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
+    @test_logs (:warn, "Prior function given while transforming to standard normal prior. Given prior will be ignored.") bayesianupdating(
         df -> df.x1, df -> df.L, [logL], tm_log
     )
 

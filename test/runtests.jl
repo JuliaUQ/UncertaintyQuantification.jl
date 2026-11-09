@@ -11,6 +11,7 @@ using TestItemRunner
 using UncertaintyQuantification
 
 @testsnippet TestSetup begin
+    using ADTypes
     using Copulas
     using DataFrames
     using Distributed
