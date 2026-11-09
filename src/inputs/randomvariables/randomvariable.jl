@@ -7,10 +7,10 @@ Defines a random variable, with a univariate distribution from Distributions.jl 
 
 ```jldoctest
 julia> RandomVariable(Normal(), :x)
-RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x)
+RandomVariable{Normal{Float64}}(Normal(0.0, 1.0), :x)
 
 julia> RandomVariable(Exponential(1), :x)
-RandomVariable{Exponential{Float64}}(Exponential{Float64}(θ=1.0), :x)
+RandomVariable{Exponential{Float64}}(Exponential(1.0), :x)
 ```
 """
 struct RandomVariable{T <: Union{UnivariateDistribution, ProbabilityBox}} <: RandomUQInput
