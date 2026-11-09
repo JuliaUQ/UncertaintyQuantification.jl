@@ -17,14 +17,14 @@ A Response Surface is a structure used for modeling.
 ===#
 
 #===
-## Example
+### Example
 
 In this example, we will model the following test function (known as Himmelblau's function)
 
-in the range ``x1, x2 ∈ [-5, 5]``. It is defined as
+in the range ``x_1, x_2 ∈ [-5, 5]``. It is defined as
 
 ```math
-f(x1, x2) = (x1^2 + x2 - 11)^2 + (x1 + x2^2 - 7)^2.
+f(x_1, x_2) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 - 7)^2.
 ```
 ===#
 
@@ -68,11 +68,11 @@ That functions degree is set as an Integer in the constructor.
 #md # !!! note
 #md #     The choice of the degree and the design and its parameters may be crucial to obtaining a sufficient model.
 
-training_data = sample(x, design)
+training_data = UncertaintyQuantification.sample(x, design)
 evaluate!(himmelblau, training_data)
 rs = ResponseSurface(training_data, :y, 4)
 
-test_data = sample(x, 1000)
+test_data = UncertaintyQuantification.sample(x, 1000)
 evaluate!(rs, test_data)
 
 #===
