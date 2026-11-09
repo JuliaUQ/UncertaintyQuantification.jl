@@ -55,7 +55,7 @@ end
     @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
 end
 
-@testitem "TM BMU - Transformations: External Model" setup = [TMBMU1] begin
+@testitem "TM BMU - Transformations: External Model" setup = [TMBMU1, TestSetup] begin
     sourcedir = tempdir()
     sourcefile = ["radius.jl"]
 
