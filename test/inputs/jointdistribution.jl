@@ -105,6 +105,8 @@ end
 
     @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈ cdf(jd, [0.5, 0.5]) atol =
         1.0e-4
+
+    @test pdf(jd, [0.0, 0.0]) ≈ exp(logpdf(jd, [0.0, 0.0])) atol = 1.0e-4
 end
 
 @testitem "JD-Copulas: to_physical_space" setup = [JDSetup] begin
@@ -160,4 +162,8 @@ end
         jd, samples
     )
     @test_throws ["Cannot map", "to physical space."] to_physical_space!(jd, samples)
+end
+
+@testitem "JD-Multivariate Distribution: densities" setup = [MVSetup] begin
+    @test pdf(jd, [0.0, 0.0]) ≈ exp(logpdf(jd, [0.0, 0.0])) atol = 1.0e-4
 end
