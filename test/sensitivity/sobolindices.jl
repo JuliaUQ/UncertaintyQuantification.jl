@@ -4,7 +4,7 @@
 
     x = RandomVariable.(Uniform(-π, π), [:x1, :x2, :x3])
 
-    ishigami_fun = (x1,x2,x3,a,b) -> sin(x1) + a * sin(x2) ^ 2 + b * x3 ^ 4 * sin(x1)
+    ishigami_fun = (x1, x2, x3, a, b) -> sin(x1) + a * sin(x2)^2 + b * x3^4 * sin(x1)
     a1 = 7; b1 = 0.1
     ishigami1 = Model(
         df -> ishigami_fun.(df.x1, df.x2, df.x3, a1, b1), :f1
@@ -36,7 +36,7 @@ end
 end
 
 @testitem "Sobol Indices: Evaluations" setup = [sobolindices] begin
-    si, evals = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc), return_samples=true)
+    si, evals = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc), return_samples = true)
 
     @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
@@ -67,7 +67,7 @@ end
 
 @testitem "Sobol Indices: Evaluations multiple outputs" setup = [sobolindices] begin
     si, evals = sobolindices(
-        [ishigami1, ishigami2], x, [:f1, :f2], MonteCarlo(n_mc), return_samples=true
+        [ishigami1, ishigami2], x, [:f1, :f2], MonteCarlo(n_mc), return_samples = true
     )
 
     @test first(si[:f1].OutputVariance) ≈ variance_analytical1 rtol = 0.05

@@ -1,6 +1,6 @@
 const _sobol_table_types = [Symbol[], Float64[], Float64[], Float64[], Float64[], Float64[]]
 const _sobol_table_header = [
-    "Variables", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError", "OutputVariance"
+    "Variables", "FirstOrder", "FirstOrderStdError", "TotalEffect", "TotalEffectStdError", "OutputVariance",
 ]
 
 function sobolindices(
@@ -30,7 +30,7 @@ function sobolindices(
     samples = (
         A = A,
         B = B,
-        AB = Dict{Symbol,DataFrame}()
+        AB = Dict{Symbol, DataFrame}(),
     )
 
     fA = Matrix(A[:, outputs])
