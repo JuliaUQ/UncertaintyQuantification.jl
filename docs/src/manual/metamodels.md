@@ -265,6 +265,8 @@ gp = GP(mean_f, kernel); nothing # hide
 
 This `GP` object illustrates the underlying prior. The [`GaussianProcess`](@ref) constructors create that prior internally from the `mean` and `kernel` keywords, which default to `ZeroMean()` and `SqExponentialKernel()`. Pass these components directly when fitting a surrogate.
 
+The composition operator `\circ` above applies the transformation to both kernel inputs `(k \circ T)(x,y) = k\bigl(T(x),T(y)\bigr)`.
+
 #### Posterior Gaussian Process
 
 The posterior GP represents the distribution of functions after incorporating observed data. We denote the observation data as:
@@ -342,7 +344,7 @@ gp_model = GaussianProcess(
 nothing # hide
 ```
 
-Now we can use our GP model to predict at new input locations `x_test` using the `evaluate!` function. By default this will only write the predictive mean to the `DataFrame` in a column suffixed with `_mean`, Passing the `variance=true` keyword will also return the variance in a column suffixed with `_var`. The predictive variance includes the observation-noise variance `gp_model.σ²`. Should only the variance be required, returning the mean can be isabled by passing the keyword `mean=false`.
+Now we can use our GP model to predict at new input locations `x_test` using the `evaluate!` function. By default this will only write the predictive mean to the `DataFrame` in a column suffixed with `_mean`. Passing the `variance=true` keyword will also return the variance in a column suffixed with `_var`. The predictive variance includes the observation-noise variance `gp_model.σ²`. Should only the variance be required, returning the mean can be disabled by passing the keyword `mean=false`.
 
 ```@example gaussianprocess
 using Plots # hide
@@ -351,17 +353,17 @@ prediction = DataFrame(:x => x_test)
 
 evaluate!(gp_model, prediction; variance=true)
 
-prediction_mean = prediction[!, :y_mean] # hide
-prediction_std = sqrt.(prediction[!, :y_var]) # hide
+prediction_mean = prediction[!, :y_mean]
+prediction_std = sqrt.(prediction[!, :y_var])
 
-p = plot(x_test, prediction_mean, color=:blue, label="Mean prediction") # hide
+p = plot(x_test, prediction_mean, color=:blue, label="Mean prediction")
 plot!(
     x_test, prediction_mean, ribbon=2 .* prediction_std,
     color=:grey, alpha=0.5, label="Confidence band"
-) # hide
+)
 
-y_true = sin.(x_test) + 0.3 * cos.(2 .* x_test) # hide
-plot!(x_test, y_true, color=:red, label="True function") # hide
+y_true = sin.(x_test) + 0.3 * cos.(2 .* x_test)
+plot!(x_test, y_true, color=:red, label="True function")
 
 savefig(p, "posterior-gp.svg"); nothing # hide
 ```

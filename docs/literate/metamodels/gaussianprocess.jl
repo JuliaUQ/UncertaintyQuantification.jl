@@ -94,30 +94,29 @@ println("MSE (GP):  $mse")
 The plots below compare the predicted surface with the original function. We use a grid inside the input domain, excluding the endpoints of the uniform distributions because they map to infinite values in standard normal space:
 ===#
 
-#md using Plots #hide
-#md using DataFrames #hide
-#md a = range(-5, 5; length=202)[2:end-1] #hide
-#md b = range(-5, 5; length=202)[2:end-1] #hide
-#md A = repeat(collect(a)', length(b), 1) #hide
-#md B = repeat(collect(b), 1, length(a)) #hide
-#md df = DataFrame(x1 = vec(A), x2 = vec(B)) #hide
-#md evaluate!(gp_model, df; variance=true) #hide
-#md evaluate!(himmelblau, df) #hide
-#md gp_mean = reshape(df[:, :y_mean], length(b), length(a)) #hide
-#md gp_var = reshape(df[:, :y_var], length(b), length(a)) #hide
-#md himmelblau_values = reshape(df[:, :y], length(b), length(a)) #hide
-#md s1 = surface(a, b, himmelblau_values; plot_title="Himmelblau's function")
-#md s2 = surface(a, b, gp_mean; plot_title="GP posterior mean")
-#md c1 = contourf(a, b, himmelblau_values)
-#md c2 = contourf(a, b, gp_mean)
-#md plot(s1, s2, c1, c2, layout = (2, 2), legend = false, size=(800, 800))
-#md savefig("gp-mean-comparison.svg") # hide
-#md s3 = surface(a, b, gp_var; plot_title="GP posterior variance") # hide
-#md plot(s3, legend = false) #hide
-#md savefig("gp-variance.svg"); nothing # hide
+#md using Plots, DataFrames
+#md a = range(-5, 5; length=200)
+#md n = length(a)
+#md df = DataFrame(x1=repeat(a; inner=n), x2=repeat(a; outer=n))
+#md evaluate!(gp_model, df; variance=true)
+#md evaluate!(himmelblau, df)
+#md z(column) = reshape(df[!, column], n, n)
 
-#md contourf(a, b, abs.(himmelblau_values - gp_mean);  plot_title="Absolute Error") # hide
-#md savefig("gp-mean-error.svg"); nothing # hide
+#md p = plot(
+#md     surface(a, a, z(:y); plot_title="Himmelblau's function"),
+#md     surface(a, a, z(:y_mean); plot_title="GP posterior mean"),
+#md     contourf(a, a, z(:y)),
+#md     contourf(a, a, z(:y_mean));
+#md     layout=(2, 2), legend=false, size=(800, 800),
+#md )
+#md savefig(p, "gp-mean-comparison.svg"); nothing # hide
+
+#md p_var = surface(a, a, z(:y_var); plot_title="GP posterior variance", legend=false) # hide
+#md savefig(p_var, "gp-variance.svg"); nothing # hide
+
+#md p_error = contourf(a, a, abs.(z(:y) - z(:y_mean)); plot_title="Absolute Error") # hide
+#md savefig(p_error, "gp-mean-error.svg"); nothing # hide
+
 
 # ![](gp-mean-comparison.svg)
 

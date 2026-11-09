@@ -53,7 +53,7 @@ end
         input_names::Vector{Symbol} = propertynames(data[:, Not(output)]); kwargs...
     )
 
-Fit a Gaussian-process surrogate to the input and output columns in `data`.
+Fit a Gaussian process surrogate to the input and output columns in `data`.
 The returned model stores the fitted posterior, selected input names, noise
 variance, input transformation, and training data in `posterior`, `input_names`,
 `σ²`, `transform`, and `data`, respectively. The output is kept on its original

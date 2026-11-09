@@ -9,7 +9,7 @@ Gaussian process.
 
 ### Himmelblau's Function
 
-As in the (non-adaptive) GP example, we consider the Himmelblau function in ``x1, x2 ∈ [-5, 5]``
+As in the (non-adaptive) GP example, we consider the Himmelblau function in ``x_1, x_2 ∈ [-5, 5]``
 as a test function.
 ===#
 
