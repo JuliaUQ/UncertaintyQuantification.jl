@@ -7,7 +7,7 @@
 | Category | Badges |
 |---|---|
 | Build status | ![Build Status](https://github.com/JuliaUQ/UncertaintyQuantification.jl/actions/workflows/ci.yml/badge.svg?branch=master) [![Coverage Status](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl/branch/master/graph/badge.svg?token=LfslMAoWvA)](https://codecov.io/gh/JuliaUQ/UncertaintyQuantification.jl) |
-| Documentation | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliauq.github.io/UncertaintyQuantification.jl/stable)[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliauq.github.io/UncertaintyQuantification.jl/dev) |
+| Documentation | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliauq.github.io/UncertaintyQuantification.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliauq.github.io/UncertaintyQuantification.jl/dev) |
 | Code quality | [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl) [![Aqua QA](https://juliatesting.github.io/Aqua.jl/dev/assets/badge.svg)](https://github.com/JuliaTesting/Aqua.jl) |
 | References | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3993816.svg)](https://doi.org/10.5281/zenodo.3993816) [![Static Badge](https://img.shields.io/badge/Paper-10.7712%2F120223.10347.19810-yellow)](https://www.eccomasproceedia.org/conferences/thematic-conferences/uncecomp-2023/10347)|
 
