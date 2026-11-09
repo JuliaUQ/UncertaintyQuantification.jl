@@ -1,14 +1,15 @@
 # [Transport Maps](@id transport_map_manual)
 
 **Transport maps** (TMs) construct a deterministic transformation between a simple reference distribution (typically standard normal) and a complex target distribution [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
-Once such a map is constructed, generating samples from the target becomes trivial: simply draw samples from the reference and apply the transformation. Moreover, transport maps enable efficient computation of conditional distributions, marginals, and other probabilistic quantities through the geometric structure they impose 
+Once such a map is constructed, generating samples from the target becomes trivial: simply draw samples from the reference and apply the transformation. Moreover, transport maps enable efficient computation of conditional distributions, marginals, and other probabilistic quantities through the geometric structure they impose
 
 ## Mathematical Formulation
 
 Mathematically, a transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is defined as a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$.
 Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target space back to the reference space.
 
-The target distribution is approximated by the so-called *pull-back* density:
+The target distribution is approximated by the so-called _pull-back_ density:
+
 ```math
 \pi(\boldsymbol{\theta}) \approx T_{\#}\rho = \rho\left(T^{-1}(\boldsymbol{a},\boldsymbol{\theta})\right) \ |\det \nabla T^{-1}(\boldsymbol{a},\boldsymbol{\theta})|.
 ```
@@ -49,36 +50,43 @@ f(z_1, \ldots, z_k; \boldsymbol{a}) = \sum_{\alpha \in \mathcal{A}_k} a_\alpha \
 ```
 
 where:
-- ``\mathcal{A}_k`` is a multi-index set defining which basis functions are included
-- ``a_\alpha`` are the optimization coefficients
-- ``\Psi_\alpha`` are multivariate basis functions
-- ``g: \mathbb{R} \to \mathbb{R}^+`` is a rectifier function that maps the derivative of ``f`` to a strictly positive value, ensuring monotonicity
+
+- `\mathcal{A}_k` is a multi-index set defining which basis functions are included
+- `a_\alpha` are the optimization coefficients
+- `\Psi_\alpha` are multivariate basis functions
+- `g: \mathbb{R} \to \mathbb{R}^+` is a rectifier function that maps the derivative of `f` to a strictly positive value, ensuring monotonicity
 
 ## Implementation
 
-In *UncertaintyQuantification.jl*, transport maps are implemented using the [TransportMaps.jl](https://juliauq.github.io/TransportMaps.jl/stable/) package.
+In _UncertaintyQuantification.jl_, transport maps are implemented using the [TransportMaps.jl](https://juliauq.github.io/TransportMaps.jl/stable/) package.
 This package provides the backend implementation, including the construction of basis functions, rectifier functions, and the optimization procedures to determine the map coefficients.
 
 There are two main approaches to constructing transport maps, depending on the available information about the target distribution:
+
 1. **From target density**: When an analytical expression for the log-density is available
 2. **From target samples**: When only samples from the target distribution are available
 
 ### Map Construction from Target Density
 
 When an analytical expression for the target log-density is available, we determine the map coefficients $\boldsymbol{a}$ by solving an optimization problem that minimizes the Kullback-Leibler (KL) divergence between the target density and the transport map approximation:
+
 ```math
 \min_{\boldsymbol{a}} \mathcal{D}_{\mathsf{KL}}(T_{\#}\rho||\pi)
 ```
+
 The KL divergence is computed as an expected value with respect to the reference measure and approximated using numerical quadrature:
+
 ```math
 \sum_{i=1}^{N} w_{q,i}\Big[-\log\pi\bigl(T(\boldsymbol{a},\boldsymbol{z}_{q,i})\bigr)-\log |\det\nabla T(\boldsymbol{a},\boldsymbol{z}_{q,i}) |\Big].
 ```
+
 Here, $w_{q,i}$ are quadrature weights and $\boldsymbol{z}_{q,i}$ are quadrature points.
 We use the quadrature schemes defined in [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods).
 Currently available schemes are:
+
 - Monte Carlo
 - Latin Hypercube
-- Gauss-Hermite, and 
+- Gauss-Hermite, and
 - Sparse Smolyak
 
 #### Usage
@@ -93,13 +101,13 @@ To construct a TM from density call [`mapfromdensity`](@ref) which requires the 
 
 A [`JointDistribution`](@ref) with the optimized [`TransportMap`](@ref) and `names` of the variables is returned.
 
-
 The following example demonstrates how to construct a transport map from a given log-density function:
+
 ```@example transportmap_banana
 using UncertaintyQuantification # hide
 using Plots # hide
 using DataFrames #hide
-
+using TransportMaps
 
 # Define the log-density of the target (banana-shaped distribution)
 logtarget(x) = logpdf.(Normal(), x[1]) + logpdf.(Normal(), x[2] .- x[1].^2)
@@ -109,7 +117,7 @@ logtarget(x) = logpdf.(Normal(), x[1]) + logpdf.(Normal(), x[2] .- x[1].^2)
 pm = PolynomialMap(2, 2)
 
 # Define 2D quadrature using a Gauss-Hermite tensor product with 3 points per dimension
-quad = GaussHermiteWeights(3, 2) 
+quad = GaussHermiteWeights(3, 2)
 
 # Construct the target density and fit the map
 target = MapTargetDensity(logtarget) # Requires a log-density function
@@ -135,7 +143,7 @@ savefig("tm-banana-1.svg"); nothing # hide
 ![Banana density](tm-banana-1.svg)
 
 !!! note "Bayesian Updating with Transport Maps"
-    The ability to have an analytical expression for the density and the ability to generate samples make transport maps appealing for Bayesian inference applications. For the usage with [`bayesianupdating`](@ref) see [Variational Inference with Transport Maps](@ref).
+The ability to have an analytical expression for the density and the ability to generate samples make transport maps appealing for Bayesian inference applications. For the usage with [`bayesianupdating`](@ref) see [Variational Inference with Transport Maps](@ref).
 
 ### Map Construction from Target Samples
 
@@ -152,6 +160,7 @@ This approach is implemented as a [`TransportMapFromSamples`](@ref) constructed 
 Similarly, the function returns a [`JointDistribution`](@ref) with the optimized [`TransportMapFromSamples`](@ref) and `names` of the variables.
 
 We consider the same banana-shaped distribution as before. However, we now start with samples generated using a simple acceptance-rejection method:
+
 ```@example transportmap_banana
 function generate_samples(n_samples::Int)
     x1_samples = Vector{Float64}(undef, n_samples)
@@ -182,7 +191,9 @@ We define the transport map structure as a [`PolynomialMap`](https://juliauq.git
 pm_samples = PolynomialMap(2, 2)
 tm = mapfromsamples(pm_samples, target_samples)
 ```
+
 As in the density-based approach, the fitted map enables sampling and probability density evaluation through the mapping from the reference space.
+
 ```@example transportmap_banana
 # Generate 1000 new samples from the fitted transport map
 tm_samples = sample(tm, 1000)
