@@ -67,7 +67,7 @@ initial_gp = GaussianProcess(
 #===
 Next, we update the initial GP using a selected learning function and a set number of
 additional points used to refine the initial GP. We use the [`MaximinDistance`](@ref)
-acquisition function and select `20` additional points, drawing `1000` candidates
+acquisition function and select `40` additional points, drawing `1000` candidates
 at each iteration.
 ===#
 
