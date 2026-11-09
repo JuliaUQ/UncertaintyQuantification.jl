@@ -139,3 +139,26 @@ end
     @test length(readdir(readdir(ext1.workdir; join = true)[1])) == 0
     @test length(readdir(readdir(ext2.workdir; join = true)[1])) == 0
 end
+
+@testitem "Extractor output types" setup = [ExternalModel] begin
+    radiusvector = Extractor(
+        base -> begin
+            r = parse(Float64, readline(joinpath(base, "out.txt")))
+            return [r, r]
+        end, :rvec
+    )
+
+    ext = ExternalModel(
+        sourcedir,
+        sourcefile,
+        [radius, radiusvector],
+        solver;
+        formats = numberformats,
+        workdir = tempname(),
+        cleanup = true,
+    )
+
+    evaluate!(ext, df)
+    @test eltype(df.r) == Float64
+    @test eltype(df.rvec) == Vector{Float64}
+end
