@@ -36,7 +36,7 @@ import NLSolversBase
 @reexport using AbstractGPs
 @reexport using Distributions
 
-import AbstractGPs: sampleplot
+import AbstractGPs: sampleplot, sampleplot!
 import Base: rand, names, copy, run, length, eltype
 import Copulas: Copula
 import DifferentiationInterface: derivative, jacobian, pullback, pushforward
