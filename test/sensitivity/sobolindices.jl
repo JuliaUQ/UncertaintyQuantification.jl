@@ -36,7 +36,7 @@ end
 end
 
 @testitem "Sobol Indices: Evaluations" setup = [sobolindices] begin
-    si, evals = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc), return_evaluations=true)
+    si, evals = sobolindices(ishigami1, x, :f1, MonteCarlo(n_mc), return_samples=true)
 
     @test first(si.OutputVariance) ≈ variance_analytical1 rtol = 0.05
     @test si.FirstOrder[1:2] ≈ firstorder_analytical1[1:2] rtol = 0.1
@@ -67,7 +67,7 @@ end
 
 @testitem "Sobol Indices: Evaluations multiple outputs" setup = [sobolindices] begin
     si, evals = sobolindices(
-        [ishigami1, ishigami2], x, [:f1, :f2], MonteCarlo(n_mc), return_evaluations=true
+        [ishigami1, ishigami2], x, [:f1, :f2], MonteCarlo(n_mc), return_samples=true
     )
 
     @test first(si[:f1].OutputVariance) ≈ variance_analytical1 rtol = 0.05
