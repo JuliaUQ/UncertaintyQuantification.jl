@@ -39,10 +39,12 @@ himmelblau = Model(
 We start with the same initial Gaussian process surrogate as in the _regular_ GP regression
 example. We pass the design positionally and specify `mean`, `kernel`, and
 `normalize` as keywords. With `normalize = true`, the input distributions define
-the transformation to standard normal space.
+the transformation to standard normal space. To show how the GP regression improves with
+the adaptive, we reduced the number of QuasiMonteCarlo samples to 40, i.e., the GP model 
+will be worse than in the regular GP example.
 ===#
 
-design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
+design = QuasiMonteCarloSampling(40, LatinHypercubeSample())
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
@@ -89,7 +91,7 @@ adaptive_gp = AdaptiveGaussianProcess(
     candidate_sampling;
     optimizer = optimizer
 )
-refine!(adaptive_gp, 20)
+refine!(adaptive_gp, 40)
 #md nothing # hide
 
 #===
@@ -106,6 +108,8 @@ evaluate!(himmelblau, test_data)
 
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (initial GP):  $mse")
+R² = 1 - (sum((test_data.y .- test_data.y_mean) .^ 2)) / (sum((test_data.y .- mean(test_data.y)) .^ 2))
+println("R^2 (initial GP):  $R²")
 
 # Then, we also evaluate the adaptively refined GP at the same test set:
 evaluate!(adaptive_gp, test_data_adaptive)
@@ -113,3 +117,8 @@ evaluate!(himmelblau, test_data_adaptive)
 
 mse_adap = mean((test_data_adaptive.y .- test_data_adaptive.y_mean) .^ 2)
 println("MSE (adaptive GP):  $mse_adap")
+R²_adap = 1 - (sum((test_data_adaptive.y .- test_data_adaptive.y_mean) .^ 2)) / (sum((test_data_adaptive.y .- mean(test_data_adaptive.y)) .^ 2))
+println("R^2 (adaptive GP):  $R²_adap")
+
+# We can clearly see from the results how both the mean squared error and the
+# coefficient of determination have improved after the adaptive refinement.
