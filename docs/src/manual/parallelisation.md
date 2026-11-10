@@ -1,6 +1,6 @@
 # Parallelisation
 
-_UncertaintyQuantification_ provides several possibilities to parallelise the execution of a model. Which method to use strongly depends on the model and the available hardware. The simplest way to run a model in parallel is passing the `distributed=true` keyword to the [`Model`]@ref constructor. If any _Distributed_ workers are present the evaluation of the rows in the `DataFrame` will be distributed among them. For this to work, _UncertaintyQuantification_ must be loaded with the `@everywhere` macro in order to be loaded on all workers. Each call to the function used in the [`Model`](@ref) is passed a `DataFrameRow` instead of the full `DataFrame`. The
+_UncertaintyQuantification_ provides several possibilities to parallelise the execution of a model. Which method to use strongly depends on the model and the available hardware. The simplest way to run a model in parallel is passing the `distributed=true` keyword to the [`Model`](@ref) constructor. If any _Distributed_ workers are present, the evaluation of the rows in the `DataFrame` will be distributed among them. For this to work, _UncertaintyQuantification_ must be loaded with the `@everywhere` macro in order to be loaded on all workers. Each call to the function used in the [`Model`](@ref) is passed a `DataFrameRow` instead of the full `DataFrame`.
 
 In the following example, we first load `Distributed` and add four local workers. A simple model is then evaluated in parallel. Finally, the workers are removed.
 
