@@ -73,10 +73,8 @@ slurm = SlurmInterface(
 )
 
 verify(slurm)
-
 ```
-`YOUR_ACCOUNT` and `YOUR_PARTITION` should be replaced with your account and partition you wish to use for testing. This test will submit 2 slurm job arrays, of a lightweight calculation (> 1 minute per job) running 4 jobs at a time.
-
+`YOUR_ACCOUNT` and `YOUR_PARTITION` should be replaced with your account and partition you wish to use for the verification. The function will submit 2 slurm job arrays of a lightweight calculation running 4 jobs at a time. This requires the `julia` binary to be available on your `$PATH`.
 ### Usage
 
 See [High Performance Computing](@ref) for a detailed example.
