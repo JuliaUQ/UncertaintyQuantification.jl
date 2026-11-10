@@ -11,7 +11,6 @@ Pages = ["models.md"]
 ```@docs
 UQModel
 Model
-ParallelModel
 LinearBasisFunctionModel
 ```
 
@@ -19,7 +18,6 @@ LinearBasisFunctionModel
 
 ```@docs
 evaluate!(m::Model, df::DataFrame)
-evaluate!(m::ParallelModel, df::DataFrame)
 reliability(ipm::IntervalPredictorModel, ϵ::Real)
 isimprecise(i::UQModel)
 isimprecise(inputs::AbstractVector{<:UQModel})
