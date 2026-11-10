@@ -263,11 +263,6 @@ function bayesianupdating(
 end
 
 # Helper functions to enable auto-diff with Mooncake
-function _evaluate!(m::ParallelModel, df::DataFrame)
-    df[!, m.name] = map(m.func, eachrow(df))
-    return nothing
-end
-
 _evaluate!(m::UQModel, df::DataFrame) = evaluate!(m, df)
 _evaluate!(m::ExternalModel, df::DataFrame) = evaluate!(m, df)
 
