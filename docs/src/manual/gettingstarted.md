@@ -72,13 +72,123 @@ To represent purely epistemic uncertainty we provide the [`IntervalVariable`](@r
 x = IntervalVariable(-1,2, :x)
 ```
 
-Hybrid uncertainties can be expressed as probability boxes (p-box) using the [`ProbabilityBox`](@ref) type. Constructing a [`ProbabilityBox`](@ref) requires a `Dict` mapping all parameters of a `UnivariateDistribution` to either a `Real` or an [`Interval`](@ref). A [`ProbabilityBox`](@ref) is then wrapped in a [`RandomVariable`](@ref) to be used as an input in an analysis.
+Hybrid uncertainties can be expressed as probability boxes (p-box) using the [`ProbabilityBox`](@ref) type. Constructing a parametric [`ProbabilityBox`](@ref) requires a `Dict` mapping all parameters of a `UnivariateDistribution` to either a `Real` or an [`Interval`](@ref). A [`ProbabilityBox`](@ref) is then wrapped in a [`RandomVariable`](@ref) to be used as an input in an analysis.
 
 ```@example rv
 parameters = Dict(:μ => Interval(-1,1), :σ => 1)
 pbox = ProbabilityBox{Normal}(parameters)
 x = RandomVariable(pbox, :x)
 ```
+
+Distribution-free p-boxes can be constructed from moments and support bounds without
+choosing a distribution family. Use [`MomentProbabilityBox`](@ref) directly, or
+its convenience constructor `ProbabilityBox(; kwargs...)`.
+This concrete type subtypes `AbstractProbabilityBox{MomentConstraints}` and
+stores checked `mean`, `var` and `range` fields as [`Interval`](@ref) values.
+Both moment inputs may be precise values or intervals; `var` specifies the
+population variance. Distributional construction such as `ProbabilityBox{Normal}`
+keeps the concrete [`ProbabilityBox`](@ref) type, which stores distribution parameters
+and subtypes `AbstractProbabilityBox{Normal}`.
+
+```julia
+ProbabilityBox(; mean = 0, var = 1)                       # mean and variance
+ProbabilityBox(; mean = 2, range = Interval(0, 5))        # mean and range
+ProbabilityBox(; mean = 2, lb = 0)                       # mean and lower bound
+ProbabilityBox(; mean = 2, ub = 5)                       # mean and upper bound
+ProbabilityBox(; var = Interval(0.2, 1), range = Interval(0, 5)) # variance and range
+MomentProbabilityBox(; mean = 0, var = 1)              # direct moment constructor
+pbox = ProbabilityBox(; mean = Interval(1, 2), var = Interval(0.2, 1), range = Interval(0, 5))
+x = RandomVariable(pbox, :x)                         # mean, variance and range
+cdf(pbox, 3)                                        # interval probability
+quantile(pbox, 0.95)                                # interval quantile
+pbox.mean                                          # checked mean interval
+pbox.var                                           # checked variance interval
+pbox.range                                         # support interval
+```
+
+P-boxes can be plotted directly as their lower and upper CDF envelopes, with
+shading between them. Named random variables also support the same recipe.
+
+```julia
+using Plots
+plot(pbox; label = "x")
+plot(pbox; shade = false)  # draw the CDF bounds without shading
+plot(x)
+```
+
+An omitted variance is unknown. An omitted mean is inferred when both support
+bounds are finite; `ProbabilityBox(; range=Interval(a, b))` also works with no
+moment information. Moment intervals are intersected with feasible
+moment bounds implied by the support, and inconsistent constraints are rejected.
+For example, the variance cannot exceed `(mean-lb)*(ub-mean)` for a precise mean
+and finite support. The returned CDF and quantile envelopes contain every feasible
+distribution; the enclosing p-box may also contain distributions with different
+moments. Sampling produces quantile intervals. Use [`RandomSlicing`](@ref) for
+reliability analysis with these p-boxes; [`DoubleLoop`](@ref) requires a parametric
+distribution family.
+
+For finite support `[a, b]`, consistency requires `a ≤ mean ≤ b` and
+`0 ≤ var ≤ (mean-a)*(b-mean)`. A positive variance lower bound therefore narrows
+the mean interval as well. For example:
+
+```julia
+pbox = ProbabilityBox(; var = 0.16, range = Interval(0, 1))
+mean(pbox)  # approximately [0.2, 0.8]
+pbox = ProbabilityBox(; mean = 0.5, var = Interval(0.5, 10), range = Interval(0, 2))
+var(pbox)   # [0.5, 0.75]
+ProbabilityBox(; mean = 0.1, var = 0.2, range = Interval(0, 1)) # throws ArgumentError
+```
+
+The stored mean and variance intervals are projections of the joint feasible
+set. Their endpoints cannot be freely combined: CDF and quantile calculations
+also enforce the relationship between each mean and its possible variances.
+
+CDF and quantile evaluation follow the terminology of Gray et al.
+[grayDistributionFreeRiskAnalysis2022](@cite), Sections 6.1–6.3, and select a
+named bound pair from the checked constraints:
+
+| Available information | Selected bounds |
+|:--|:--|
+| Mean + variance, no finite support endpoints | [`chebyshev_cdf`](@ref), [`chebyshev_quantile`](@ref) |
+| Mean + one or both support endpoints, variance unknown or redundant | [`markov_cdf`](@ref), [`markov_quantile`](@ref) |
+| Mean + variance + one finite endpoint | [`cantelli_cdf`](@ref), [`cantelli_quantile`](@ref) |
+| Mean + variance + two finite endpoints | [`meanvarminmax_cdf`](@ref), [`meanvarminmax_quantile`](@ref) |
+| Variance + finite range, mean unknown | Full min–max–mean–variance bounds over the inferred feasible mean interval |
+| Finite range only | Range envelope |
+
+The mean-and-variance case uses the one-sided Chebyshev inequality
+``P(X-\mu \ge t) \le v/(v+t^2)`` for ``t>0`` and its reflection.
+This same formula is also called Chebyshev–Cantelli or Cantelli's inequality;
+these names require no extra support information. The classical two-sided
+Chebyshev inequality is ``P(|X-\mu| \ge t) \le v/t^2`` and gives weaker bounds
+when applied to each CDF tail.
+
+Markov uses the mean of
+the nonnegative variable `X-lb` or `ub-X`; with both endpoints it combines the
+two directions. The `cantelli_*` helpers combine one-sided Chebyshev and Markov
+with one known endpoint, following the name of the construction in Section 6.2
+of Gray et al.
+The full bounded-moment formula uses both endpoints jointly and can be tighter.
+If a variance interval adds no restriction beyond the mean and support, evaluation
+falls back to Markov. All four quantile helpers use explicit formulas, including
+analytic feasible-mean extrema for finite-range interval moments. Evaluation
+does not use a discretization grid or iterative root finding.
+
+The historical sources use different terminology. Chebyshev's *Des valeurs
+moyennes* [chebyshevDesValeursMoyennes1867](@cite) contains the classical
+two-sided inequality. His *Sur les valeurs limites des intégrales*
+[chebyshevValeursLimitesIntegrales1874](@cite), pp. 159–160, already gives
+piecewise bounds using range, mean and variance; taking unbounded-support limits
+gives the one-sided mean–variance bounds. Cantelli's *Sui confini della
+probabilità* [cantelliConfiniProbabilita1932](@cite), Section 7, p. 53,
+equations (19) and (21), explicitly states the latter bounds, now commonly called
+Cantelli's inequality. The names `chebyshev_*` and `cantelli_*` here retain the
+distinction made in Gray et al.: moments alone versus moments plus one endpoint.
+
+For the Markov construction, ``P(Y \ge y) \le E[Y]/y`` follows by taking
+expectations in ``y\,\mathbf{1}_{Y\ge y} \le Y`` for nonnegative ``Y`` and
+``y>0``. Markoff's 1886 paper [markoffQuestionMaximumMinimum1886](@cite)
+is a historical reference on the broader moment-bounds problem.
 
 !!! note "Interval and IntervalVariable"
 The [`Interval`](@ref) type is internally used as a data type and to construct a [`ProbabilityBox`](@ref) while the [`IntervalVariable`](@ref) represents interval variables.
@@ -137,7 +247,7 @@ marginals = [x, y]
 return nothing # hide
 ```
 
-Note, that the marginals are not restricted to `UnivariateDistribution`. Dependent p-boxes can be constructed by passing a [`ProbabilityBox`](@ref) instead.
+Note, that the marginals are not restricted to `UnivariateDistribution`. Dependent p-boxes can be constructed by passing an [`AbstractProbabilityBox`](@ref), such as a [`ProbabilityBox`](@ref) or [`MomentProbabilityBox`](@ref), instead.
 
 Next, we define the copula to model the dependence. _UncertaintyQuantification_ accepts all copulas provided by _Copulas.jl_[lavernyCopulasjlFullyDistributionsjlcompliant2024](@cite). Here, we define a Gaussian copula by passing the correlation matrix and then build the`JointDistribution` from the copula and the marginals.
 
