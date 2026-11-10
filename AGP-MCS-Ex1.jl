@@ -67,7 +67,7 @@ initial_gp = GaussianProcess(
 ) # REQUIRED_INPUT
 
 learning_function = DeviationNumber() # REQUIRED_INPUT
-candidate_sampling = MonteCarlo(1.0e6) # this is hard-coded. Should the user secify this? Maybe as an optional
+candidate_sampling = MonteCarlo(100000) # this is hard-coded. Should the user secify this? Maybe as an optional
 
 adaptive_gp = AdaptiveGaussianProcess(
     deepcopy(initial_gp),
@@ -77,10 +77,10 @@ adaptive_gp = AdaptiveGaussianProcess(
     candidate_sampling; # should the user pass this? Maybe have a optional input
     optimizer = optimizer # same as initial GP
 )
-refine!(adaptive_gp, 120)
+refine!(adaptive_gp, 120) # refinement with budget stopping criterion
 
-g = df -> df.g_mean # duplicate the output of the mean of the GP as the performance for use in the reliability
-pf_akmc, std_akmc, samples_akmc = probability_of_failure(adaptive_gp, g, x, mc)
+g_gp = df -> df.g_mean # duplicate the output of the mean of the GP as the performance for use in the reliability
+pf_akmc, std_akmc = probability_of_failure(adaptive_gp, g_gp, x, mc)
 
 # some plots
 function lsf_GP_adapt(x, y)
@@ -91,3 +91,26 @@ end
 implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
 implicit_plot!(lsf_GP_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
 scatter!(adaptive_gp.gp.data.x1, adaptive_gp.gp.data.x2)
+
+
+adaptive_gp2 = AdaptiveGaussianProcess(
+    deepcopy(initial_gp),
+    x, # same as initial GP
+    models, # same as initial GP
+    learning_function,  # REQUIRED_INPUT
+    candidate_sampling; # should the user pass this? Maybe have a optional input
+    optimizer = optimizer # same as initial GP
+)
+refine!(adaptive_gp2, 2.0, 1000) # refinement with threshold stopping criterion
+
+pf_akmc2, std_akmc2 = probability_of_failure(adaptive_gp2, g_gp, x, mc)
+
+# some plots
+function lsf_GP2_adapt(x, y)
+    df = DataFrame([:x1, :x2] .=> [x, y])
+    evaluate!(adaptive_gp2, df)
+    return only(df.g_mean)
+end
+implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
+implicit_plot!(lsf_GP2_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
+scatter!(adaptive_gp2.gp.data.x1, adaptive_gp2.gp.data.x2)

@@ -168,11 +168,11 @@ Base.@kwdef struct DeviationNumber <: AbstractGaussianProcessAcquisitionFunction
 end
 
 function _find_next_point(gp::GaussianProcess, candidates::DataFrame, dn::DeviationNumber)
-    next_point, _ = _find_next_point_stopping(gp, candidates, dn)
+    next_point, _ = _find_next_point_stopping(gp, candidates, 0.0, dn)
     return next_point
 end
 
-function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, dn::DeviationNumber)
+function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, stopping::Float64, dn::DeviationNumber)
     input = propertynames(candidates)
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
@@ -184,7 +184,7 @@ function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, d
     u = [s > 0 ? abs(m - dn.threshold) / s : Inf for (m, s) in zip(μ, σ)]
     val, ind = findmin(u)
 
-    return candidates[[ind], Cols(input)], (val >= dn.stopping)
+    return candidates[[ind], Cols(input)], (val >= stopping) # return the true condition for stopping
 end
 
 function _mean_var_cols(gp::GaussianProcess)

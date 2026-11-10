@@ -144,6 +144,7 @@ The fitted model is changed in place; the function returns `nothing`. Passing
 - `n`: Number of adaptive iterations. Defaults to `1`.
 """
 function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
+    println("I am in the refine with maximum samples")
     for i in 1:n
         candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
         next_point = _find_next_point(agp.gp, candidates, agp.acquisition_function)
@@ -155,7 +156,46 @@ function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
 
         @debug "added point" iteration = i point = NamedTuple(next_point[1, :])
     end
-    return
+    return nothing
+end
+
+
+"""
+    refine!(agp::AdaptiveGaussianProcess, stopping, budget::Int = 1)
+
+Adaptively add up observations to `agp` until the stopping condition is met.
+Each iteration samples a candidates using `agp.candidate_sampling`, selects a
+candidate with `agp.acquisition_function`, evaluates `agp.model` there, and
+updates `agp.gp`. Training rows that duplicate existing rows are not appended.
+The fitted model is changed in place; the function returns `nothing`. Passing
+`n = 0` leaves the model unchanged.
+
+# Arguments
+- `agp`: Adaptive Gaussian process to refine.
+- `stopping`: stopping value for the termination criterion of the acquisition function
+- `budget`: Number of maximum adaptive iterations. Defaults to `1`.
+"""
+function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 1)
+    println("I am in the refine with stopping criterion")
+    converged = false
+    iterations = 0
+    while !converged
+        iterations += 1
+        candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
+        next_point, converged = _find_next_point_stopping(agp.gp, candidates, stopping, agp.acquisition_function)
+
+        evaluate!(agp.model, next_point)
+        agp.gp = _refit_gp(
+            agp.gp, next_point[:, [agp.gp.inputs..., agp.gp.output]], agp.optimizer, agp.gp.σ², agp.learn_noise, agp.learn_hyperparameters
+        )
+
+        @debug "added point" iteration = iterations point = NamedTuple(next_point[1, :])
+        if iterations > budget
+            @warn "Iteration budget exceede during adaptive refinement"
+            break
+        end
+    end
+    return nothing
 end
 
 """
