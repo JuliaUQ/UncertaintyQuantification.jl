@@ -10,7 +10,7 @@ Bayes' theorem is defined as
 P(\theta|Y) = \frac{P(Y|\theta)P(\theta)}{P(Y)},
 ```
 
-where ``P(\theta)`` is the prior distribution, describing prior belief on ``\theta`. `P(Y|\theta)`   is the likelihood function evaluating how the data Y supports our belief. This is a function of `\theta` not ``Y``. ``P(\theta|Y)`` is called the posterior distribution and expresses an updated belief under data ``Y``. The term ``P(Y)``, often called the marginal likelihood, or the evidence. It can be calculated as the integral of the likelihood multiplied by the prior distribution over the sample space of `\theta`
+where ``P(\theta)`` is the prior distribution, describing prior belief on ``\theta``. ``P(Y|\theta)``   is the likelihood function evaluating how the data ``Y`` supports our belief. This is a function of ``\theta`` not ``Y``. ``P(\theta|Y)`` is called the posterior distribution and expresses an updated belief under data ``Y``. The term ``P(Y)``, often called the marginal likelihood, or the evidence. It can be calculated as the integral of the likelihood multiplied by the prior distribution over the sample space of ``\theta``
 
 ```math
 P(Y) = \int{}P(Y|\theta)P(\theta), d\theta{}.
@@ -42,7 +42,7 @@ The goal of Markov chain Monte Carlo (MCMC) sampling methods is to construct a M
 
 ### Metropolis Hastings
 
-The Metropolis-Hastings algorithm, was published in 1970 by W. K. Hastings [hastingsMonteCarloSampling1970](@cite). The MH algorithm is a random-walk algorithm that provides a selection criteria for choosing the next sample `(\theta_{i + 1})` in a Markov chain. This is done through a so-called proposal distribution `q(\theta_{i + 1}|\theta_i)` which is well known and relatively easy to sample from. Usually, symmetric proposal distributions centred at `(\theta_i)` are used, for example Normal and Uniform distributions. A candidate sample ``\theta^*`` is sampled from the proposal distribution and accepted with probability ``\alpha``
+The Metropolis-Hastings algorithm, was published in 1970 by W. K. Hastings [hastingsMonteCarloSampling1970](@cite). The MH algorithm is a random-walk algorithm that provides a selection criteria for choosing the next sample ``(\theta_{i + 1})`` in a Markov chain. This is done through a so-called proposal distribution ``q(\theta_{i + 1}|\theta_i)`` which is well known and relatively easy to sample from. Usually, symmetric proposal distributions centred at ``(\theta_i)`` are used, for example Normal and Uniform distributions. A candidate sample ``\theta^*`` is sampled from the proposal distribution and accepted with probability ``\alpha``
 
 ```math
 \alpha = \min\left[1,\frac{P(\theta^*|Y)}{P(\theta_i|Y)}\cdot{}\frac{q(\theta_i|\theta^*)}{q(\theta^*|\theta_i)}\right].
