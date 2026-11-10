@@ -100,7 +100,7 @@ function to_standard_normal_space!(
         jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::DataFrame
     )
     for rv in jd.m
-        if isa(rv.dist, ProbabilityBox)
+        if isa(rv.dist, AbstractProbabilityBox)
             x[!, rv.name] = reverse_quantile.(rv.dist, x[:, rv.name])
         else
             x[!, rv.name] = cdf.(rv.dist, x[:, rv.name])
@@ -149,7 +149,7 @@ dimensions(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = length
 
 function bounds(
         jd::JointDistribution{
-            <:Copulas.Copula, <:RandomVariable{<:Union{UnivariateDistribution, ProbabilityBox}},
+            <:Copulas.Copula, <:RandomVariable{<:Union{UnivariateDistribution, AbstractProbabilityBox}},
         },
     )
     b = map(bounds, filter(isimprecise, jd.m))

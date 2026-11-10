@@ -38,7 +38,7 @@ function names(inputs::Vector{<:UQInput})
 end
 
 function count_rvs(inputs::Vector{<:UQInput})
-    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
+    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, AbstractProbabilityBox), inputs)
     return mapreduce(dimensions, +, random_inputs)
 end
 

@@ -84,23 +84,46 @@ abstract type AbstractHPCScheduler end
 
 abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
 
+"""
+    MomentConstraints
+
+Abstract marker type identifying distribution-free p-boxes specified by moment
+and support constraints. Used as the type parameter in
+`AbstractProbabilityBox{MomentConstraints}`. Construct a [`MomentProbabilityBox`](@ref)
+to store the checked moments and range.
+"""
+abstract type MomentConstraints end
+
+"""
+    AbstractProbabilityBox{T}
+
+Abstract parent for p-boxes, parameterized by the information describing them.
+[`ProbabilityBox`](@ref) uses a univariate distribution family as `T`;
+[`MomentProbabilityBox`](@ref) uses [`MomentConstraints`](@ref).
+Methods shared by both kinds of p-box dispatch on `AbstractProbabilityBox`.
+"""
+abstract type AbstractProbabilityBox{T} end
+
 # Types
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
 export AbstractMonteCarlo
+export AbstractProbabilityBox
 export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractSimulation
 export AbstractTransportMap
 export Copula
 export DeterministicUQInput
+export MomentConstraints
 export RandomUQInput
 export UQInput
 export UQModel
 
 # Structs
 export AdvancedLineSampling
+export ProbabilityBox
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -145,7 +168,7 @@ export PolynomialChaosBasis
 export PolynomialChaosExpansion
 export PolyharmonicRadialBasis
 export PolyharmonicSpline
-export ProbabilityBox
+export MomentProbabilityBox
 export RadialBasedImportanceSampling
 export GaussianRadialBasis
 export RandomVariable
@@ -213,6 +236,7 @@ include("inputs/parameter.jl")
 
 include("inputs/imprecise/interval.jl")
 include("inputs/imprecise/p-box.jl")
+include("inputs/imprecise/moment-p-box.jl")
 
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")

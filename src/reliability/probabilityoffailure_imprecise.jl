@@ -186,14 +186,14 @@ function map_to_precise_inputs(x::AbstractVector, inputs::AbstractVector{<:UQInp
     for i in inputs
         if isa(i, IntervalVariable)
             push!(precise_inputs, map_to_precise(popfirst!(x), i))
-        elseif isa(i, RandomVariable{<:ProbabilityBox})
-            d = count(x -> isa(x, Interval), values(i.dist.parameters))
+        elseif isa(i, RandomVariable{<:AbstractProbabilityBox})
+            d = length(first(bounds(i)))
             p = [popfirst!(x) for _ in 1:d]
             push!(precise_inputs, map_to_precise(p, i))
         elseif isa(i, JointDistribution)
             precise_marginals = map(i.m) do rv
                 if isimprecise(rv)
-                    d = count(x -> isa(x, Interval), values(rv.dist.parameters))
+                    d = length(first(bounds(rv)))
                     p = [popfirst!(x) for _ in 1:d]
                     return map_to_precise(p, rv)
                 else

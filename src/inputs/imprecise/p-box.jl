@@ -1,12 +1,15 @@
 """
     ProbabilityBox{T}(parameters::Dict{Symbol, Union{Real, Interval}}, lb::Real, ub::Real)
 
-Represents a (optionally truncated) probability box (p-box) for a univariate distribution `T`, where parameters may be specified as precise values (`Real`) or intervals ([`Interval`](@ref)). The support of the distribution is bounded by `lb` (lower bound) and `ub` (upper bound).
+Concrete p-box for a univariate distribution family `T`, with precise (`Real`)
+or interval ([`Interval`](@ref)) distribution parameters and optional truncation.
+Subtype of `AbstractProbabilityBox{T}`. For a distribution-free p-box with
+explicit moment and range fields, use [`MomentProbabilityBox`](@ref).
 
 To use the `ProbabilityBox` in an analysis it has to be wrapped in a [`RandomVariable`](@ref).
 
 # Fields
-- `parameters::Dict{Symbol, Union{Real, Interval}}`: Dictionary mapping parameter names (as symbols) to their values or intervals.
+- `parameters::Dict{Symbol, Union{Real, Interval}}`: Distribution parameter values or intervals.
 - `lb::Real`: Lower bound of the distribution's support.
 - `ub::Real`: Upper bound of the distribution's support.
 
@@ -16,6 +19,9 @@ To use the `ProbabilityBox` in an analysis it has to be wrapped in a [`RandomVar
 - `ProbabilityBox{T}(parameter::Interval)`: For univariate distributions with a single parameter, construct from a single interval.
 
 For convenience the first two constructors can also be called with a `Vector{Pair{Symbol,Union{Real,Interval}}}` to automatically create the `Dict`.
+
+The keyword constructor `ProbabilityBox(; mean=nothing, var=nothing, lb=-Inf, ub=Inf,
+range=nothing)` is a convenience constructor for [`MomentProbabilityBox`](@ref).
 
 # Examples
 
@@ -33,7 +39,7 @@ julia> ProbabilityBox{Normal}([:μ => Interval(0, 1), :σ => Interval(0.1, 1)])
 ProbabilityBox{Normal}(Dict{Symbol, Union{Real, Interval}}(:μ => [0, 1], :σ => [0.1, 1]), -Inf, Inf)
 ```
 """
-struct ProbabilityBox{T <: UnivariateDistribution}
+struct ProbabilityBox{T <: UnivariateDistribution} <: AbstractProbabilityBox{T}
     parameters::Dict{Symbol, Union{Real, Interval}}
     lb::Real
     ub::Real
@@ -47,6 +53,8 @@ struct ProbabilityBox{T <: UnivariateDistribution}
                 "Parameter mismatch for ProbabilityBox $(keys(p)) != $([fieldnames(T)...])."
             )
         end
+        any(x -> x isa Interval && isempty(x), values(p)) &&
+            throw(ArgumentError("ProbabilityBox parameter intervals must be nonempty."))
         # If someone only passes Parameters, return a RandomVariable instead.
         if all(isa.(values(p), Real))
             @warn "ProbabilityBox() returns a UnivariateDistribution if no intervals are passed"
@@ -68,7 +76,7 @@ struct ProbabilityBox{T <: UnivariateDistribution}
             end
         end
 
-        return new(convert(Dict{Symbol, Union{Real, Interval}}, p), lb, ub)
+        return new{T}(convert(Dict{Symbol, Union{Real, Interval}}, p), lb, ub)
     end
 end
 
@@ -148,7 +156,7 @@ function quantile(pbox::ProbabilityBox{T}, u::Real) where {T <: UnivariateDistri
     return Interval(minimum(quantiles), maximum(quantiles))
 end
 
-rand(pbox::ProbabilityBox, n::Integer = 1) = quantile.(Ref(pbox), rand(n))
+rand(pbox::AbstractProbabilityBox, n::Integer = 1) = quantile.(Ref(pbox), rand(n))
 
 function bounds(pbox::ProbabilityBox{T}) where {T <: UnivariateDistribution}
     intervals = filter(
@@ -197,9 +205,9 @@ function reverse_quantile(
     return middle(u_lo, u_hi)   # Return midpoint
 end
 
-Base.broadcastable(pbox::ProbabilityBox) = Ref(pbox)
+Base.broadcastable(pbox::AbstractProbabilityBox) = Ref(pbox)
 
-length(::ProbabilityBox{<:UnivariateDistribution}) = 1
+length(::AbstractProbabilityBox) = 1
 
 function mean(pbox::ProbabilityBox{<:UnivariateDistribution})
     cdfs = map(

@@ -33,7 +33,7 @@ function sample(inputs::Vector{<:UQInput}, sim::MonteCarlo)
 end
 
 function sample(inputs::Vector{<:UQInput}, sim::QuasiMonteCarloSampling, T::Type = Float64)
-    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
+    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, AbstractProbabilityBox), inputs)
     deterministic_inputs = filter(i -> isa(i, Parameter) || isa(i, Interval), inputs)
 
     if isempty(random_inputs)
