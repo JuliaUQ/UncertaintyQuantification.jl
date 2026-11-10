@@ -3,14 +3,18 @@ using DataFrames
 using Distributed
 using HCubature
 using InteractiveUtils
+using LinearAlgebra: norm
+using ParameterHandling
 using Random
 using StatsBase: fit, Histogram, corkendall
 using Test
 using Plots
 using TestItemRunner
 using UncertaintyQuantification
+import UncertaintyQuantification: sample
 
 @testsnippet TestSetup begin
+    using ADTypes
     using Copulas
     using DataFrames
     using Distributed
@@ -48,14 +52,14 @@ end
     end
 
 end
+
 include("models/model.jl")
-include("modelupdating/bayesianTM.jl")
+include("models/gp/parameterization.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")
-@run_package_tests
-
-
 include("plotting/plotting.jl")
+
+@run_package_tests
 
 if Sys.islinux()
     HPC = false

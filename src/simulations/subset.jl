@@ -14,7 +14,7 @@ function is wrongly defined and it is never negative.
 
 ```jldoctest
 julia> SubSetSimulation(100, 0.1, 10, Uniform(-0.2, 0.2))
-SubSetSimulation(100, 0.1, 10, Uniform{Float64}(a=-0.2, b=0.2))
+SubSetSimulation(100, 0.1, 10, Uniform(-0.2, 0.2))
 ```
 
 # References

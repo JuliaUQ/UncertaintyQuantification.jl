@@ -7,7 +7,6 @@ using Copulas
 using CovarianceEstimation
 using DataFrames
 using Dates
-using DifferentiationInterface
 using Dierckx
 using DifferentiationInterface
 using Distributed
@@ -21,6 +20,7 @@ using Monomials
 using Mooncake: Mooncake
 using Mustache
 using Optim
+using ParameterHandling
 using Primes
 using QuadGK
 using QuasiMonteCarlo
@@ -31,15 +31,20 @@ using StatsBase
 using TransportMaps
 using RecipesBase
 
-@reexport using TransportMaps
-@reexport using Distributions
-@reexport using DifferentiationInterface
+import NLSolversBase
 
+@reexport using AbstractGPs
+@reexport using Distributions
+
+import AbstractGPs: sampleplot, sampleplot!
 import Base: rand, names, copy, run, length, eltype
+import Copulas: Copula
+import DifferentiationInterface: derivative, jacobian, pullback, pushforward
 import Distributions:
-    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std, median
+    cdf, quantile, pdf, logpdf, minimum, maximum, insupport, mean, var, sampler, std,
+    median, kldivergence, mode, shape
 import Statistics: mean, var, std
-import TransportMaps: AbstractMapDensity, logpdf, grad_logpdf
+import TransportMaps: AbstractMapDensity, AbstractQuadratureWeights, logpdf, grad_logpdf, optimize!
 
 abstract type UQInput end
 abstract type DeterministicUQInput <: UQInput end
@@ -104,7 +109,13 @@ Methods shared by both kinds of p-box dispatch on `AbstractProbabilityBox`.
 """
 abstract type AbstractProbabilityBox{T} end
 
+abstract type AbstractAcquisitionFunction end
+abstract type AbstractGaussianProcessAcquisitionFunction <: AbstractAcquisitionFunction end
+
+
 # Types
+export AbstractAcquisitionFunction
+export AbstractGaussianProcessAcquisitionFunction
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
@@ -123,7 +134,7 @@ export UQModel
 
 # Structs
 export AdvancedLineSampling
-export ProbabilityBox
+export AdaptiveGaussianProcess
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -132,16 +143,21 @@ export BoxBehnken
 export CentralComposite
 export CentralFiniteDifferences
 export CloughPenzien
+export DeviationNumber
 export DoubleLoop
 export EmpiricalPSD
 export ExternalModel
 export SlurmInterface
+export ExpectedFeasibility
+export ExpectedImprovement
+export ExpectedImprovementForGlobalFit
 export Extractor
 export FORM
 export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianMixtureModel
+export GaussianProcess
 export GaussQuadrature
 export HermiteBasis
 export ImportanceSampling
@@ -158,10 +174,12 @@ export LineSampling
 export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
 export MaximumLikelihoodBayesian
+export MaximumLikelihoodEstimation
+export MaximinDistance
+export MaximumVariance
 export Model
 export MonomialBasis
 export MonteCarlo
-export ParallelModel
 export Parameter
 export PlackettBurman
 export PolynomialChaosBasis
@@ -169,6 +187,8 @@ export PolynomialChaosExpansion
 export PolyharmonicRadialBasis
 export PolyharmonicSpline
 export MomentProbabilityBox
+export ProbabilityBox
+export ProbabilityOfImprovement
 export RadialBasedImportanceSampling
 export GaussianRadialBasis
 export RandomVariable
@@ -186,12 +206,11 @@ export TransportMap
 export TransportMapFromSamples
 export TransportMapBayesian
 export TwoLevelFactorial
-export UQTargetDensity
+export UpperConfidenceBound
 export QuasiMonteCarloSampling
 
 # Methods
 export bayesianupdating
-export calc
 export count_rvs
 export dimensions
 export distribution_parameters
@@ -208,20 +227,21 @@ export mapfromdensity
 export mapfromsamples
 export mean
 export multivariate_indices
+export optimize_hyperparameters
 export pdf
 export periodogram
 export polynomialchaos
 export probability_of_failure
 export propagate_intervals!
-export qmc_samples
 export quadrature_nodes
 export quadrature_weights
 export rand
+export refine!
 export reliability
 export sample
+export sample!
 export sobolindices
 export to_physical_space!
-export to_standard_normal_space
 export to_standard_normal_space!
 export variancediagnostic
 
@@ -258,7 +278,12 @@ include("models/model.jl")
 include("models/imprecise/propagation.jl")
 include("models/polyharmonicspline.jl")
 include("models/responsesurface.jl")
-include("models//slicingmodel.jl")
+include("models/slicingmodel.jl")
+include("models/gp/parameterization.jl")
+include("models/gp/hyperparametertuning.jl")
+include("models/gp/gaussianprocess.jl")
+include("models/gp/adaptivegaussianprocess.jl")
+include("models/gp/gp_acquisitionfunction.jl")
 include("models/ipm.jl")
 include("models/models.jl")
 
