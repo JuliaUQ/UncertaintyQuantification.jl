@@ -39,6 +39,7 @@ function bayesianupdating(
     return samples, rejection
 end
 
+#!TODO: rewrite these methods
 function bayesianupdating(
         prior::Function,
         likelihood::Function,
