@@ -89,6 +89,8 @@ evaluate!(gp_model, test_data; variance = true)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (GP):  $mse")
+R² = 1 - (sum((test_data.y .- test_data.y_mean) .^ 2)) / (sum((test_data.y .- mean(test_data.y)) .^ 2))
+println("R^2 (GP):  $R²")
 
 #===
 The plots below compare the predicted surface with the original function. We use a grid inside the input domain, excluding the endpoints of the uniform distributions because they map to infinite values in standard normal space:
