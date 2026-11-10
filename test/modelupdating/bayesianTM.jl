@@ -40,7 +40,7 @@ end
     #setup
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
-    loglikelihood = (x1, x2) -> logpdf(Normal(), x1) + logpdf(Normal(), x2 - x1 .^ 2)
+    loglikelihood = (x1, x2) -> logpdf.(Normal(), x1) + logpdf.(Normal(), x2 - x1 .^ 2)
 
     logL = Model(df -> loglikelihood(df.x1, df.x2), :L)
 

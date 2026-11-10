@@ -55,7 +55,6 @@ end
 
 include("models/model.jl")
 include("models/gp/parameterization.jl")
-include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")
 include("plotting/plotting.jl")
