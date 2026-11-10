@@ -1,52 +1,31 @@
 """
-    Model(f::Function, name::Symbol)
+    Model(f::Function, name::Symbol; distributed::Bool = false)
 
-The function `f` must accept a `DataFrame` and return the result of the model for each row in the `DataFrame` as a vector. The `name` is used to add the output to the `DataFrame`.
-
+By default the function `f` must accept a `DataFrame` and return the result of the model for each row in the `DataFrame` as a vector. The `name` is used to add the output to the `DataFrame`.
+When `distributed` is set to `true` a `pmap` will evaluate each row the the `DataFrame` in parallel, making use of any available workers. In this case `f` must accept a `DataFrameRow`.
 """
 struct Model <: UQModel
     func::Function
     name::Symbol
+    distributed::Bool
 end
 
-"""
-    ParallelModel(f::Function, name::Symbol)
-
-The  `ParallelModel`  does what the `Model` does with a small difference. The function `f` is passed a `DataFrameRow` not the full `DataFrame`.
-If workers (through `Distributed`) are present, the rows are evaluated in parallel.
-
-"""
-struct ParallelModel <: UQModel
-    func::Function
-    name::Symbol
-end
-
-function (m::Model)(df::DataFrame)
-    return m.func(df)
-end
-
-function (m::ParallelModel)(df::DataFrame)
-    return pmap(m.func, eachrow(df))
+function Model(f::Function, name::Symbol; distributed::Bool = false)
+    return Model(f, name, distributed)
 end
 
 """
     evaluate!(m::Model, df::DataFrame)
 
-Calls `m.func` with `df` and adds the result to the `DataFrame` as a column `m.name`
+Calls `m.func` with `df` and adds the result to the `DataFrame` as a column `m.name` If `m.distributed` is `true` a `pmap` evaluates m.func for each row of `df` in parallel.
 """
 function evaluate!(m::Model, df::DataFrame)
-    df[!, m.name] = m.func(df)
-    return nothing
-end
+    if m.distributed
+        df[!, m.name] = pmap(m.func, eachrow(df))
 
-"""
-    evaluate!(m::ParallelModel, df::DataFrame)
-
-Calls `m.func` for each row of `df` and adds the result to the `DataFrame` as a column `m.name`.
-If workers are added through `Distributed`, the rows will be evaluated in parallel.
-"""
-function evaluate!(m::ParallelModel, df::DataFrame)
-    df[!, m.name] = pmap(m.func, eachrow(df))
+    else
+        df[!, m.name] = m.func(df)
+    end
     return nothing
 end
 

@@ -10,7 +10,7 @@ Bayes' theorem is defined as
 P(\theta|Y) = \frac{P(Y|\theta)P(\theta)}{P(Y)},
 ```
 
-where ``P(\theta)`` is the prior distribution, describing prior belief on ``\theta``. ``P(Y|\theta)`` is the likelihood function evaluating how the data Y supports our belief. This is a function of ``\theta`` not ``Y``. ``P(\theta|Y)`` is called the posterior distribution and expresses an updated belief under data ``Y``. The term ``P(Y)``, often called the marginal likelihood, or the evidence. It can be calculated as the integral of the likelihood multiplied by the prior distribution over the sample space of ``\theta``
+where ``P(\theta)`` is the prior distribution, describing prior belief on ``\theta``. ``P(Y|\theta)``   is the likelihood function evaluating how the data ``Y`` supports our belief. This is a function of ``\theta`` not ``Y``. ``P(\theta|Y)`` is called the posterior distribution and expresses an updated belief under data ``Y``. The term ``P(Y)``, often called the marginal likelihood, or the evidence. It can be calculated as the integral of the likelihood multiplied by the prior distribution over the sample space of ``\theta``
 
 ```math
 P(Y) = \int{}P(Y|\theta)P(\theta), d\theta{}.
@@ -67,7 +67,7 @@ In practice, a random number ``r \sim U(0,1)`` is sampled, and the candidate sam
 \theta_{i + 1} = \theta_{i}   \qquad  \text{otherwise.} \\
 ```
 
-As an example consider a synthetic data sequence `Y` as the outcome of 100 Bernoulli trials with unknown success probability `p` (here p=0.8).
+As an example consider a synthetic data sequence ``Y`` as the outcome of 100 Bernoulli trials with unknown success probability ``p`` (here ``p=0.8``).
 
 ```@example metropolis
 using UncertaintyQuantification # hide
@@ -76,7 +76,7 @@ using UncertaintyQuantification # hide
  return nothing # hide
 ```
 
-The likelihood function which, similar to a `Model` must accept a `DataFrame`, follows a Binomial distribution and returns the likelihood for each row in the `DataFrame` as a vector. The prior is chosen as a beta distribution with ``\alpha=\beta=1`` (uniform on ``[0, 1]``). It is often beneficial to use the log-likelihood and log-prior for numerical reasons.
+The likelihood function which, similar to a [`Model`](@ref) must accept a `DataFrame`, follows a Binomial distribution and returns the likelihood for each row in the `DataFrame` as a vector. The prior is chosen as a beta distribution with ``\alpha=\beta=1`` (uniform on ``[0, 1]``). It is often beneficial to use the log-likelihood and log-prior for numerical reasons.
 
 ```@example metropolis
     function loglikelihood(df)
@@ -129,7 +129,7 @@ savefig(p, "mh.svg"); nothing # hide
 
 ![](mh.svg)
 
-As a second example we will attempt to sample from a bimodal target distribution in two dimensions. The prior is uniform over ``[-2, 2]`` in each dimension and the likelihood is a mixture of two Gaussian functions centred at ``[0.5, 0.5]`` and ``[-0.5, -0.5]``.  The standard deviation for both Gaussians are identical and if small enough will effectively disconnect the two functions.
+As a second example we will attempt to sample from a bimodal target distribution in two dimensions. The prior is uniform over ``[-2, 2]`` in each dimension and the likelihood is a mixture of two Gaussian functions centred at ``[0.5, 0.5]`` and ``[-0.5, -0.5]``. The standard deviation for both Gaussians are identical and if small enough will effectively disconnect the two functions.
 
 ```@example tmcmc
 using UncertaintyQuantification # hide
@@ -193,7 +193,7 @@ The complete TMCMC algorithm can be summarized as
 5. Generate a single-step Markov chain for each ``\theta_i``.
 6. Repeat steps (2) to (5) until (and including) ``(\beta_j=1)``.
 
-Returning to the bimodal example, this time using the TMCMC algorithm. In order to apply a different MCMC algorithm we only need to construct a `TransitionalMarkovChainMonteCarlo` object and pass it to the `bayesianupdating` method. The definition of prior and likelihood remains the same. In difference to the `SingleComponentMetropolisHastings` the log evidence is returned instead of the acceptance rate.
+Returning to the bimodal example, this time using the TMCMC algorithm. In order to apply a different MCMC algorithm we only need to construct a [`TransitionalMarkovChainMonteCarlo`](@ref) object and pass it to the `bayesianupdating` method. The definition of prior and likelihood remains the same. In difference to the [`SingleComponentMetropolisHastings`](@ref) the log evidence is returned instead of the acceptance rate.
 
 ```@example tmcmc
 
@@ -210,7 +210,7 @@ savefig("tmcmc.svg"); nothing # hide
 The resulting scatter plot shows how TMCMC is able to sample both peaks of the bimodal target distribution. The standard implementation of TMCMC uses a multivariate Gaussian proposal distribution centred at each ``\theta_i`` with covariance matrix ``\Sigma`` estimated from the current likelihood scaled by a factor ``\beta^2``. This scaling factor defaults to ``0.2`` as suggested by the authors, but can optionally be passed to the constructor as a fourth argument. Application of different MCMC Algorithms nested in the TMCMC give rise to variants of the algorithm. For example, it is possible to use the previously introduced `SingleComponentMetropolisHastings` resulting in `SingleComponentTransitionalMarkovChainMonteCarlo`.
 
 !!! note "Note"
-    `SingleComponentTransitionalMarkovChainMonteCarlo` is currently not available but planned for implementation.
+`SingleComponentTransitionalMarkovChainMonteCarlo` is currently not available but planned for implementation.
 
 For convenience, the prior can be automatically constructed from the random variables passed to `TransitionalMarkovChainMonteCarlo`.
 
@@ -222,7 +222,7 @@ tmcmc_samples, S = bayesianupdating(loglikelihood, tmcmc)
 
 ## Maximum likelihood and maximum a posteriori estimates
 
-Instead of using sample-based methods it is also possible to calculate the local maxima of likelihood ($P(Y|\theta)$) or posterior ($P(\theta|Y)$). While this does not directly give an esimate of the full parameter distribution, it allows for the estimation of the most probable parameter values. Calculating the maximum (or maxima, depending on the use case) is referred to as maximum likelihood estimate (MLE), using the full (unnormalized) posterior is referred to as maximum a posteriori (MAP) estimate. Note that technically MLE is not a Bayesian estimate as the prior distribution is ignored. More formally,
+Instead of using sample-based methods it is also possible to calculate the local maxima of likelihood (``P(Y|\theta)``) or posterior (``P(\theta|Y)``). While this does not directly give an esimate of the full parameter distribution, it allows for the estimation of the most probable parameter values. Calculating the maximum (or maxima, depending on the use case) is referred to as maximum likelihood estimate (MLE), using the full (unnormalized) posterior is referred to as maximum a posteriori (MAP) estimate. Note that technically MLE is not a Bayesian estimate as the prior distribution is ignored. More formally,
 
 ```math
 \theta_{\text{MLE}} = \underset{\theta}{\arg \max} P(Y|\theta)
@@ -234,7 +234,7 @@ Instead of using sample-based methods it is also possible to calculate the local
 
 Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes (using Optim.jl) and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
 
-The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A `MaximumAPosterioriBayesian` or a `MaximumLikelihoodBayesian` object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method can be chosen by setting the `optimizer` in the input, where `optimizer` is an optimizer specified by Optim.jl. The default is LBFGS. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` with the column name corresponding to the chosen approximation. Below is an example for the implementation.
+The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A [`MaximumAPosterioriBayesian`](@ref) or a [`MaximumLikelihoodBayesian`](@ref) object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method can be chosen by setting the `optimizer` in the input, where `optimizer` is an optimizer specified by Optim.jl. The default is LBFGS. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` with the column name corresponding to the chosen approximation. Below is an example for the implementation.
 
 ```@example pointestimates
 using UncertaintyQuantification # hide
@@ -339,11 +339,13 @@ savefig("laplace-estimates.svg"); nothing # hide
 ```
 
 ![Laplace estimate](laplace-estimates.svg)
+
 ## Variational Inference with Transport Maps
 
 As an alternative to sampling-based approaches and point estimates, variational inference with transport maps provides a deterministic method to approximate the posterior density [marzoukSamplingMeasureTransport2016](@cite), [ramgraberTriangularTransport2025](@cite).
 
 Transport maps establish a deterministic coupling between a simple reference distribution (typically standard normal) and the complex posterior distribution. In the context of Bayesian updating, the target density is the posterior:
+
 ```math
 \pi(\theta) = P(\theta | Y).
 ```
@@ -351,6 +353,7 @@ Transport maps establish a deterministic coupling between a simple reference dis
 The map coefficients are determined by minimizing the Kullback-Leibler (KL) divergence between the transport map approximation and the true posterior. For detailed information on transport map theory, construction methods, and general usage, see [Transport Maps](@ref transport_map_manual).
 
 For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
+
 - `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
 - `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
 - `quadrature`: A quadrature scheme for KL divergence evaluation (see [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods))
@@ -358,6 +361,7 @@ For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@re
 By default, the prior is transformed to standard normal for improved numerical conditioning.
 
 Pass the [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref) along with the log-likelihood function and any required models to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
+
 - Generate samples from the posterior by mapping from the reference space
 - Evaluate the posterior probability density function
 - Provide an analytical approximation of the posterior (unlike sampling methods)
@@ -383,7 +387,7 @@ loglikelihood =
 pm = PolynomialMap(2, 2)
 
 # Define 2D quadrature using Gauss-Hermite with 3 points per dimension
-quad = GaussHermiteWeights(3, 2) 
+quad = GaussHermiteWeights(3, 2)
 
 # Create the TransportMapBayesian object
 tm = TransportMapBayesian(prior, pm, quad)
@@ -411,9 +415,8 @@ The figure shows samples and the posterior pdf approximation obtained via the tr
 
 For a more comprehensive example demonstrating the use of transport maps in Bayesian updating, see [Beam Example: Comparison of TMCMC and Transport Maps](@ref).
 
-
 ## Bayesian calibration of computer simulations
 
-*UncertaintyQuantification.jl* allows for complex computer models to be included in the Bayesian updating procedure, if for example one wishes to infer unknown model parameters from experimental data of model outputs. Several models can be evaluated in order to compute the likelihood function, by passing a vector of [`UQModel`](@ref)s to the [`bayesianupdating`](@ref) method. These will be executed before the likelihood is evaluated and models outputs will be available in the `DataFrame` inside the likelihood function. There is no restriction on the type of [`UQModel`](@ref) used. For example, it is possible to use an `ExternalModel` and call an external solver.
+_UncertaintyQuantification.jl_ allows for complex computer models to be included in the Bayesian updating procedure, if for example one wishes to infer unknown model parameters from experimental data of model outputs. Several models can be evaluated in order to compute the likelihood function, by passing a vector of [`UQModel`](@ref)s to the [`bayesianupdating`](@ref) method. These will be executed before the likelihood is evaluated and models outputs will be available in the `DataFrame` inside the likelihood function. There is no restriction on the type of [`UQModel`](@ref) used. For example, it is possible to use an [`ExternalModel`](@ref) and call an external solver.
 
 For a complete example refer to the [Inverse eigenvalue problem](@ref).

@@ -11,6 +11,10 @@ or a multivariate distribution and a vector of variable names.
 	- The copula's dimension must match the length of `m`.
 	- `m` must be a vector of `RandomVariable`.
 
+- JointDistribution(m::Vector{RandomVariable}):
+    - Use an independent copula to combine the marginal distributions in `m` into a joint distribution.
+    - `m` must be a vector of `RandomVariable`.
+
 - JointDistribution(d::MultivariateDistribution, m::Vector{Symbol}):
 	- Use a multivariate distribution `d` with named components specified by `m`.
 	- The distribution's dimension (number of variables) must match the length of `m`.
@@ -20,17 +24,17 @@ or a multivariate distribution and a vector of variable names.
 
 ```jldoctest
 julia> JointDistribution(GaussianCopula([1.0 0.71; 0.71 1.0]), [RandomVariable(Normal(), :x), RandomVariable(Uniform(), :y)])
-JointDistribution{GaussianCopula{2, Matrix{Float64}}, RandomVariable}(GaussianCopula{2, Matrix{Float64}}(Σ = [1.0 0.71; 0.71 1.0])), RandomVariable{<:UnivariateDistribution}[RandomVariable{Normal{Float64}}(Normal{Float64}(μ=0.0, σ=1.0), :x), RandomVariable{Uniform{Float64}}(Uniform{Float64}(a=0.0, b=1.0), :y)])
+JointDistribution{GaussianCopula{2, Matrix{Float64}}, RandomVariable}(GaussianCopula{2, Matrix{Float64}}(Σ = [1.0 0.71; 0.71 1.0])), RandomVariable{<:UnivariateDistribution}[RandomVariable{Normal{Float64}}(Normal(0.0, 1.0), :x), RandomVariable{Uniform{Float64}}(Uniform(0.0, 1.0), :y)])
+```
+
+```jldoctest
+julia> JointDistribution([RandomVariable(Normal(), :x), RandomVariable(Uniform(), :y)])
+JointDistribution{IndependentCopula{2}, RandomVariable}(IndependentCopula(), RandomVariable{<:UnivariateDistribution}[RandomVariable{Normal{Float64}}(Normal(0.0, 1.0), :x), RandomVariable{Uniform{Float64}}(Uniform(0.0, 1.0), :y)])
 ```
 
 ```jldoctest
 julia> JointDistribution(MultivariateNormal([1.0 0.71; 0.71 1.0]), [:x, :y])
-JointDistribution{MultivariateDistribution, Symbol}(ZeroMeanFullNormal(
-dim: 2
-μ: Zeros(2)
-Σ: [1.0 0.71; 0.71 1.0]
-)
-, [:x, :y])
+JointDistribution{MultivariateDistribution, Symbol}(MvNormal(Zeros(2), [1.0 0.71; 0.71 1.0]), [:x, :y])
 ```
 """
 struct JointDistribution{
@@ -48,6 +52,11 @@ struct JointDistribution{
             throw(ArgumentError("Marginal names must be unique."))
         end
         return new{typeof(c), RandomVariable}(c, m)
+    end
+
+    # Copula + RandomVariable from Vector{<:RandomVariable}
+    function JointDistribution(m::Vector{<:RandomVariable})
+        return JointDistribution(IndependentCopula(length(m)), m)
     end
 
     # MultivariateDistribution + Symbol
@@ -163,6 +172,12 @@ function pdf(
         jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::AbstractVector{<:Real}
     )
     return pdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)]) * prod([pdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
+end
+
+function logpdf(
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}, x::AbstractVector{<:Real}
+    )
+    return logpdf(jd.d, [cdf(jd.m[i], x[i]) for i in 1:length(jd.d)]) + sum([logpdf(jd.m[i], x[i]) for i in 1:length(jd.d)])
 end
 
 function cdf(
