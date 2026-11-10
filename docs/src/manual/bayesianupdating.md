@@ -207,7 +207,7 @@ savefig("tmcmc.svg"); nothing # hide
 
 ![](tmcmc.svg)
 
-The resulting scatter plot shows how TMCMC is able to sample both peaks of the bimodal target distribution. The standard implementation of TMCMC uses a multivariate Gaussian proposal distribution centred at each ``\theta_i`` with covariance matrix ``\Sigma`` estimated from the current likelihood scaled by a factor `\beta^2`. This scaling factor defaults to ``0.2`` as suggested by the authors, but can optionally be passed to the constructor as a fourth argument. Application of different MCMC Algorithms nested in the TMCMC give rise to variants of the algorithm. For example, it is possible to use the previously introduced `SingleComponentMetropolisHastings` resulting in `SingleComponentTransitionalMarkovChainMonteCarlo`.
+The resulting scatter plot shows how TMCMC is able to sample both peaks of the bimodal target distribution. The standard implementation of TMCMC uses a multivariate Gaussian proposal distribution centred at each ``\theta_i`` with covariance matrix ``\Sigma`` estimated from the current likelihood scaled by a factor ``\beta^2``. This scaling factor defaults to ``0.2`` as suggested by the authors, but can optionally be passed to the constructor as a fourth argument. Application of different MCMC Algorithms nested in the TMCMC give rise to variants of the algorithm. For example, it is possible to use the previously introduced `SingleComponentMetropolisHastings` resulting in `SingleComponentTransitionalMarkovChainMonteCarlo`.
 
 !!! note "Note"
 `SingleComponentTransitionalMarkovChainMonteCarlo` is currently not available but planned for implementation.

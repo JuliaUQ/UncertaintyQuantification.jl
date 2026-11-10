@@ -5,8 +5,8 @@ Once such a map is constructed, generating samples from the target becomes trivi
 
 ## Mathematical Formulation
 
-Mathematically, a transport map $T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}$ is defined as a deterministic coupling between a reference space $\boldsymbol{Z} \sim \rho(\boldsymbol{z})$ and a target space $\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})$.
-Hence, the inverse map $T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}$ maps from the target space back to the reference space.
+Mathematically, a transport map ``T: \boldsymbol{Z} \mapsto \boldsymbol{\Theta}`` is defined as a deterministic coupling between a reference space ``\boldsymbol{Z} \sim \rho(\boldsymbol{z})`` and a target space ``\boldsymbol{\Theta} \sim \pi(\boldsymbol{\theta})``.
+Hence, the inverse map ``T^{-1}: \boldsymbol{\Theta} \mapsto \boldsymbol{Z}`` maps from the target space back to the reference space.
 
 The target distribution is approximated by the so-called _pull-back_ density:
 
@@ -18,7 +18,7 @@ The target distribution is approximated by the so-called _pull-back_ density:
 
 The construction and inversion of the transport map can be greatly simplified by using a triangular structure following the Knothe-Rosenblatt rearrangement [knotheContributions1957](@cite), [rosenblattRemarks1952](@cite).
 This triangular structure guarantees invertibility and makes the Jacobian determinant straightforward to compute.
-A triangular map in $n$ dimensions has the form:
+A triangular map in ``n`` dimensions has the form:
 
 ```math
 T(\boldsymbol{z}) =
@@ -32,7 +32,7 @@ T_n(z_1, z_2, \dots, z_n)
 \right)
 ```
 
-A key requirement for the transport map is that each component $T_k$ must be strictly monotonically increasing in its last argument $z_k$ (while possibly depending non-monotonically on the earlier arguments $z_{1:k-1}$).
+A key requirement for the transport map is that each component ``T_k`` must be strictly monotonically increasing in its last argument ``z_k`` (while possibly depending non-monotonically on the earlier arguments ``z_{1:k-1}``).
 This monotonicity constraint ensures invertibility and is enforced through a specialized parameterization.
 
 ### Integrated Rectifier Parameterization
@@ -43,7 +43,7 @@ This monotonicity requirement is commonly achieved using an integrated rectifier
 T_k(z_1, \ldots, z_k; \boldsymbol{a}) = f(z_1, \ldots, z_{k-1}, 0; \boldsymbol{a}) + \int_0^{z_k} g\left(\partial_k f(z_1, \ldots, z_{k-1}, \xi; \boldsymbol{a})\right) d\xi.
 ```
 
-Here, $f(z_1, \ldots, z_k; \boldsymbol{a})$ is a multivariate polynomial
+Here, ``f(z_1, \ldots, z_k; \boldsymbol{a})`` is a multivariate polynomial
 
 ```math
 f(z_1, \ldots, z_k; \boldsymbol{a}) = \sum_{\alpha \in \mathcal{A}_k} a_\alpha \Psi_\alpha(z_1, \ldots, z_k)
@@ -51,10 +51,10 @@ f(z_1, \ldots, z_k; \boldsymbol{a}) = \sum_{\alpha \in \mathcal{A}_k} a_\alpha \
 
 where:
 
-- `\mathcal{A}_k` is a multi-index set defining which basis functions are included
-- `a_\alpha` are the optimization coefficients
-- `\Psi_\alpha` are multivariate basis functions
-- `g: \mathbb{R} \to \mathbb{R}^+` is a rectifier function that maps the derivative of `f` to a strictly positive value, ensuring monotonicity
+- ``\mathcal{A}_k`` is a multi-index set defining which basis functions are included
+- ``a_\alpha`` are the optimization coefficients
+- ``\Psi_\alpha`` are multivariate basis functions
+- ``g: \mathbb{R} \to \mathbb{R}^+`` is a rectifier function that maps the derivative of ``f`` to a strictly positive value, ensuring monotonicity
 
 ## Implementation
 
@@ -68,7 +68,7 @@ There are two main approaches to constructing transport maps, depending on the a
 
 ### Map Construction from Target Density
 
-When an analytical expression for the target log-density is available, we determine the map coefficients $\boldsymbol{a}$ by solving an optimization problem that minimizes the Kullback-Leibler (KL) divergence between the target density and the transport map approximation:
+When an analytical expression for the target log-density is available, we determine the map coefficients ``\boldsymbol{a}`` by solving an optimization problem that minimizes the Kullback-Leibler (KL) divergence between the target density and the transport map approximation:
 
 ```math
 \min_{\boldsymbol{a}} \mathcal{D}_{\mathsf{KL}}(T_{\#}\rho||\pi)
@@ -80,7 +80,7 @@ The KL divergence is computed as an expected value with respect to the reference
 \sum_{i=1}^{N} w_{q,i}\Big[-\log\pi\bigl(T(\boldsymbol{a},\boldsymbol{z}_{q,i})\bigr)-\log |\det\nabla T(\boldsymbol{a},\boldsymbol{z}_{q,i}) |\Big].
 ```
 
-Here, $w_{q,i}$ are quadrature weights and $\boldsymbol{z}_{q,i}$ are quadrature points.
+Here, ``w_{q,i}`` are quadrature weights and ``\boldsymbol{z}_{q,i}`` are quadrature points.
 We use the quadrature schemes defined in [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods).
 Currently available schemes are:
 
