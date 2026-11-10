@@ -149,10 +149,10 @@ named bound pair from the checked constraints:
 
 | Available information | Selected bounds |
 |:--|:--|
-| Mean + variance, no finite support endpoints | [`chebyshev_cdf`](@ref), [`chebyshev_quantile`](@ref) |
-| Mean + one or both support endpoints, variance unknown or redundant | [`markov_cdf`](@ref), [`markov_quantile`](@ref) |
-| Mean + variance + one finite endpoint | [`cantelli_cdf`](@ref), [`cantelli_quantile`](@ref) |
-| Mean + variance + two finite endpoints | [`meanvarminmax_cdf`](@ref), [`meanvarminmax_quantile`](@ref) |
+| Mean + variance, no finite support endpoints | [`chebyshev_cdf`](@ref UncertaintyQuantification.chebyshev_cdf), [`chebyshev_quantile`](@ref UncertaintyQuantification.chebyshev_quantile) |
+| Mean + one or both support endpoints, variance unknown or redundant | [`markov_cdf`](@ref UncertaintyQuantification.markov_cdf), [`markov_quantile`](@ref UncertaintyQuantification.markov_quantile) |
+| Mean + variance + one finite endpoint | [`cantelli_cdf`](@ref UncertaintyQuantification.cantelli_cdf), [`cantelli_quantile`](@ref UncertaintyQuantification.cantelli_quantile) |
+| Mean + variance + two finite endpoints | [`meanvarminmax_cdf`](@ref UncertaintyQuantification.meanvarminmax_cdf), [`meanvarminmax_quantile`](@ref UncertaintyQuantification.meanvarminmax_quantile) |
 | Variance + finite range, mean unknown | Full min–max–mean–variance bounds over the inferred feasible mean interval |
 | Finite range only | Range envelope |
 
