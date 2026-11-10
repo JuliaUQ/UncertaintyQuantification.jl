@@ -5,7 +5,7 @@ Passed to [`bayesianupdating`](@ref) to perform variational inference with a tra
 that maps between the posterior and standard normal space, fitted with [`mapfromdensity`](@ref).
 The `prior` is a vector of prior distributions, `transportmap` is the transport map to be optimized,
 and `quadrature` specifies the quadrature points in the standard normal space.
-The `gradient` can be specified as either an `AbstractADType` or a `Function` (default: `AutoFiniteDiff()`).
+The `gradient` can be specified as either an `ADTypes.AbstractADType` or a `Function` (default: `AutoFiniteDiff()`).
 The `optimizer` specifies the optimization method from Optim.jl (default: `LBFGS()`), and
 `optim_options` allows passing options to the optimizer (default: `Optim.Options()`).
 The flag `islog` specifies whether densities are already log-densities.
@@ -28,7 +28,7 @@ struct TransportMapBayesian <: AbstractBayesianMethod
     prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
     transportmap::AbstractTriangularMap
     quadrature::AbstractQuadratureWeights
-    gradient::Union{AbstractADType, Function}
+    gradient::Union{ADTypes.AbstractADType, Function}
     optimizer::Optim.AbstractOptimizer
     optim_options::Optim.Options
     islog::Bool
@@ -38,7 +38,7 @@ struct TransportMapBayesian <: AbstractBayesianMethod
             prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
             transportmap::AbstractTriangularMap,
             quadrature::AbstractQuadratureWeights,
-            gradient::Union{AbstractADType, Function} = AutoFiniteDiff(),
+            gradient::Union{ADTypes.AbstractADType, Function} = AutoFiniteDiff(),
             optimizer::Optim.AbstractOptimizer = LBFGS(),
             optim_options::Optim.Options = Optim.Options();
             islog::Bool = true,

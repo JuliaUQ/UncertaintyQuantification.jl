@@ -27,9 +27,11 @@ The goal is to infer the unknown parameters ``a`` (relative position along the b
 
 #md using UncertaintyQuantification # hide
 #md using Plots # hide
+#md using TransportMaps
 
 #jl using UncertaintyQuantification
 #jl using Plots
+#jl using TransportMaps
 
 #===
 

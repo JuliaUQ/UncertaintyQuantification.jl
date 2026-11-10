@@ -14,6 +14,7 @@ using UncertaintyQuantification
 import UncertaintyQuantification: sample
 
 @testsnippet TestSetup begin
+    using ADTypes
     using Copulas
     using DataFrames
     using Distributed
