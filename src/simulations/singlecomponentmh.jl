@@ -43,8 +43,6 @@ function sample(target::Function, sim::SingleComponentMetropolisHastings)
     samples = DataFrame(collect(sim.x0)', collect(keys(sim.x0)))
     inputvariables = collect(keys(sim.x0))
 
-    println("samples: ", samples)
-
     # is this necessary?
     logtarget = if sim.islog
         df -> target(df)

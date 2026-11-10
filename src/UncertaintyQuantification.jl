@@ -283,6 +283,7 @@ include("simulations/subset.jl")
 
 #load after simulations to avoid circular dependency
 include("modelupdating/bayesiansinglecomponentmh.jl")
+include("modelupdating/bayesiantransitionalmarkovchainmontecarlo.jl")
 
 include("reliability/form.jl")
 include("simulations/importancesampling.jl")

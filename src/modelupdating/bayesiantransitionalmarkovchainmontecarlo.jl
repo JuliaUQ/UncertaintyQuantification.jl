@@ -16,14 +16,12 @@ TransitionalMarkovChainMonteCarlo(prior, n, burnin)    # `β` = 0.2,  `islog` = 
 
 """
 struct TransitionalMarkovChainMonteCarlo <: AbstractBayesianMethod # Transitional Markov Chain Monte Carlo
-    prior::Vector{<:RandomVariable{<:UnivariateDistribution}}
     n::Int
     burnin::Int
     β::Real
     islog::Bool
 
     function TransitionalMarkovChainMonteCarlo(
-            prior::Vector{<:RandomVariable{<:UnivariateDistribution}},
             n::Int,
             burnin::Int,
             β::Real = 0.2,
@@ -33,26 +31,28 @@ struct TransitionalMarkovChainMonteCarlo <: AbstractBayesianMethod # Transitiona
             error("Number of samples `n` must be positive")
         end
 
-        return new(prior, n, burnin, β, islog)
+        return new(n, burnin, β, islog)
     end
 end
 
 # TMCMC implementation
 function bayesianupdating(
-        prior::Function,
+        prior::JointDistribution,
         likelihood::Function,
-        models::Vector{<:UQModel},
         tmcmc::TransitionalMarkovChainMonteCarlo,
+        models::Vector{<:UQModel} = UQModel[]
     )
+    log_prior = _log_prior(prior)
+
     covariance_method = LinearShrinkage(DiagonalUnitVariance(), :lw)
 
-    rv_names = names(tmcmc.prior)
+    rv_names = names(prior)
     n_rv = length(rv_names)
 
     j = 0 # iteration
     βⱼ = 0.0 # tempering
 
-    θⱼ = sample(tmcmc.prior, tmcmc.n) # prior samples
+    θⱼ = sample(prior, tmcmc.n) # prior samples
 
     if !isempty(models)
         evaluate!(models, θⱼ)
@@ -91,9 +91,9 @@ function bayesianupdating(
         chain[1] = copy(θⱼ⁺)
 
         target = if tmcmc.islog
-            df -> likelihood(df) .* βⱼ⁺ .+ prior(df)
+            df -> likelihood(df) .* βⱼ⁺ .+ log_prior(df)
         else
-            df -> log.(likelihood(df)) .* βⱼ⁺ .+ log.(prior(df))
+            df -> log.(likelihood(df)) .* βⱼ⁺ .+ log_prior(df)
         end
 
         for i in 2:(tmcmc.burnin + 2)
@@ -102,7 +102,7 @@ function bayesianupdating(
             next[:, rv_names] = Matrix(next[:, rv_names]) .+ transpose(rand(mv_normal, tmcmc.n))
 
             # safeguard for Inf in the prior
-            idx_inf = findall(isinf, prior(next))
+            idx_inf = findall(isinf, log_prior(next))
 
             while !isempty(idx_inf)
                 current_means = Matrix(chain[i - 1][idx_inf, rv_names])
@@ -110,7 +110,7 @@ function bayesianupdating(
                 next[idx_inf, rv_names] = current_means .+ transpose(rand(mv_normal, length(idx_inf)))
 
                 # only re-checking idx_inf candidates
-                still_inf = isinf.(prior(next[idx_inf, rv_names]))
+                still_inf = isinf.(log_prior(next[idx_inf, rv_names]))
                 idx_inf = idx_inf[still_inf]
             end
 
