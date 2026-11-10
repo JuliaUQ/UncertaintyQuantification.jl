@@ -17,13 +17,19 @@
     n_mc = 10000
     n_qmc = 10000
 
-    firstorder_analytical1 = [0.3138, 0.4424, 0.0]
-    totaleffect_analytical1 = [0.5574, 0.4424, 0.2436]
-    variance_analytical1 = 13.8446
+    # Analytical formula for the ishigami Sobol' indices. The missing indices are all 0
+    variance_analytical = (a, b) -> (0.5 + a^2 / 8 + b * pi^4 / 5 + b^2 * pi^8 / 18)
+    S1_analytic = (a, b) -> (0.5 + b * pi^4 / 5 + b^2 * pi^8 / 50) / variance_analytical(a, b)
+    S2_analytic = (a, b) -> (a^2 / 8) / variance_analytical(a, b)
+    S13_analytic = (a, b) -> (0.5 + a^2 / 8 + b * pi^4 / 5 + b^2 * pi^8 / 18 - a^2 / 8 - 0.5 - b * pi^4 / 5 - b^2 * pi^8 / 50) / variance_analytical(a, b)
 
-    firstorder_analytical2 = [0.219, 0.687, 0.0]
-    totaleffect_analytical2 = [0.3136, 0.687, 0.0946]
-    variance_analytical2 = 8.9169
+    firstorder_analytical1 = [S1_analytic(a1, b1), S2_analytic(a1, b1), 0.0]
+    totaleffect_analytical1 = [S1_analytic(a1, b1) + S13_analytic(a1, b1), S2_analytic(a1, b1), S13_analytic(a1, b1)]
+    variance_analytical1 = variance_analytical(a1, b1)
+
+    firstorder_analytical2 = [S1_analytic(a2, b2), S2_analytic(a2, b2), 0.0]
+    totaleffect_analytical2 = [S1_analytic(a2, b2) + S13_analytic(a2, b2), S2_analytic(a2, b2), S13_analytic(a2, b2)]
+    variance_analytical2 = variance_analytical(a2, b2)
 end
 
 @testitem "Sobol Indices: Monte Carlo" setup = [sobolindices] begin
