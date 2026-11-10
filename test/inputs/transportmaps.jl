@@ -1,4 +1,6 @@
 @testitem "TransportMap from density" setup = [TestSetup] begin
+    using TransportMaps
+
     # Define Target
     μ = [1.0, 2.0]
     Σ = [1.0 0.5; 0.5 2.0]
@@ -98,6 +100,7 @@
 end
 
 @testitem "TransportMap from samples" setup = [TestSetup] begin
+    using TransportMaps
     # Generate samples from a known distribution
     μ = [0.5, 1.5]
     Σ = [1.5 0.3; 0.3 1.0]
@@ -191,6 +194,8 @@ end
 end
 
 @testitem "TransportMap with transform_density" begin
+    using TransportMaps
+
     # Prior to transform density
     prior = RandomVariable.([Uniform(0, 5), Uniform(-2, 3)], [:x1, :x2])
 

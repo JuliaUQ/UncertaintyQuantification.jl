@@ -1,4 +1,5 @@
 @testsnippet TMBMU1 begin
+    using TransportMaps
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
     loglikelihood = (x1, x2) -> logpdf.(Normal(), x1) + logpdf.(Normal(), x2 - x1 .^ 2)
@@ -34,7 +35,8 @@ end
     @test !iszero(getcoefficients(tm_result.d.map))
 end
 
-@testset "TM BMU - Transformations: Warning and errors" begin
+@testitem "TM BMU - Transformations: Warning and errors" setup = [TestSetup] begin
+    using TransportMaps
     #setup
     prior = RandomVariable.([Uniform(-10, 10), Uniform(-10, 10)], [:x1, :x2])
 
@@ -47,7 +49,7 @@ end
 
     # begin
     tm_log = TransportMapBayesian(prior, map, quadrature; islog = true, transformprior = true)
-    @test_warn "Prior function given while transforming to standard normal prior. Given prior will be ignored." bayesianupdating(
+    @test_logs (:warn, "Prior function given while transforming to standard normal prior. Given prior will be ignored.") bayesianupdating(
         df -> df.x1, df -> df.L, [logL], tm_log
     )
 
@@ -55,7 +57,7 @@ end
     @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
 end
 
-@testitem "TM BMU - Transformations: External Model" setup = [TMBMU1] begin
+@testitem "TM BMU - Transformations: External Model" setup = [TMBMU1, TestSetup] begin
     sourcedir = tempdir()
     sourcefile = ["radius.jl"]
 
@@ -82,6 +84,7 @@ end
 end
 
 @testsnippet TMBMU2 begin
+    using TransportMaps
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
 

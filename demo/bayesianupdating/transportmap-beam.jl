@@ -1,5 +1,6 @@
 using UncertaintyQuantification
 using Plots
+using TransportMaps
 
 b = 0.2
 h = 0.1
