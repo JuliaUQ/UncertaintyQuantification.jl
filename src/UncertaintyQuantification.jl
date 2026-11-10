@@ -81,7 +81,7 @@ Subtypes are:
 - [`MaximumAPosterioriBayesian`](@ref)
 - [`MaximumLikelihoodBayesian`](@ref)
 """
-abstract type AbstractBayesianPointEstimate end
+abstract type AbstractBayesianPointEstimate <: AbstractBayesianMethod end
 abstract type AbstractDesignOfExperiments end
 
 abstract type AbstractHPCScheduler end
@@ -287,7 +287,11 @@ include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
 include("simulations/radialbasedimportancesampling.jl")
+include("simulations/singlecomponentmh.jl")
 include("simulations/subset.jl")
+
+#load after simulations to avoid circular dependency
+include("modelupdating/bayesiansinglecomponentmh.jl")
 
 include("reliability/form.jl")
 include("simulations/importancesampling.jl")
