@@ -221,6 +221,7 @@ export sobolindices
 export to_physical_space!
 export to_standard_normal_space!
 export variancediagnostic
+export verify
 
 include("util/binning.jl")
 include("util/fourier-transform.jl")
