@@ -12,8 +12,8 @@ and variance constraints. Omitting both moments gives a range-only p-box.
 `range=Interval(a, b)` is shorthand for `lb=a, ub=b`.
 
 # Fields
-- `mean::Interval`: Feasible mean values; a precise input becomes a point interval.
-- `var::Interval`: Feasible population variances; a precise input becomes a point interval.
+- `mean::Interval`: Mean values; a precise input becomes a point interval.
+- `var::Interval`: Variances; a precise input becomes a point interval.
 - `range::Interval`: Support bounds, which may have infinite endpoints.
 
 # Bound construction and selection
@@ -23,37 +23,14 @@ Constructions follow Sections 6.1–6.3 of
 
 | Available information | P-box bounds | Construction |
 |:--|:--|:--|
-| Mean + variance, unbounded support | One-sided Chebyshev | Mean–variance tail inequalities.
+| Mean + variance, unbounded support | One-sided Chebyshev | Mean–variance tail inequalities. |
 | Mean + lower or upper bound | Markov | Apply Markov to `X-lb` or `ub-X`. |
 | Mean + finite range, unknown variance | Markov from both endpoints | Intersect the shifted and reflected Markov bounds. |
 | Mean + variance + one support endpoint | Cantelli construction in Gray et al. | Combine one-sided Chebyshev and Markov using the known endpoint (Section 6.2). |
-| Mean + variance + finite range | Min–max–mean–variance | Optimize the bounded moment constraints, giving the piecewise three-point bounds (Section 6.3). |
+| Mean + variance + finite range | Min–max–mean–variance | Optimize the bounded moment constraints (Section 6.3). |
 | Variance + finite range, unknown mean | Min–max–mean–variance | Envelope the bounds over all feasible means inferred from the range and variance. |
 | Finite range only | Range envelope | All distributions supported within the range remain possible. |
 
-For `t > 0`, the Chebyshev bound used here is `P(X-mean ≥ t) ≤ var/(var+t^2)`
-and its reflection. Markov uses `P(Y ≥ y) ≤ E[Y]/y` for nonnegative `Y`.
-The `cantelli_*` helpers combine this one-sided Chebyshev bound with the Markov
-restriction from one support endpoint. With both endpoints known, the full
-bounded-moment formula uses their joint restrictions on the first two moments
-and can improve on the separate inequalities.
-
-Only the mean and variance are needed for the one-sided Chebyshev inequality;
-its alternative names, Chebyshev–Cantelli and Cantelli's inequality, refer to
-the same formula, not to an additional support assumption. Here `chebyshev_*`
-denotes that formula, while `cantelli_*` denotes the combined construction
-named in Section 6.2 of Gray et al. The classical two-sided Chebyshev inequality
-is `P(abs(X-mean) ≥ t) ≤ var/t^2`; applying it to each tail gives weaker CDF
-bounds than the one-sided formula used here.
-
-Selection uses the checked constraints, rather than remembering which keywords
-were supplied. If the variance interval contains every variance already permitted
-by the mean and support, it adds no information and evaluation uses Markov.
-The named helpers are `chebyshev_*`, `markov_*`, `cantelli_*`, and
-`meanvarminmax_*`, each with `cdf` and `quantile` variants. All four quantile
-helpers use explicit formulas. Finite-range min–max–mean–variance quantiles
-also evaluate analytic mean extrema for interval moments. Zero variance and
-forced endpoint two-point laws are handled explicitly.
 
 # Feasibility and interval moments
 
@@ -63,14 +40,10 @@ constraints throw `ArgumentError`. CDF and quantile bounds envelope all feasible
 distributions, including discrete distributions. The envelopes can also contain
 distributions that do not satisfy the original moment constraints.
 
-For finite support `[a, b]`, feasibility requires `a ≤ m ≤ b` and
-`0 ≤ v ≤ (m-a)*(b-m)`. The constructor narrows the mean using the variance's
-lower bound and the variance using its maximum over feasible means. The CDF
-envelope also respects this joint constraint, rather than treating every pair
-in the returned moment intervals as feasible.
-
 Wrap the result in [`RandomVariable`](@ref) for sampling and [`RandomSlicing`](@ref).
 Parametric [`DoubleLoop`](@ref) analysis is not supported.
+
+Check [`check_moments_and_range`](@ref) for how feasibility constraints are computed
 
 # References
 
@@ -252,9 +225,8 @@ end
 """
     chebyshev_cdf(x, mean, var)
 
-Return the interval CDF bound from the one-sided Chebyshev inequality of
-Section 6.1 of [Gray et al. (2022)](https://doi.org/10.1016/j.ijar.2022.04.001),
-using a precise or interval mean and variance on unbounded support.
+Return the interval CDF bound from the Chebyshev inequality using a precise 
+or interval mean and variance on unbounded support.
 For `t > 0`, use `P(X-mean ≥ t) ≤ var/(var+t^2)` and its reflection.
 Only the mean and variance are required. This is the one-sided refinement of
 the classical two-sided inequality `P(abs(X-mean) ≥ t) ≤ var/t^2`.
@@ -265,9 +237,8 @@ It is also known as Chebyshev–Cantelli or Cantelli's inequality; an explicit l
 statement is in Cantelli's
 *[Sui confini della probabilità](https://www.mathunion.org/fileadmin/ICM/Proceedings/ICM1928.6/ICM1928.6.ocr.pdf)*,
 Section 7, p. 53, equations (19) and (21), in the 1928 Bologna congress proceedings
-(vol. 6, published 1932). These alternative names describe the same mean–variance
-bound. The [`cantelli_cdf`](@ref) helper additionally combines it with a Markov
-support restriction, following the naming in Gray et al.
+(vol. 6, published 1932). 
+
 Moment constraints must be consistent; see [`check_moments_and_range`](@ref).
 """
 function chebyshev_cdf(x::Real, m::Union{Real, Interval}, v::Union{Real, Interval})
@@ -314,7 +285,7 @@ constraints must be consistent; see [`check_moments_and_range`](@ref).
 
 Apply `P(Y ≥ y) ≤ E[Y]/y` for `y > 0` to the nonnegative variable `Y=X-lb`
 or `Y=ub-X`. The inequality follows directly from
-`y*1{Y ≥ y} ≤ Y` by taking expectations. For historical background on the
+`y*1{Y ≥ y} ≤ Y` by taking expectations. For background on the
 general moment-bounds problem, see
 [Markoff (1886)](https://archive.ymsc.tsinghua.edu.cn/pacm_download/117/4885-11511_2006_Article_BF02406729.pdf),
 *Acta Mathematica* **9**, pp. 57–70.
@@ -469,10 +440,7 @@ end
     meanvarminmax_quantile(u, mean, var, lb, ub)
 
 Return explicit quantile bounds at probability `u ∈ [0, 1]` for checked moment
-and support constraints. Combine the inverse Chebyshev, Markov and bounded-variance
-terms directly, as in the
-[`mmms` construction in ProbabilityBoundsAnalysis.jl](https://github.com/AnderGray/ProbabilityBoundsAnalysis.jl/blob/master/src/pbox/distributions.jl#L569-L641).
-Evaluate the requested probability without a discretization grid or root finding.
+and support constraints.
 
 For interval moments, envelope over the feasible mean endpoints and an analytic
 interior extremum. With an infinite endpoint, reduce to [`cantelli_quantile`](@ref).
