@@ -144,7 +144,6 @@ The fitted model is changed in place; the function returns `nothing`. Passing
 - `n`: Number of adaptive iterations. Defaults to `1`.
 """
 function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
-    println("I am in the refine with maximum samples")
     for i in 1:n
         candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
         next_point = _find_next_point(agp.gp, candidates, agp.acquisition_function)
@@ -176,7 +175,6 @@ The fitted model is changed in place; the function returns `nothing`. Passing
 - `budget`: Number of maximum adaptive iterations. Defaults to `1`.
 """
 function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 1)
-    println("I am in the refine with stopping criterion")
     converged = false
     iterations = 0
     while !converged

@@ -164,15 +164,25 @@ reliability method combining Kriging and Monte Carlo Simulation. Structural Safe
 """
 Base.@kwdef struct DeviationNumber <: AbstractGaussianProcessAcquisitionFunction
     threshold::Float64 = 0.0
-    stopping::Float64 = 2.0
 end
 
-function _find_next_point(gp::GaussianProcess, candidates::DataFrame, dn::DeviationNumber)
+function _find_next_point(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        dn::DeviationNumber
+    )
+
     next_point, _ = _find_next_point_stopping(gp, candidates, 0.0, dn)
     return next_point
 end
 
-function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, stopping::Float64, dn::DeviationNumber)
+function _find_next_point_stopping(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        stopping::Float64,
+        dn::DeviationNumber
+    )
+
     input = propertynames(candidates)
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
@@ -207,7 +217,6 @@ https://doi.org/10.2514/1.34321
 Base.@kwdef struct ExpectedFeasibility <: AbstractGaussianProcessAcquisitionFunction
     threshold::Float64 = 0.0
     epsilon_factor::Float64 = 2.0
-    stopping::Float64 = 0.001
 end
 
 function _find_next_point(
@@ -215,13 +224,14 @@ function _find_next_point(
         candidates::DataFrame,
         eff::ExpectedFeasibility,
     )
-    next_point, _ = _find_next_point_stopping(gp, candidates, eff)
+    next_point, _ = _find_next_point_stopping(gp, candidates, Inf, eff)
     return next_point
 end
 
 function _find_next_point_stopping(
         gp::GaussianProcess,
         candidates::DataFrame,
+        stopping::Float64,
         eff::ExpectedFeasibility,
     )
     input = propertynames(candidates)
@@ -261,7 +271,7 @@ function _find_next_point_stopping(
 
     val, ind = findmax(eff_values)
 
-    return candidates[[ind], Cols(input)], (val <= eff.stopping)
+    return candidates[[ind], Cols(input)], (val <= stopping)
 end
 
 """

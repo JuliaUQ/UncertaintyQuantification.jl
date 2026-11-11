@@ -66,6 +66,8 @@ initial_gp = GaussianProcess(
     optimizer = optimizer # REQUIRED_INPUT
 ) # REQUIRED_INPUT
 
+
+## adaptive gp with DeviationNumber, stopping by budget
 learning_function = DeviationNumber() # REQUIRED_INPUT
 candidate_sampling = MonteCarlo(100000) # this is hard-coded. Should the user secify this? Maybe as an optional
 
@@ -92,7 +94,7 @@ implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
 implicit_plot!(lsf_GP_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
 scatter!(adaptive_gp.gp.data.x1, adaptive_gp.gp.data.x2)
 
-
+## adaptive gp with DeviationNumber, stopping by minimum threshold
 adaptive_gp2 = AdaptiveGaussianProcess(
     deepcopy(initial_gp),
     x, # same as initial GP
@@ -114,3 +116,48 @@ end
 implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
 implicit_plot!(lsf_GP2_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
 scatter!(adaptive_gp2.gp.data.x1, adaptive_gp2.gp.data.x2)
+
+## adaptive gp with ExpectedFeasibilityFunction, stopping by budget
+learning_function = ExpectedFeasibility() # REQUIRED_INPUT
+candidate_sampling = MonteCarlo(100000) # this is hard-coded. Should the user secify this? Maybe as an optional
+
+adaptive_gp3 = AdaptiveGaussianProcess(
+    deepcopy(initial_gp),
+    x, # same as initial GP
+    models, # same as initial GP
+    learning_function,  # REQUIRED_INPUT
+    candidate_sampling; # should the user pass this? Maybe have a optional input
+    optimizer = optimizer # same as initial GP
+)
+refine!(adaptive_gp3, 150) # refinement with budget stopping criterion
+
+# some plots
+function lsf_GP3_adapt(x, y)
+    df = DataFrame([:x1, :x2] .=> [x, y])
+    evaluate!(adaptive_gp3, df)
+    return only(df.g_mean)
+end
+implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
+implicit_plot!(lsf_GP3_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
+scatter!(adaptive_gp3.gp.data.x1, adaptive_gp3.gp.data.x2)
+
+## adaptive gp with ExpectedFeasibilityFunction, stopping by maximum feasibility
+adaptive_gp4 = AdaptiveGaussianProcess(
+    deepcopy(initial_gp),
+    x, # same as initial GP
+    models, # same as initial GP
+    learning_function,  # REQUIRED_INPUT
+    candidate_sampling; # should the user pass this? Maybe have a optional input
+    optimizer = optimizer # same as initial GP
+)
+refine!(adaptive_gp4, 0.001, 1000) # refinement with budget stopping criterion
+
+# some plots
+function lsf_GP4_adapt(x, y)
+    df = DataFrame([:x1, :x2] .=> [x, y])
+    evaluate!(adaptive_gp4, df)
+    return only(df.g_mean)
+end
+implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
+implicit_plot!(lsf_GP4_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
+scatter!(adaptive_gp4.gp.data.x1, adaptive_gp4.gp.data.x2)
