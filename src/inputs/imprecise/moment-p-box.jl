@@ -254,7 +254,25 @@ function chebyshev_cdf(x::Real, m::Union{Real, Interval}, v::Union{Real, Interva
 end
 
 function _chebyshev_cdf_upper(x, m, v)
-    return x < m ? (isinf(v) ? 1.0 : v / (v + (m - x)^2)) : 1.0
+    x < m || return 1.0
+    isinf(v) && return 1.0
+
+    distance = m - x
+    sigma = sqrt(v)
+
+    if distance <= sigma
+        ratio = distance / sigma
+        return 1 / (1 + ratio^2)
+    end
+
+    ratio = if isinf(distance)
+        # Avoid overflow in m - x by halving before subtraction.
+        (sigma / 2) / (m / 2 - x / 2)
+    else
+        sigma / distance
+    end
+
+    return ratio^2 / (1 + ratio^2)
 end
 
 """
