@@ -65,7 +65,7 @@ Jones, D. R., Schonlau, M., & Welch, W. J. (1998). Efficient Global
 Optimization of Expensive Black-Box Functions. Journal of Global
 Optimization, 13(4), 455–492. https://doi.org/10.1023/A:1008306431147
 """
-Base.@kwdef struct ExpectedImprovement <: AbstractGaussianProcessAcquisitionFunction
+Base.@kwdef struct ExpectedImprovement <: AbstractReliabilityAcquisitionFunction
     ξ::Float64 = 0.0
 end
 
@@ -162,7 +162,7 @@ Echard, B., Gayton, N., & Lemaire, M. (2011). AK-MCS: An active learning
 reliability method combining Kriging and Monte Carlo Simulation. Structural Safety, 33(2),
 145–154. https://doi.org/10.1016/j.strusafe.2011.01.002
 """
-Base.@kwdef struct DeviationNumber <: AbstractGaussianProcessAcquisitionFunction
+Base.@kwdef struct DeviationNumber <: AbstractReliabilityAcquisitionFunction
     threshold::Float64 = 0.0
 end
 

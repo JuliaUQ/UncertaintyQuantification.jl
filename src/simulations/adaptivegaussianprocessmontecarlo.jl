@@ -1,7 +1,7 @@
 struct AdaptiveGaussianProcessMonteCarlo
     n::Integer
     initial_design::AbstractMonteCarlo
-    acquisition_function::AbstractGaussianProcessAcquisitionFunction
+    acquisition_function::AbstractReliabilityAcquisitionFunction
     stopping::Float64
     maximum_samples::Integer
     σ²::Float64
@@ -16,7 +16,7 @@ struct AdaptiveGaussianProcessMonteCarlo
     function AdaptiveGaussianProcessMonteCarlo(
             n::Integer,
             initial_design::AbstractMonteCarlo = QuasiMonteCarloSampling(10, LatinHypercubeSample()),
-            acquisition_function::AbstractGaussianProcessAcquisitionFunction = DeviationNumber(),
+            acquisition_function::AbstractReliabilityAcquisitionFunction = DeviationNumber(),
             stopping::Float64 = 2.0,
             maximum_samples::Integer = 1000;
             σ²::Float64 = 1.0e-10,
