@@ -198,6 +198,32 @@ end
     @test c.ub ≈ 0.5
 end
 
+@testitem "Moment p-box: extreme bounded CDF products" begin
+    p = ProbabilityBox(; mean = 0, var = 5.0e307, range = Interval(-1.0e154, 1.0e154))
+    @test cdf(p, 0).lb ≈ 0.25
+    @test cdf(p, 0).ub ≈ 0.75
+
+    # Scaling the same moment problem must preserve its CDF envelopes.
+    scale = 1.0e154
+    for (m, v, scaled_m, scaled_v) in (
+            (0, 0.5, 0, 5.0e307),
+            (Interval(-0.1, 0.1), Interval(0.25, 0.5), Interval(-1.0e153, 1.0e153), Interval(2.5e307, 5.0e307)),
+        )
+        small = ProbabilityBox(; mean = m, var = v, range = Interval(-1, 1))
+        large = ProbabilityBox(; mean = scaled_m, var = scaled_v, range = Interval(-scale, scale))
+        for x in (-1, -0.75, -0.1, 0, 0.1, 0.75, 1)
+            expected, actual = cdf(small, x), cdf(large, scale * x)
+            @test actual.lb ≈ expected.lb atol = 1.0e-14
+            @test actual.ub ≈ expected.ub atol = 1.0e-14
+        end
+    end
+
+    p = ProbabilityBox(; mean = 0, var = 1, range = Interval(-1.0e308, 1.0e308))
+    @test cdf(p, -1).ub ≈ 0.5
+    @test cdf(p, 1).lb ≈ 0.5
+    @test cdf(p, -1.0e160).ub ≈ 1.0e-320 rtol = 1.0e-3
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 

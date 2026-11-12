@@ -231,6 +231,18 @@ function _moment_max_variance(m, a, b)
     return isfinite(bound) ? bound : (big(m) - big(a)) * (big(b) - big(m))
 end
 
+_moment_big(x::Real) = big(x)
+_moment_big(x::Interval) = Interval(big(x.lb), big(x.ub))
+
+function _moment_wide_bounds(f, z, m, v, a, b)
+    (a isa BigFloat && b isa BigFloat) &&
+        throw(ArgumentError("Support width exceeds the range of BigFloat arithmetic."))
+    # Widen intermediates only on overflow, retaining the original result type.
+    T = promote_type(typeof.((z, lo(m), hi(m), lo(v), hi(v), a, b))...)
+    result = f(_moment_big.((z, m, v, a, b))...)
+    return Interval(T(result.lb), T(result.ub))
+end
+
 # Solve the quadratic analytically: mean ∈ midpoint ± sqrt(halfwidth²-v_min).
 # Use the equivalent rationalized form near the endpoints to avoid cancellation.
 function _mean_bounds_from_variance(mean::Interval, v_min::Real, lb::Real, ub::Real)
@@ -472,6 +484,9 @@ function meanvarminmax_cdf(
     x >= b && return Interval(1.0, 1.0)
     x < a && return Interval(0.0, 0.0)
     iszero(hi(v)) && return chebyshev_cdf(x, m, v)
+    if !isfinite((b - a)^2)
+        return _moment_wide_bounds(meanvarminmax_cdf, x, m, v, a, b)
+    end
     if _moment_endpoint_distribution(m, v, a, b)
         f = (b - lo(m)) / (b - a)
         return Interval(f, f)
