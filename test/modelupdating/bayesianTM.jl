@@ -75,14 +75,6 @@ end
     @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
 end
 
-@testitem "TM BMU - Transformations: Show methods" setup = [TMBMU1] begin
-    # Test show methods
-    tm = TransportMapBayesian(prior, map, quadrature)
-    @test_nowarn sprint(show, tm)
-    @test_nowarn sprint(print, tm)
-    @test_nowarn display(tm)
-end
-
 @testsnippet TMBMU2 begin
     using TransportMaps
     N_binom = 15

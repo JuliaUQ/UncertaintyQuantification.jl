@@ -39,7 +39,7 @@ tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
 samples, evidence = bayesianupdating(Like, [M], tmcmc)
 
 T = PolynomialMap(2, 2)
-quadrature = GaussHermiteWeights(3, 2)
+quadrature = GaussHermiteWeights(1, 2)
 transportmap = TransportMapBayesian(prior, T, quadrature)
 
 tm = bayesianupdating(Like, [M], transportmap)
