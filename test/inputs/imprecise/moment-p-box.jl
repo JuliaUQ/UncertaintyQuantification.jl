@@ -64,24 +64,119 @@
     @test_throws ArgumentError cdf(p, NaN)
 end
 
+@testitem "Moment p-box: numeric input conversion" begin
+    using UncertaintyQuantification:
+        chebyshev_cdf, chebyshev_quantile, markov_cdf, markov_quantile,
+        cantelli_cdf, cantelli_quantile, meanvarminmax_cdf, meanvarminmax_quantile
+
+    # Products of valid Int64 moment/support values can exceed typemax(Int64).
+    p = ProbabilityBox(; mean = 1_000_000_000, range = Interval(0, 11_000_000_000))
+    @test var(p).lb == 0
+    @test var(p).ub == 1.0e19
+    @test cdf(p, 1_000_000_000).lb == 0
+    @test cdf(p, 1_000_000_000).ub == 1
+
+    # Conversion must retain narrow intervals beyond Float64's exact Int range.
+    n = 2^60
+    p = ProbabilityBox(; mean = n + 1, range = Interval(n, n + 2))
+    @test mean(p).lb == n + 1
+    @test p.range.lb == n
+    @test p.range.ub == n + 2
+    @test var(p).ub == 1
+    q = chebyshev_quantile(0.5, n + 1, 1)
+    @test q.lb == n
+    @test q.ub == n + 2
+
+    # Query arguments need conversion too: negating typemin(Int) wraps around.
+    p = ProbabilityBox(; mean = 0, var = 1)
+    for f in (x -> cdf(p, x), x -> chebyshev_cdf(x, 0, 1))
+        c = f(typemin(Int))
+        @test c.lb == 0
+        @test c.ub ≈ 2.0^-126
+        @test f(UInt(1)).lb == 0.5
+    end
+
+    # Standalone bounds bypass the constructor's conversion.
+    a, b = -6_000_000_000_000_000_000, 6_000_000_000_000_000_000
+    m, x = -5_000_000_000_000_000_000, -3_000_000_000_000_000_000
+    c = markov_cdf(x, m, a, b)
+    @test c.lb ≈ 2 / 3
+    @test c.ub == 1
+    q = markov_quantile(0.5, m, a, b)
+    @test q.lb == a
+    @test q.ub == -4.0e18
+    c = cantelli_cdf(x, m, 1.0e36, a, Inf)
+    @test c.lb ≈ 0.8
+    @test c.ub == 1
+    q = cantelli_quantile(0, m, 1.0e36, -Inf, b)
+    @test q.lb == -Inf
+    @test q.ub ≈ -5.0e18 - 1.0e36 / 11.0e18
+
+    m, v, a, b = 1_000_000_000, 1_000_000_000_000_000_000, 0, 11_000_000_000
+    c = meanvarminmax_cdf(m, m, v, a, b)
+    @test c.lb ≈ 1 / 11
+    @test c.ub ≈ 109 / 110
+    q = meanvarminmax_quantile(0.5, m, v, a, b)
+    @test q.lb == 0
+    @test q.ub == 2.0e9
+    @test_throws ArgumentError ProbabilityBox(; mean = Interval(), range = Interval(0, 1))
+
+    # BigInt conversion must reject insufficient precision rather than erase
+    # differences between endpoints. Higher precision supports the same inputs.
+    n = big(2)^300
+    setprecision(BigFloat, 256) do
+        @test_throws ["cannot be represented exactly", "setprecision"] ProbabilityBox(;
+            mean = n + 1, range = Interval(n, n + 2),
+        )
+        @test_throws ["cannot be represented exactly", "setprecision"] chebyshev_quantile(0.5, n + 1, 1)
+    end
+    setprecision(BigFloat, 512) do
+        p = ProbabilityBox(; mean = n + 1, range = Interval(n, n + 2))
+        @test mean(p).lb == n + 1
+        @test p.range.ub - p.range.lb == 2
+        @test var(p).ub == 1
+        q = chebyshev_quantile(0.5, n + 1, 1)
+        @test q.lb == n
+        @test q.ub == n + 2
+    end
+end
+
+@testitem "Moment p-box: floating-point overflow" begin
+    p = ProbabilityBox(; mean = 0, var = 1.0e-320)
+    q = quantile(p, 1.0e-320)
+    @test q.lb ≈ -1
+    @test q.ub == 1.0e-320
+
+    p = ProbabilityBox(; mean = 0, var = 1.0e308)
+    @test cdf(p, -1.0e154).lb == 0
+    @test cdf(p, -1.0e154).ub ≈ 0.5
+    @test cdf(p, 1.0e154).lb ≈ 0.5
+    @test cdf(p, 1.0e154).ub == 1
+
+    # The distance itself overflows, but the probability remains representable.
+    p = ProbabilityBox(; mean = 1.0e308, var = 1.0e308)
+    @test cdf(p, -1.0e308).lb == 0
+    @test cdf(p, -1.0e308).ub ≈ 2.5e-309
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 
     @test_throws [
-        "Mean ∩ range = ∅.", "Provided mean: [3, 4]", "Theoretical mean bounds: [0, 2]",
+        "Mean ∩ range = ∅.", "Provided mean: [3.0, 4.0]", "Theoretical mean bounds: [0.0, 2.0]",
     ] check_moments_and_range(; mean = Interval(3, 4), lb = 0, ub = 2)
     @test_throws [
-        "Provided variance: [10, 12]", "Theoretical variance bounds: [0, 9]",
-        "Mean used for variance bounds: [11, 11]", "range: [10, 20]",
+        "Provided variance: [10.0, 12.0]", "Theoretical variance bounds: [0, 9.0]",
+        "Mean used for variance bounds: [11.0, 11.0]", "range: [10.0, 20.0]",
     ] check_moments_and_range(; mean = 11, var = Interval(10, 12), lb = 10, ub = 20)
     @test_throws [
-        "Provided variance: 10", "Theoretical variance bounds: [0, 9]",
+        "Provided variance: 10.0", "Theoretical variance bounds: [0, 9.0]",
     ] check_moments_and_range(; mean = 11, var = 10, lb = 10, ub = 20)
     @test_throws [
-        "Provided variance: [-2, -1]", "Theoretical variance bounds: [0, Inf]",
+        "Provided variance: [-2.0, -1.0]", "Theoretical variance bounds: [0, Inf]",
     ] check_moments_and_range(; mean = 0, var = Interval(-2, -1))
     @test_throws [
-        "Provided lb=2, ub=1",
+        "Provided lb=2.0, ub=1.0",
     ] check_moments_and_range(; mean = 0, var = 1, lb = 2, ub = 1)
 end
 

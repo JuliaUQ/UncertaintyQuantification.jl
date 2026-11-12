@@ -132,6 +132,8 @@ function check_moments_and_range(;
         var::Union{Nothing, Real, Interval} = nothing,
         lb::Real = -Inf, ub::Real = Inf,
     )
+    mean, var, lb, ub = _moment_float.((mean, var, lb, ub))
+
     (lb < Inf && ub > -Inf && lb <= ub) ||
         throw(ArgumentError("Support bounds must be ordered and contain finite values. Provided lb=$lb, ub=$ub."))
     support = Interval(lb, ub)
@@ -185,6 +187,27 @@ function check_moments_and_range(;
         mean = mean ∩ _mean_bounds_from_variance(mean, lo(var), lb, ub)
     end
     return mean, var, lb, ub
+end
+
+_moment_float(x::Real) = float(x)
+_moment_float(::Nothing) = nothing
+
+function _moment_float(x::Integer)
+    y = Float64(x)
+    y == x && return y
+    # Preserve integer values instead of silently collapsing nearby endpoints.
+    y = BigFloat(x)
+    y == x || throw(
+        ArgumentError(
+            "Integer $x cannot be represented exactly at the current BigFloat precision ($(precision(BigFloat)) bits). Increase it with setprecision for construction and evaluation.",
+        )
+    )
+    return y
+end
+
+function _moment_float(x::Interval)
+    isempty(x) && return x
+    return Interval(_moment_float(x.lb), _moment_float(x.ub))
 end
 
 # Solve the quadratic analytically: mean ∈ midpoint ± sqrt(halfwidth²-v_min).
@@ -242,6 +265,7 @@ Section 7, p. 53, equations (19) and (21), in the 1928 Bologna congress proceedi
 Moment constraints must be consistent; see [`check_moments_and_range`](@ref).
 """
 function chebyshev_cdf(x::Real, m::Union{Real, Interval}, v::Union{Real, Interval})
+    x, m, v = _moment_float.((x, m, v))
     isnan(x) && throw(ArgumentError("CDF argument must not be NaN."))
     x == -Inf && return Interval(0.0, 0.0)
     x == Inf && return Interval(1.0, 1.0)
@@ -283,6 +307,7 @@ precise or interval mean and variance. Moment constraints must be consistent.
 These invert [`chebyshev_cdf`](@ref); see that function for the sources and naming.
 """
 function chebyshev_quantile(u::Real, m::Union{Real, Interval}, v::Union{Real, Interval})
+    u, m, v = _moment_float.((u, m, v))
     0 <= u <= 1 || throw(ArgumentError("Quantile probability must be in [0, 1]."))
     ml, mh, vh = lo(m), hi(m), hi(v)
     iszero(vh) && return Interval(ml, mh)
@@ -309,6 +334,7 @@ general moment-bounds problem, see
 *Acta Mathematica* **9**, pp. 57–70.
 """
 function markov_cdf(x::Real, m::Union{Real, Interval}, a::Real, b::Real)
+    x, m, a, b = _moment_float.((x, m, a, b))
     isnan(x) && throw(ArgumentError("CDF argument must not be NaN."))
     x == -Inf && return Interval(0.0, 0.0)
     x >= b && return Interval(1.0, 1.0)
@@ -329,6 +355,7 @@ consistent. Either endpoint may be infinite.
 These invert [`markov_cdf`](@ref); see that function for the construction and source.
 """
 function markov_quantile(u::Real, m::Union{Real, Interval}, a::Real, b::Real)
+    u, m, a, b = _moment_float.((u, m, a, b))
     0 <= u <= 1 || throw(ArgumentError("Quantile probability must be in [0, 1]."))
     ml, mh = lo(m), hi(m)
     if ml == mh == a || ml == mh == b
@@ -358,6 +385,7 @@ variance; see [`chebyshev_cdf`](@ref) for its formula and historical sources.
 function cantelli_cdf(
         x::Real, m::Union{Real, Interval}, v::Union{Real, Interval}, a::Real, b::Real,
     )
+    x, m, v, a, b = _moment_float.((x, m, v, a, b))
     moment = chebyshev_cdf(x, m, v)
     support = markov_cdf(x, m, a, b)
     return Interval(max(moment.lb, support.lb), min(moment.ub, support.ub))
@@ -376,6 +404,7 @@ See [`cantelli_cdf`](@ref) for the source and naming convention.
 function cantelli_quantile(
         u::Real, m::Union{Real, Interval}, v::Union{Real, Interval}, a::Real, b::Real,
     )
+    u, m, v, a, b = _moment_float.((u, m, v, a, b))
     moment = chebyshev_quantile(u, m, v)
     iszero(hi(v)) && return moment
     if iszero(u)
@@ -404,6 +433,7 @@ endpoint, reduce to [`cantelli_cdf`](@ref). Inputs must satisfy [`check_moments_
 function meanvarminmax_cdf(
         x::Real, m::Union{Real, Interval}, v::Union{Real, Interval}, a::Real, b::Real,
     )
+    x, m, v, a, b = _moment_float.((x, m, v, a, b))
     (!isfinite(a) || !isfinite(b)) && return cantelli_cdf(x, m, v, a, b)
     isnan(x) && throw(ArgumentError("CDF argument must not be NaN."))
     x == -Inf && return Interval(0.0, 0.0)
@@ -470,6 +500,7 @@ the corresponding CDF bounds and their sources.
 function meanvarminmax_quantile(
         u::Real, m::Union{Real, Interval}, v::Union{Real, Interval}, a::Real, b::Real,
     )
+    u, m, v, a, b = _moment_float.((u, m, v, a, b))
     (!isfinite(a) || !isfinite(b)) && return cantelli_quantile(u, m, v, a, b)
     0 <= u <= 1 || throw(ArgumentError("Quantile probability must be in [0, 1]."))
     ml, mh, vl, vh = lo(m), hi(m), lo(v), hi(v)
