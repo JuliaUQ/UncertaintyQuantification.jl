@@ -267,7 +267,17 @@ function probability_of_failure(
     return pf, cov * pf, samples
 end
 
-# Adaptive GP MonteCarlo
+"""
+    probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function),inputs::Union{Vector{<:UQInput},UQInput},sim::AdaptiveGaussianProcessMonteCarlo)
+
+Perform a reliability analysis with an adaptive Gaussian process Monte Carlo simulation.
+Returns the estimated probability of failure `pf`, the standard deviation `σ`, the `DataFrame` containing the evaluated `samples`, and the fitted `AdaptiveGaussianProcess`.
+
+## Examples
+```
+pf, σ, samples, adaptive_gp = probability_of_failure(model, performance, inputs, sim)
+```
+"""
 function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
         performance::Function,
