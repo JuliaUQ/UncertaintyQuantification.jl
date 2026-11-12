@@ -253,6 +253,35 @@ end
     @test quantile(p, 1.0e-320).ub ≈ 1.0e-320 rtol = 1.0e-3
 end
 
+@testitem "Moment p-box: infinite variance reverse quantiles" begin
+    using DataFrames
+    using UncertaintyQuantification: reverse_quantile
+
+    for m in (0, Interval(-1, 2)), vl in (0, 1)
+        p = ProbabilityBox(; mean = m, var = Interval(vl, Inf))
+        for u in (0.1, 0.5, 0.9)
+            slice = quantile(p, u)
+            @test slice.lb == -Inf && slice.ub == Inf
+            @test reverse_quantile(p, slice) == 0.5
+        end
+        @test reverse_quantile(p, quantile(p, 0)) == 0
+        @test reverse_quantile(p, quantile(p, 1)) == 1
+
+        rv = RandomVariable(p, :x)
+        data = DataFrame(; x = quantile.(p, [0.1, 0.5, 0.9]))
+        to_standard_normal_space!(rv, data)
+        @test all(iszero, data.x)
+        to_physical_space!(rv, data)
+        @test all(x -> x.lb == -Inf && x.ub == Inf, data.x)
+    end
+
+    # Infinite variance alone does not make a slice constant on bounded support.
+    p = ProbabilityBox(; mean = 2, var = Interval(1, Inf), lb = 0)
+    for u in (0.2, 0.8)
+        @test reverse_quantile(p, quantile(p, u)) ≈ u
+    end
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 

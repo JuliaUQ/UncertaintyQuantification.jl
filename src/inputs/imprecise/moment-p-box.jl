@@ -659,6 +659,10 @@ function quantile(p::MomentProbabilityBox, u::Real)
 end
 
 function reverse_quantile(p::MomentProbabilityBox, x::Interval)
+    if bounds(x) == (-Inf, Inf) && bounds(p.range) == (-Inf, Inf) && isinf(var(p).ub)
+        # Every interior probability has this same slice; return its midpoint.
+        return 0.5
+    end
     # Atoms and constant quantile branches can correspond to a whole probability
     # interval; choose its midpoint when the original probability is not unique.
     lower = max(cdf(p, prevfloat(float(x.lb))).ub, cdf(p, prevfloat(float(x.ub))).lb)
