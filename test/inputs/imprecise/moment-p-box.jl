@@ -224,6 +224,35 @@ end
     @test cdf(p, -1.0e160).ub ≈ 1.0e-320 rtol = 1.0e-3
 end
 
+@testitem "Moment p-box: extreme bounded quantile widths" begin
+    p = ProbabilityBox(; mean = 0, var = 1, range = Interval(-1.0e308, 1.0e308))
+    @test quantile(p, 0.5).lb ≈ -1
+    @test quantile(p, 0.5).ub ≈ 1
+    @test quantile(p, 0.1).lb ≈ -3.0
+    @test quantile(p, 0.1).ub ≈ 1 / 3
+    @test quantile(p, 0).lb == -1.0e308
+    @test quantile(p, 0).ub ≈ -1.0e-308
+    @test quantile(p, 1).lb ≈ 1.0e-308
+    @test quantile(p, 1).ub == 1.0e308
+    for u in (nextfloat(0.0), prevfloat(1.0))
+        q = quantile(p, u)
+        @test isfinite(q.lb) && isfinite(q.ub)
+        @test -1.0e308 <= q.lb <= q.ub <= 1.0e308
+    end
+
+    small = ProbabilityBox(; mean = 0, var = 0.5, range = Interval(-1, 1))
+    large = ProbabilityBox(; mean = 0, var = 5.0e307, range = Interval(-1.0e154, 1.0e154))
+    for u in (0.01, 0.25, 0.5, 0.75, 0.99)
+        expected, actual = quantile(small, u), quantile(large, u)
+        @test actual.lb / 1.0e154 ≈ expected.lb atol = 1.0e-14
+        @test actual.ub / 1.0e154 ≈ expected.ub atol = 1.0e-14
+    end
+
+    p = ProbabilityBox(; mean = 0, var = 1.0e-320, range = Interval(-1.0e308, 1.0e308))
+    @test quantile(p, 1.0e-320).lb ≈ -1
+    @test quantile(p, 1.0e-320).ub ≈ 1.0e-320 rtol = 1.0e-3
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 

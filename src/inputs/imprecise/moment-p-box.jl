@@ -552,6 +552,9 @@ function meanvarminmax_quantile(
     0 <= u <= 1 || throw(ArgumentError("Quantile probability must be in [0, 1]."))
     ml, mh, vl, vh = lo(m), hi(m), lo(v), hi(v)
     iszero(vh) && return Interval(ml, mh)
+    if !isfinite((b - a)^2)
+        return _moment_wide_bounds(meanvarminmax_quantile, u, m, v, a, b)
+    end
     if iszero(u)
         return Interval(a, -_moment_least_upper(-mh, -ml, vl, -b))
     elseif u == 1
