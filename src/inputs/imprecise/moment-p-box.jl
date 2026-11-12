@@ -215,6 +215,15 @@ function _moment_midpoint(a, b)
     return isfinite(width) ? a + width / 2 : a / 2 + b / 2
 end
 
+function _moment_distance_ratio(a, b, c, d)
+    numerator, denominator = a - b, c - d
+    if isfinite(numerator) && isfinite(denominator)
+        return numerator / denominator
+    end
+    # The endpoints are finite; halve before subtracting overflowing distances.
+    return (a / 2 - b / 2) / (c / 2 - d / 2)
+end
+
 function _moment_max_variance(m, a, b)
     (m == a || m == b) && return zero(m)
     bound = (m - a) * (b - m)
@@ -364,8 +373,8 @@ function markov_cdf(x::Real, m::Union{Real, Interval}, a::Real, b::Real)
     x < a && return Interval(0.0, 0.0)
     # A mean at the lower endpoint forces a point mass, including F(a)=1.
     hi(m) == a && return Interval(1.0, 1.0)
-    upper = isfinite(b) ? clamp((b - lo(m)) / (b - x), 0, 1) : 1.0
-    lower = isfinite(a) && x > a ? clamp(1 - (hi(m) - a) / (x - a), 0, 1) : 0.0
+    upper = isfinite(b) ? clamp(_moment_distance_ratio(b, lo(m), b, x), 0, 1) : 1.0
+    lower = isfinite(a) && x > a ? clamp(1 - _moment_distance_ratio(hi(m), a, x, a), 0, 1) : 0.0
     return Interval(lower, upper)
 end
 

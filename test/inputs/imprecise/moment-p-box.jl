@@ -181,6 +181,23 @@ end
     @test_throws ArgumentError ProbabilityBox(; var = big"1e620", range = Interval(-1.0e308, 1.0e308))
 end
 
+@testitem "Moment p-box: extreme Markov distances" begin
+    p = ProbabilityBox(; mean = 0, range = Interval(-1.0e308, 1.0e308))
+    @test cdf(p, -1.0e308).lb == 0
+    @test cdf(p, -1.0e308).ub ≈ 0.5
+    @test cdf(p, 9.0e307).lb ≈ 9 / 19
+    @test cdf(p, 9.0e307).ub == 1
+    @test cdf(p, -9.0e307).ub ≈ 10 / 19
+    # The equally weighted endpoint law remains inside the envelope.
+    for x in (-1.0e308, -9.0e307, 0.0, 9.0e307)
+        @test cdf(p, x).lb <= 0.5 <= cdf(p, x).ub
+    end
+    p = ProbabilityBox(; mean = Interval(-1.0e307, 1.0e307), range = Interval(-1.0e308, 1.0e308))
+    @test cdf(p, -1.0e308).ub ≈ 0.55
+    c = UncertaintyQuantification.markov_cdf(-1.0e308, 0, -1.0e308, 1.0e308)
+    @test c.ub ≈ 0.5
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 
