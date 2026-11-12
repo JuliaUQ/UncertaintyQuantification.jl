@@ -201,7 +201,7 @@ julia > verify(slurm, 10)
 """
 function verify(si::SlurmInterface, n::Integer = 100)
     sourcedir = tempdir()
-    sourcefile = basename(tempname(; suffix = ".jl"))
+    sourcefile = basename(tempname())
 
     open(
         joinpath(sourcedir, sourcefile)
