@@ -159,6 +159,28 @@ end
     @test cdf(p, -1.0e308).ub ≈ 2.5e-309
 end
 
+@testitem "Moment p-box: extreme finite range inference" begin
+    for (a, b) in ((-1.0e308, 1.0e308), (1.0e308, 1.7e308))
+        p = ProbabilityBox(; range = Interval(a, b))
+        @test mean(p).lb == a
+        @test mean(p).ub == b
+        @test var(p).lb == 0
+        @test isfinite(var(p).ub)
+        @test var(p).ub ≈ ((big(b) - big(a)) / 2)^2
+        for m in (a, b)
+            endpoint = ProbabilityBox(; mean = m, range = Interval(a, b))
+            @test var(endpoint).lb == var(endpoint).ub == 0
+        end
+    end
+
+    p = ProbabilityBox(; var = 1.0e308, range = Interval(-1.0e155, 1.0e155))
+    radius = sqrt(big(1.0e155)^2 - big(1.0e308))
+    @test mean(p).lb ≈ -radius
+    @test mean(p).ub ≈ radius
+    @test isfinite(mean(p).lb) && isfinite(mean(p).ub)
+    @test_throws ArgumentError ProbabilityBox(; var = big"1e620", range = Interval(-1.0e308, 1.0e308))
+end
+
 @testitem "Moment p-box: inconsistency diagnostics" begin
     using UncertaintyQuantification: check_moments_and_range
 

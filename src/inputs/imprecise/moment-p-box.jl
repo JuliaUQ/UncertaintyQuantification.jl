@@ -158,13 +158,13 @@ function check_moments_and_range(;
     end
     if isfinite(lb) && isfinite(ub)
         ml, mh = bounds(mean)
-        v1 = (ml - lb) * (ub - ml)
-        v2 = (mh - lb) * (ub - mh)
+        v1 = _moment_max_variance(ml, lb, ub)
+        v2 = _moment_max_variance(mh, lb, ub)
         v3 = 0
 
-        midpoint = lb + (ub - lb) / 2
+        midpoint = _moment_midpoint(lb, ub)
         if midpoint ∈ mean
-            v3 = (midpoint - lb) * (ub - midpoint)
+            v3 = _moment_max_variance(midpoint, lb, ub)
         end
 
         max_var = Interval(0, max(v1, v2, v3))
@@ -210,23 +210,46 @@ function _moment_float(x::Interval)
     return Interval(_moment_float(x.lb), _moment_float(x.ub))
 end
 
+function _moment_midpoint(a, b)
+    width = b - a
+    return isfinite(width) ? a + width / 2 : a / 2 + b / 2
+end
+
+function _moment_max_variance(m, a, b)
+    (m == a || m == b) && return zero(m)
+    bound = (m - a) * (b - m)
+    # Finite support still has a finite variance bound when Float64 overflows.
+    return isfinite(bound) ? bound : (big(m) - big(a)) * (big(b) - big(m))
+end
+
 # Solve the quadratic analytically: mean ∈ midpoint ± sqrt(halfwidth²-v_min).
 # Use the equivalent rationalized form near the endpoints to avoid cancellation.
 function _mean_bounds_from_variance(mean::Interval, v_min::Real, lb::Real, ub::Real)
-    halfwidth = (ub - lb) / 2
-    midpoint = lb + halfwidth
-    radius = sqrt(max(0, halfwidth^2 - v_min))
-    offset = v_min / (halfwidth + radius)
-    lower = v_min > halfwidth^2 / 2 ? midpoint - radius : lb + offset
-    upper = v_min > halfwidth^2 / 2 ? midpoint + radius : ub - offset
+    width = ub - lb
+    halfwidth = isfinite(width) ? width / 2 : ub / 2 - lb / 2
+    midpoint = _moment_midpoint(lb, ub)
+    if isfinite(halfwidth^2)
+        radius = sqrt(max(0, halfwidth^2 - v_min))
+        offset = v_min / (halfwidth + radius)
+        central = v_min > halfwidth^2 / 2
+    else
+        # Scale the same quadratic roots when squaring the half-width overflows.
+        ratio = sqrt(v_min) / halfwidth
+        radius_ratio = sqrt(max(0, (1 - ratio) * (1 + ratio)))
+        radius = halfwidth * radius_ratio
+        offset = (v_min / halfwidth) / (1 + radius_ratio)
+        central = ratio > sqrt(0.5)
+    end
+    lower = central ? midpoint - radius : lb + offset
+    upper = central ? midpoint + radius : ub - offset
 
     # Preserve input endpoints already certified as feasible by the product
     # bound, even if rounding in the analytic roots would exclude them.
-    if (mean.lb - lb) * (ub - mean.lb) >= v_min
+    if _moment_max_variance(mean.lb, lb, ub) >= v_min
         lower = min(lower, mean.lb)
         upper = max(upper, mean.lb)
     end
-    if (mean.ub - lb) * (ub - mean.ub) >= v_min
+    if _moment_max_variance(mean.ub, lb, ub) >= v_min
         lower = min(lower, mean.ub)
         upper = max(upper, mean.ub)
     end
@@ -576,8 +599,8 @@ function _has_informative_variance(m, v, a, b)
     lo(v) > 0 && return true
     (lo(m) == hi(m) == a || lo(m) == hi(m) == b) && return false
     if isfinite(a) && isfinite(b)
-        peak = clamp(a + (b - a) / 2, lo(m), hi(m))
-        return hi(v) < (peak - a) * (b - peak)
+        peak = clamp(_moment_midpoint(a, b), lo(m), hi(m))
+        return hi(v) < _moment_max_variance(peak, a, b)
     end
     return isfinite(hi(v))
 end
