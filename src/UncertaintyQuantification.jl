@@ -198,6 +198,7 @@ export doe_samples
 export double_samples
 export evaluate
 export evaluate!
+export gaussian_likelihood
 export gradient
 export gradient_in_standard_normal_space
 export isimprecise
@@ -294,6 +295,7 @@ include("modelupdating/bayesian/maximumaposteriori.jl")
 include("modelupdating/bayesian/transportmap.jl")
 include("modelupdating/maximumlikelihood.jl")
 include("modelupdating/bayesian/bayesianupdating.jl")
+include("modelupdating/likelihoods.jl")
 
 include("reliability/form.jl")
 include("simulations/importancesampling.jl")
