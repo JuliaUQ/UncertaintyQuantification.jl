@@ -112,6 +112,7 @@ export UQModel
 # Structs
 export AdvancedLineSampling
 export AdaptiveGaussianProcess
+export AdaptiveGaussianProcessMonteCarlo
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -277,6 +278,7 @@ include("sensitivity/gradient.jl")
 include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
+include("simulations/adaptivegaussianprocessmontecarlo.jl")
 include("simulations/radialbasedimportancesampling.jl")
 include("simulations/subset.jl")
 

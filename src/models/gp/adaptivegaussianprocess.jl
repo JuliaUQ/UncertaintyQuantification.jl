@@ -50,7 +50,7 @@ original scale.
 # Keyword Arguments
 - `candidate_sampling`: Monte Carlo method for sampling candidates during
   refinement. Defaults to `MonteCarlo(100_000)`.
-- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `mean`: Prior mean function. Defaults to `ConstMean(0.0)`.
 - `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
 - `normalize`: Whether to map inputs to standard normal space using their
   distributions. Defaults to `true`; `false` uses physical-space inputs.
@@ -91,10 +91,10 @@ function AdaptiveGaussianProcess(
         output::Symbol,
         acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance();
         candidate_sampling = MonteCarlo(100_000),
-        σ² = 1.0e-5,
+        σ² = 1.0e-10,
         learn_noise = false,
         learn_hyperparameters = true,
-        mean::AbstractGPs.MeanFunction = ZeroMean(),
+        mean::AbstractGPs.MeanFunction = ConstMean(0.0),
         kernel::Kernel = SqExponentialKernel(),
         normalize::Bool = true,
         optimizer::UncertaintyQuantification.AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))

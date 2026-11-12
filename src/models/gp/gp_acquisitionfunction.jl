@@ -194,6 +194,7 @@ function _find_next_point_stopping(
     u = [s > 0 ? abs(m - dn.threshold) / s : Inf for (m, s) in zip(μ, σ)]
     val, ind = findmin(u)
 
+    @debug "min(U(x)) value" val
     return candidates[[ind], Cols(input)], (val >= stopping) # return the true condition for stopping
 end
 
