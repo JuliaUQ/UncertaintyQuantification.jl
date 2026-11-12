@@ -59,16 +59,19 @@ abstract type AbstractBasis end
 
 abstract type AbstractSimulation end
 abstract type AbstractMonteCarlo <: AbstractSimulation end
+abstract type AbstractMarkovChainMonteCarlo end
 
 """
 	AbstractBayesianMethod
 
-Subtypes are used to dispatch to the different MCMC methods in [`bayesianupdating`](@ref).
+Subtypes configure Bayesian updating algorithms. General MCMC samplers and
+`LaplaceEstimate` can also be passed to [`bayesianupdating`](@ref).
 
 Subtypes are:
 
-- [`SingleComponentMetropolisHastings`](@ref)
 - [`TransitionalMarkovChainMonteCarlo`](@ref)
+- [`MaximumAPosterioriBayesian`](@ref)
+- [`TransportMapBayesian`](@ref)
 """
 abstract type AbstractBayesianMethod end
 
@@ -80,7 +83,6 @@ Subtypes are used to dispatch to the different point estimation methods in [`bay
 Subtypes are:
 
 - [`MaximumAPosterioriBayesian`](@ref)
-- [`MaximumLikelihoodBayesian`](@ref)
 """
 abstract type AbstractBayesianPointEstimate <: AbstractBayesianMethod end
 abstract type AbstractDesignOfExperiments end
@@ -110,6 +112,8 @@ export UQInput
 export UQModel
 
 # Structs
+export MetropolisHastings
+export AdaptiveMetropolisHastings
 export AdvancedLineSampling
 export AdaptiveGaussianProcess
 export EmpiricalDistribution
@@ -143,14 +147,14 @@ export IntervalVariable
 export IntervalPredictorModel
 export JointDistribution
 export KanaiTajimi
-export LaplaceEstimateBayesian
+export LaplaceEstimate
 export LeastSquares
 export WeightedApproximateFetekePoints
 export LegendreBasis
 export LineSampling
 export SingleComponentMetropolisHastings
 export MaximumAPosterioriBayesian
-export MaximumLikelihoodBayesian
+export MaximumLikelihoodEstimate
 export MaximumLikelihoodEstimation
 export MaximinDistance
 export MaximumVariance
@@ -198,6 +202,8 @@ export gradient
 export gradient_in_standard_normal_space
 export isimprecise
 export linear_binning
+export laplaceestimate
+export maximumlikelihood
 export logpdf
 export mapfromdensity
 export mapfromsamples
@@ -237,6 +243,7 @@ include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
 include("inputs/gaussianmixtures.jl")
 include("inputs/jointdistribution.jl")
+include("inputs/laplaceestimate.jl")
 include("inputs/transportmaps.jl")
 
 include("dynamics/psd.jl")
@@ -267,10 +274,6 @@ include("hpc/slurm.jl")
 include("models/pce/pcebases.jl")
 include("models/pce/polynomialchaosexpansion.jl")
 
-include("modelupdating/bayesianMAP.jl")
-include("modelupdating/bayesianTM.jl")
-include("modelupdating/bayesianupdating.jl")
-
 include("sensitivity/finitedifferences.jl")
 include("sensitivity/gradient.jl")
 
@@ -278,12 +281,19 @@ include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
 include("simulations/radialbasedimportancesampling.jl")
-include("simulations/singlecomponentmh.jl")
+include("simulations/MCMC/singlecomponentmetropolishastings.jl")
+include("simulations/MCMC/adaptivemetropolishastings.jl")
+include("simulations/MCMC/metropolishastings.jl")
 include("simulations/subset.jl")
 
 #load after simulations to avoid circular dependency
-include("modelupdating/bayesiansinglecomponentmh.jl")
-include("modelupdating/bayesiantransitionalmarkovchainmontecarlo.jl")
+include("modelupdating/bayesian/markovchainmontecarlo.jl")
+include("modelupdating/bayesian/transitionalmarkovchainmontecarlo.jl")
+include("modelupdating/bayesian/laplaceestimate.jl")
+include("modelupdating/bayesian/maximumaposteriori.jl")
+include("modelupdating/bayesian/transportmap.jl")
+include("modelupdating/maximumlikelihood.jl")
+include("modelupdating/bayesian/bayesianupdating.jl")
 
 include("reliability/form.jl")
 include("simulations/importancesampling.jl")

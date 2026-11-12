@@ -13,11 +13,11 @@ Pages = ["bayesianupdating.md"]
 ```@docs
 AbstractBayesianMethod
 SingleComponentMetropolisHastings
+MetropolisHastings
+AdaptiveMetropolisHastings
 TransitionalMarkovChainMonteCarlo
 AbstractBayesianPointEstimate
 MaximumAPosterioriBayesian
-MaximumLikelihoodBayesian
-LaplaceEstimateBayesian
 TransportMapBayesian
 ```
 

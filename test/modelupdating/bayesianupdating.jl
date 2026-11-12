@@ -1,4 +1,7 @@
 @testsnippet BayesianUpdating begin
+    using DataFrames, Random
+    Random.seed!(1234)
+
     N_binom = 15
     data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
 
@@ -60,7 +63,7 @@
     ] # μ = 4, σ = 5
 
     function binomialinferencebenchmark(
-            sampler::AbstractBayesianMethod, prior::Beta{Float64}
+            sampler, prior::Beta{Float64}
         )
         alpha0 = prior.α
         beta0 = prior.β
@@ -82,12 +85,12 @@
 
         logprior(df) = logpdf.(prior, df.x)
 
-        mcmc_samples, _ = bayesianupdating(logprior, loglikelihood, UQModel[], sampler)
+        mcmc_samples, _ = bayesianupdating(JointDistribution([RandomVariable(prior, :x)]), loglikelihood, sampler)
 
         return mcmc_samples, analytic_mean, sqrt(analytic_var)
     end
 
-    function normalmeanbenchmark(sampler::AbstractBayesianMethod, prior::Normal{Float64})
+    function normalmeanbenchmark(sampler, prior::Normal{Float64})
         std_fixed = 5     # Fixed
 
         prior_mean = prior.μ
@@ -106,12 +109,12 @@
 
         logprior(df) = logpdf.(prior, df.x)
 
-        mcmc_samples, _ = bayesianupdating(logprior, loglikelihood, UQModel[], sampler)
+        mcmc_samples, _ = bayesianupdating(JointDistribution([RandomVariable(prior, :x)]), loglikelihood, sampler)
 
         return mcmc_samples, analytic_mean, analytic_std
     end
 
-    function normalvarbenchmark(sampler::AbstractBayesianMethod, prior::InverseGamma)
+    function normalvarbenchmark(sampler, prior::InverseGamma)
         mean_fixed = 4     # Fixed
 
         prior_shape = prior.invd.α
@@ -138,12 +141,12 @@
 
         logprior(df) = [logprior1(df_i) for df_i in eachrow(df)]
 
-        mcmc_samples, _ = bayesianupdating(logprior, loglikelihood, UQModel[], sampler)
+        mcmc_samples, _ = bayesianupdating(JointDistribution([RandomVariable(prior, :x)]), loglikelihood, sampler)
 
         return mcmc_samples, mean(posterior_exact), std(posterior_exact)
     end
 
-    function bivariategaussian(sampler::AbstractBayesianMethod, prior::Uniform)
+    function bivariategaussian(sampler, prior::Uniform)
         analytic_mean = [-0.5, 0.5]
         analytic_cov = [1 0.8; 0.8 1]
 
@@ -158,7 +161,7 @@
             ]
         end
 
-        mcmc_samples, _ = bayesianupdating(logprior, loglikelihood, UQModel[], sampler)
+        mcmc_samples, _ = bayesianupdating(JointDistribution(RandomVariable.(prior, [:x, :y])), loglikelihood, sampler)
 
         return mcmc_samples, analytic_mean, analytic_cov
     end
@@ -168,7 +171,7 @@ end
     BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x = 0.5,)
+    x0 = DataFrame(x = [0.5])
     n = 4000
     burnin = 100
 
@@ -186,7 +189,7 @@ end
     BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x = 2.5,)
+    x0 = DataFrame(x = [2.5])
     n = 4000
     burnin = 100
 
@@ -207,7 +210,7 @@ end
     BayesianUpdating,
 ] begin
     proposal = Normal()
-    x0 = (x = 3.0,)
+    x0 = DataFrame(x = [3.0])
     n = 4000
     burnin = 100
 
@@ -226,7 +229,7 @@ end
 
 @testitem "Bayesian Updating: Single Component MH proposal" setup = [BayesianUpdating] begin
     proposal = Normal()
-    x0 = (x = 3.0, y = 1.0)
+    x0 = DataFrame(x = [3.0], y = [1.0])
     mh = SingleComponentMetropolisHastings(proposal, x0, 1000, 100)
 
     @test isa(mh.proposal, Vector{<:UnivariateDistribution})
@@ -239,7 +242,7 @@ end
     @test mh_vec.proposal[2] == proposal_vec[2]
 
     @test_throws AssertionError SingleComponentMetropolisHastings(
-        proposal_vec, (; x = 3.0), 1000, 100
+        proposal_vec, DataFrame(x = [3.0]), 1000, 100
     )
 end
 
@@ -249,7 +252,7 @@ end
     n = 100_000
     burnin = 20_000
 
-    x0 = (x = 0.0, y = 0.0)
+    x0 = DataFrame(x = [0.0], y = [0.0])
 
     proposal = Normal(0, 1)
 
@@ -276,7 +279,7 @@ end
 
     prior_sample_ = RandomVariable(prior, :x)
 
-    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
     mc_samples, analytic_mean, analytic_std = binomialinferencebenchmark(tmcmc, prior)
 
@@ -295,7 +298,7 @@ end
 
     prior_sample_ = RandomVariable(prior, :x)
 
-    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
     mc_samples, analytic_mean, analytic_std = normalmeanbenchmark(tmcmc, prior)
 
@@ -314,7 +317,7 @@ end
 
     prior_sample_ = RandomVariable(prior, :x)
 
-    tmcmc = TransitionalMarkovChainMonteCarlo([prior_sample_], n, burnin)
+    tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
     mc_samples, analytic_mean, analytic_std = normalvarbenchmark(tmcmc, prior)
 
@@ -330,7 +333,7 @@ end
 
     prior = RandomVariable.(prior_dist, [:x, :y])
 
-    mh = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
+    mh = TransitionalMarkovChainMonteCarlo(n, burnin)
     mcmc_samples, analytic_mean, analytic_cov = bivariategaussian(mh, prior_dist)
 
     @test mean(mcmc_samples.x) ≈ analytic_mean[1] rtol = 0.1

@@ -12,10 +12,10 @@ end
 
 @testitem "TM BMU - Transformations: With density transform" setup = [TMBMU1, TestSetup] begin
     tm_log = TransportMapBayesian(
-        prior, deepcopy(map), quadrature; islog = true, transformprior = true
+        deepcopy(map), quadrature; islog = true, transformprior = true
     )
 
-    tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
+    tm_result = bayesianupdating(prior, df -> df.L, tm_log, [logL])
     @test !iszero(getcoefficients(tm_result.d.map))
 
     @test tm_result isa JointDistribution
@@ -28,10 +28,10 @@ end
 
 @testitem "TM BMU - Transformations: No density transform" setup = [TMBMU1] begin
     tm_log = TransportMapBayesian(
-        prior, deepcopy(map), quadrature; islog = true, transformprior = false
+        deepcopy(map), quadrature; islog = true, transformprior = false
     )
 
-    tm_result = bayesianupdating(df -> df.L, [logL], tm_log)
+    tm_result = bayesianupdating(prior, df -> df.L, tm_log, [logL])
     @test !iszero(getcoefficients(tm_result.d.map))
 end
 
@@ -48,13 +48,14 @@ end
     quadrature = GaussHermiteWeights(3, 2)
 
     # begin
-    tm_log = TransportMapBayesian(prior, map, quadrature; islog = true, transformprior = true)
-    @test_logs (:warn, "Prior function given while transforming to standard normal prior. Given prior will be ignored.") bayesianupdating(
-        df -> df.x1, df -> df.L, [logL], tm_log
-    )
+    tm_log = TransportMapBayesian(map, quadrature; islog = true, transformprior = true)
+    wrong_prior = [RandomVariable(Normal(), :x)]
+    @test_throws DimensionMismatch bayesianupdating(wrong_prior, df -> df.L, tm_log, [logL])
+    correlated = JointDistribution(MvNormal(zeros(2), [1.0 0.5; 0.5 1.0]), [:x1, :x2])
+    @test_throws ArgumentError bayesianupdating(correlated, df -> df.L, tm_log, [logL])
 
-    tm_forward = TransportMapBayesian(prior, map, quadrature, AutoForwardDiff())
-    @test_throws AssertionError bayesianupdating(df -> df.L, [logL], tm_forward)
+    tm_forward = TransportMapBayesian(map, quadrature, AutoForwardDiff())
+    @test_throws AssertionError bayesianupdating(prior, df -> df.L, tm_forward, [logL])
 end
 
 @testitem "TM BMU - Transformations: External Model" setup = [TMBMU1, TestSetup] begin
@@ -71,13 +72,13 @@ end
     solver = Solver(binary, "radius.jl")
 
     ext = ExternalModel(sourcedir, sourcefile, radius, solver)
-    tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
-    @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
+    tm_mooncake = TransportMapBayesian(map, quadrature, AutoMooncake())
+    @test_throws AssertionError bayesianupdating(prior, df -> df.L, tm_mooncake, [ext])
 end
 
 @testitem "TM BMU - Transformations: Show methods" setup = [TMBMU1] begin
     # Test show methods
-    tm = TransportMapBayesian(prior, map, quadrature)
+    tm = TransportMapBayesian(map, quadrature)
     @test_nowarn sprint(show, tm)
     @test_nowarn sprint(print, tm)
     @test_nowarn display(tm)
@@ -168,7 +169,7 @@ end
 
         logprior(df) = logpdf.(prior, df.x)
 
-        tm = bayesianupdating(loglikelihood, UQModel[], transportmap)
+        tm = bayesianupdating([RandomVariable(prior, :x)], loglikelihood, transportmap)
 
         return tm, analytic_mean, sqrt(analytic_var)
     end
@@ -190,7 +191,7 @@ end
             ]
         end
 
-        tm = bayesianupdating(loglikelihood, UQModel[], transportmap)
+        tm = bayesianupdating([RandomVariable(prior, :x)], loglikelihood, transportmap)
 
         return tm, analytic_mean, analytic_std
     end
@@ -222,7 +223,7 @@ end
 
         logprior(df) = [logprior1(df_i) for df_i in eachrow(df)]
 
-        tm = bayesianupdating(logprior, loglikelihood, UQModel[], transportmap)
+        tm = bayesianupdating([RandomVariable(prior, :x)], loglikelihood, transportmap)
 
         return tm, mean(posterior_exact), std(posterior_exact)
     end
@@ -234,7 +235,7 @@ end
 
     tm = PolynomialMap(1, 2)
     quad = GaussHermiteWeights(10, 1)
-    map = TransportMapBayesian([prior_RV], tm, quad)
+    map = TransportMapBayesian(tm, quad)
 
     tm_opt, analytic_mean, analytic_std = normalmeanbenchmark(map, prior)
 
@@ -254,7 +255,7 @@ end
 
     tm = PolynomialMap(1, 2)
     quad = GaussHermiteWeights(10, 1)
-    map = TransportMapBayesian([prior_RV], tm, quad)
+    map = TransportMapBayesian(tm, quad)
 
     tm_opt, analytic_mean, analytic_std = binomialinferencebenchmark(map, prior)
 
@@ -274,7 +275,7 @@ end
 
     tm = PolynomialMap(1, 2)
     quad = GaussHermiteWeights(10, 1)
-    map = TransportMapBayesian([prior_RV], tm, quad)
+    map = TransportMapBayesian(tm, quad)
 
     tm_opt, analytic_mean, analytic_std = normalvarbenchmark(map, prior)
 

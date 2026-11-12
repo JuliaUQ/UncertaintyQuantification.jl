@@ -36,9 +36,9 @@ burnin = 0
 
 x0 = [[1.0, 1.0], [3.0, 0.5], [2.0, 2.0]]
 
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
-samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
+samples, evidence = bayesianupdating(prior, likelihood, tmcmc, [λ1, λ2])
 
 scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 

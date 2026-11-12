@@ -1,297 +1,75 @@
-@testsnippet MLandMAPestimates begin
-    N_binom = 15
-    data_binom = [1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1] # p = 0.8
+@testitem "MAP and MLE have different targets" begin
+    using DataFrames, Optim, Statistics
 
-    N_normal = 25
-    data_normal_var = [
-        3.1170072530410713,
-        5.793425513286137,
-        3.019644523423345,
-        4.198492885643784,
-        4.3404411932408005,
-        5.338786752835615,
-        1.6563692415479587,
-        3.496696575234516,
-        5.093428444721792,
-        5.091321607109399,
-        4.994437068835541,
-        4.285932709130585,
-        1.6751627811539134,
-        5.51537861306012,
-        2.4998958266295026,
-        7.065078073070958,
-        5.005937831600564,
-        3.9349403146434914,
-        3.9340063190556913,
-        4.400921498325048,
-        5.276032641042012,
-        4.034478885301326,
-        7.5811254216258215,
-        6.468279762464751,
-        4.416669261547403,
-    ] # μ = 4, σ² = 5
-
-    data_normal_mean = [
-        3.2447586269995603,
-        7.31570639905421,
-        2.9583720841640524,
-        2.7006645805494793,
-        -5.390670487961957,
-        13.222284857030616,
-        4.274588755848634,
-        6.92516681771173,
-        -14.259515860959095,
-        2.8938242850671676,
-        8.702867817886007,
-        17.60466794732554,
-        -3.791069613048381,
-        3.8733459676840587,
-        5.010069312798485,
-        -1.8534537575475099,
-        10.843101672796852,
-        -1.7035437372547804,
-        -1.8363450654785087,
-        -2.929811781116549,
-        -1.6820361524479646,
-        -1.5074002658326515,
-        1.2143899492909962,
-        2.9977426550531416,
-        3.9469743716484778,
-    ] # μ = 4, σ = 5
-
-    function binomialinferencebenchmark(
-            estimater::AbstractBayesianPointEstimate, prior::Beta{Float64}
+    data = [1.0, 3.0, 5.0]
+    prior = JointDistribution([RandomVariable(Normal(), :x)])
+    expected = sum(data) / (4 + length(data))
+    for islog in (true, false)
+        calls = Ref(0)
+        likelihood_calls = Ref(0)
+        model = Model(
+            df -> begin
+                calls[] += 1
+                copy(df.x)
+            end, :response
         )
-        alpha0 = prior.α
-        beta0 = prior.β
-
-        alpha_posterior = alpha0 + sum(data_binom)
-        beta_posterior = beta0 + N_binom - sum(data_binom)
-
-        analytic_mode = (alpha_posterior - 1) / (alpha_posterior + beta_posterior - 2)
-        analytic_mean = alpha_posterior / (alpha_posterior + beta_posterior)
-        analytic_var =
-            alpha_posterior * beta_posterior /
-            ((alpha_posterior + beta_posterior)^2 * (alpha_posterior + beta_posterior + 1))
-
-        function loglikelihood(df)
-            return [
-                sum(logpdf.(Binomial.(N_binom, df_i.x), sum(data_binom))) for
-                    df_i in eachrow(df)
-            ]
+        loglikelihood = df -> begin
+            likelihood_calls[] += 1
+            [sum(logpdf.(Normal(x, 2), data)) for x in df.response]
         end
-
-        logprior(df) = logpdf.(prior, df.x)
-
-        estimate = bayesianupdating(loglikelihood, UQModel[], estimater; prior = logprior)
-
-        return estimate, analytic_mode, analytic_mean
-    end
-
-    function normalmeanbenchmark(
-            estimater::AbstractBayesianPointEstimate, prior::Normal{Float64}
-        )
-        std_fixed = 5     # Fixed
-
-        prior_mean = prior.μ
-        prior_std = prior.σ
-
-        analytic_std = 1 / ((1 / prior_std^2) + (N_normal / std_fixed^2))
-        analytic_mean =
-            analytic_std * (prior_mean / prior_std^2 + sum(data_normal_mean) / std_fixed^2)
-
-        function loglikelihood(df)
-            return [
-                sum(logpdf.(Normal.(df_i.x, std_fixed), data_normal_mean)) for
-                    df_i in eachrow(df)
-            ]
-        end
-
-        logprior(df) = logpdf.(prior, df.x)
-
-        estimation = bayesianupdating(loglikelihood, UQModel[], estimater; prior = logprior)
-
-        return estimation, analytic_mean, analytic_std
-    end
-
-    function mvnormalbenchmark(estimater::AbstractBayesianPointEstimate)
-        μ_1 = [1.0, 1.0]
-        μ_2 = [-1.0, -1.0]
-
-        Σ_1 = [0.5 0.1; 0.1 0.5]
-        Σ_2 = [0.5 -0.1; -0.1 0.5]
-
-        mmodel = MixtureModel([MvNormal(μ_1, Σ_1), MvNormal(μ_2, Σ_2)], [0.2, 0.8])
-
-        function likelihood(df)
-            xy = Matrix(select(df, [:x, :y]))
-            return [log.(pdf(mmodel, xy[i, :])) for i in 1:size(xy, 1)]
-        end
-
-        estimation = bayesianupdating(likelihood, UQModel[], estimater)
-
-        return estimation, mmodel
+        likelihood = islog ? loglikelihood : df -> exp.(loglikelihood(df))
+        starts = DataFrame(x = [0.0, 3.0])
+        estimate = MaximumAPosterioriBayesian(starts; islog = islog)
+        result = bayesianupdating(prior, likelihood, estimate, [model])
+        @test nrow(result) == 1
+        @test result.x[1] ≈ expected atol = 1.0e-5
+        @test calls[] == likelihood_calls[]
+        @test starts == DataFrame(x = [0.0, 3.0])
+        expected_value = logpdf(Normal(), expected) + sum(logpdf.(Normal(expected, 2), data))
+        @test result[1, islog ? :logMAP : :MAP] ≈ (islog ? expected_value : exp(expected_value)) atol = 1.0e-9
+        mle = maximumlikelihood(likelihood, MaximumLikelihoodEstimate(starts; islog = islog), [model])
+        @test mle.x[1] ≈ mean(data) atol = 1.0e-5
     end
 end
-@testitem "MLandMAP: MAP normal mean analytical" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.0]
 
-    prior_mean = 2
-    prior_std = 10
+@testitem "MAP bounded binomial and multivariate estimates" begin
+    using DataFrames, Optim
 
-    prior = Normal(prior_mean, prior_std)
+    prior = JointDistribution([RandomVariable(Beta(2, 3), :p)])
+    estimate = MaximumAPosterioriBayesian(DataFrame(p = [0.5]); lowerbounds = [0.0], upperbounds = [1.0])
+    result = bayesianupdating(prior, df -> logpdf.(Binomial.(15, df.p), 10), estimate)
+    @test result.p[1] ≈ 11 / 18 atol = 1.0e-5
 
-    prior_sample_ = RandomVariable(prior, :x)
+    target = MvNormal([1.0, -2.0], [1.0 0.3; 0.3 2.0])
+    prior = JointDistribution([RandomVariable(Normal(0, 5), :x), RandomVariable(Normal(0, 5), :y)])
+    estimate = MaximumAPosterioriBayesian(DataFrame(y = [0.0], x = [0.0]))
+    likelihood = df -> [logpdf(target, [row.x, row.y]) for row in eachrow(df)]
+    result = bayesianupdating(prior, likelihood, estimate)
+    covariance = inv(inv(cov(target)) + [1 / 25 0.0; 0.0 1 / 25])
+    μ = covariance * inv(cov(target)) * mean(target)
+    @test names(result) == ["y", "x", "logMAP"]
+    @test [result.y[1], result.x[1]] ≈ reverse(μ) atol = 1.0e-5
+    @test_throws ArgumentError bayesianupdating(prior, likelihood, MaximumAPosterioriBayesian(DataFrame(z = [0.0])))
 
-    estimater = MaximumAPosterioriBayesian([prior_sample_], x0)
-
-    MAPEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
-
-    @test MAPEst.x[1] ≈ analytic_mean rtol = 0.05
-end
-
-@testitem "MLandMAP: MLE normal mean analytical" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.0]
-
-    prior_mean = 2
-    prior_std = 10
-
-    prior = Normal(prior_mean, prior_std)
-
-    prior_sample_ = RandomVariable(prior, :x)
-
-    estimater = MaximumLikelihoodBayesian([prior_sample_], x0)
-
-    MLEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
-
-    @test MLEst.x[1] ≈ analytic_mean rtol = 0.05
-end
-
-@testitem "MLandMAP: Laplace normal mean analytical" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.0]
-
-    prior_mean = 2
-    prior_std = 10
-
-    prior = Normal(prior_mean, prior_std)
-
-    prior_sample_ = RandomVariable(prior, :x)
-
-    estimater = LaplaceEstimateBayesian([prior_sample_], x0)
-
-    LaplaceEst, analytic_mean, analytic_std = normalmeanbenchmark(estimater, prior)
-
-    @test mean(LaplaceEst)[1] ≈ analytic_mean rtol = 0.05
-    @test var(LaplaceEst)[1] ≈ analytic_std^2 rtol = 0.05
-end
-
-@testitem "MLandMAP: MAP binomial test" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.5]
-
-    prior_Function = Beta(1, 1)
-    prior = RandomVariable(prior_Function, :x)
-
-    estimater = MaximumAPosterioriBayesian(
-        [prior], x0; lowerbounds = [0.0], upperbounds = [1.0]
+    prior = JointDistribution([RandomVariable(Normal(), :x)])
+    estimate = MaximumAPosterioriBayesian(
+        DataFrame(x = [5.0]); optimizer = Optim.NelderMead(),
+        optimoptions = Optim.Options(; iterations = 0)
     )
-
-    estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
-        estimater, prior_Function
-    )
-
-    @test estimate.x[1] ≈ analytic_mode rtol = 0.1
+    result = bayesianupdating(prior, df -> zeros(nrow(df)), estimate)
+    @test result.x[1] > 4
 end
 
-@testitem "MLandMAP: MLE binomial test" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.5]
+@testitem "MAP and MLE retain distinct modes" begin
+    using DataFrames
 
-    prior_Function = Beta(1, 1)
-    prior = RandomVariable(prior_Function, :x)
-
-    estimater = MaximumLikelihoodBayesian([prior], x0; lowerbounds = [0.0], upperbounds = [1.0])
-
-    estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
-        estimater, prior_Function
-    )
-
-    @test estimate.x[1] ≈ analytic_mode rtol = 0.1
-end
-
-@testitem "MLandMAP: Laplace estimate binomial test" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [0.5]
-
-    prior_Function = Beta(1, 1)
-    prior = RandomVariable(prior_Function, :x)
-
-    estimater = LaplaceEstimateBayesian([prior], x0; lowerbounds = [0.0], upperbounds = [1.0])
-
-    estimate, analytic_mode, analytic_mean = binomialinferencebenchmark(
-        estimater, prior_Function
-    )
-
-    @test mean(estimate)[1] ≈ analytic_mode rtol = 0.1
-end
-
-@testitem "MLandMAP: MAP multivariate normal test" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [[1.0, 1.0], [-1.0, -1.0]]
-
-    prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
-
-    estimater = MaximumAPosterioriBayesian(prior, x0)
-
-    MAPEst, mmodel = mvnormalbenchmark(estimater)
-
-    mmodel_μ = [c.μ for c in mmodel.components]
-    mapest_μ = [[row.x, row.y] for row in eachrow(MAPEst)]
-
-    est_π = exp.(MAPEst.logMAP) ./ sum(exp.(MAPEst.logMAP))
-    est_sorted = sortperm(est_π; rev = true)
-
-    @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
-    @test mapest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
-end
-
-@testitem "MLandMAP: MLE multivariate normal test" setup = [MLandMAPestimates, TestSetup] begin
-    x0 = [[1.0, 1.0], [-1.0, -1.0]]
-
-    prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
-
-    estimater = MaximumLikelihoodBayesian(prior, x0)
-
-    MLEst, mmodel = mvnormalbenchmark(estimater)
-
-    mmodel_μ = [c.μ for c in mmodel.components]
-    mleest_μ = [[row.x, row.y] for row in eachrow(MLEst)]
-
-    est_π = exp.(MLEst.logMLE) ./ sum(exp.(MLEst.logMLE))
-    est_sorted = sortperm(est_π; rev = true)
-
-    # mmodel.prior.p is the weight of the components
-    @test est_π[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
-    @test mleest_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
-end
-
-@testitem "MLandMAP: Laplace estimate multivariate normal test" setup = [
-    MLandMAPestimates, TestSetup,
-] begin
-    x0 = [[1.0, 1.0], [-1.0, -1.0]]
-
-    prior = [RandomVariable(Uniform(-5, 5), :x), RandomVariable(Uniform(-5, 5), :y)]
-
-    estimater = LaplaceEstimateBayesian(prior, x0)
-
-    LaplaceEst, mmodel = mvnormalbenchmark(estimater)
-
-    mmodel_μ = [c.μ for c in mmodel.components]
-    mmodel_Σ = [c.Σ for c in mmodel.components]
-    est_μ = [c.μ for c in LaplaceEst.d.components]
-    est_Σ = [c.Σ for c in LaplaceEst.d.components]
-
-    # LaplaceEst.d: Underlying MixtureModel
-    # LaplaceEst.d.prior.p: weight of the components
-    est_sorted = sortperm(LaplaceEst.d.prior.p; rev = true)
-
-    @test LaplaceEst.d.prior.p[est_sorted] ≈ mmodel.prior.p[est_sorted] rtol = 0.1
-    @test est_μ[est_sorted] ≈ mmodel_μ[est_sorted] rtol = 0.1
-    @test est_Σ[est_sorted] ≈ mmodel_Σ[est_sorted] rtol = 0.1
+    target = MixtureModel([MvNormal([-3.0], [0.1;;]), MvNormal([3.0], [0.1;;])], [0.2, 0.8])
+    likelihood = df -> [logpdf(target, [x]) for x in df.x]
+    starts = DataFrame(x = [-3.0, 3.0, 3.0])
+    prior = JointDistribution([RandomVariable(Uniform(-5, 5), :x)])
+    map = bayesianupdating(prior, likelihood, MaximumAPosterioriBayesian(starts))
+    mle = maximumlikelihood(likelihood, MaximumLikelihoodEstimate(starts))
+    @test map.x ≈ [-3.0, 3.0] atol = 1.0e-5
+    @test mle.x ≈ map.x atol = 1.0e-5
+    @test map.logMAP ≈ mle.logMLE .- log(10) atol = 1.0e-5
 end
