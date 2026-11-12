@@ -302,6 +302,47 @@ end
         return right
     end
 
+    # An endpoint law at the largest feasible mean produces a CDF plateau.
+    # Its upper quantile uses the limit over means, not the plateau's far end.
+    plateau = ProbabilityBox(; var = 0.1875, range = Interval(0, 1))
+    @test cdf(plateau, 0.5).lb == 0.25
+    @test UncertaintyQuantification.bounds(quantile(plateau, 0.25)) == (0, 0.5)
+    # Higher precision keeps CDF rounding from moving the plateau's first crossing.
+    reference = ProbabilityBox(; var = big"0.1875", range = Interval(big"0", big"1"))
+    for u in (prevfloat(0.25), 0.25, nextfloat(0.25))
+        q = quantile(plateau, u)
+        @test q.lb ≈ inverse_cdf(reference, BigFloat(u), UncertaintyQuantification.hi) atol = 1.0e-14
+        @test q.ub ≈ inverse_cdf(reference, BigFloat(u), UncertaintyQuantification.lo) atol = 1.0e-14
+    end
+    @test quantile(plateau, nextfloat(0.25)).ub == 1
+
+    # Cover shifted/scaled supports, restricted means and interval variances.
+    for (a, b) in ((0, 1), (-1, 0), (-2, 6), (3, 5)), u in (0.125, 0.25, 0.375)
+        width = b - a
+        ml, mh = a + u * width, b - u * width
+        vl = (mh - a) * (b - mh)
+        for means in (Interval(ml, mh), Interval((ml + mh) / 2, mh)),
+                variance in (vl, Interval(vl, width^2 / 4))
+            p = ProbabilityBox(; mean = means, var = variance, range = Interval(a, b))
+            reference_box = ProbabilityBox(;
+                mean = Interval(BigFloat(means.lb), BigFloat(means.ub)),
+                var = Interval(BigFloat(var(p).lb), BigFloat(var(p).ub)),
+                range = Interval(BigFloat(a), BigFloat(b)),
+            )
+            @test quantile(p, u).ub == mh - (b - mh)
+            for probability in (u - 1.0e-6, prevfloat(u), u, nextfloat(u), u + 1.0e-6)
+                q = quantile(p, probability)
+                @test q.lb ≈ inverse_cdf(reference_box, BigFloat(probability), UncertaintyQuantification.hi) atol = 1.0e-11 * width
+                @test q.ub ≈ inverse_cdf(reference_box, BigFloat(probability), UncertaintyQuantification.lo) atol = 1.0e-11 * width
+            end
+        end
+    end
+
+    # Near equality is not equality: a slightly smaller minimum variance still
+    # permits quantiles at the upper support endpoint at this probability.
+    smaller_variance = ProbabilityBox(; mean = Interval(0.25, 0.75), var = prevfloat(0.1875), range = Interval(0, 1))
+    @test quantile(smaller_variance, 0.25).ub == 1
+
     for i in 1:100
         a = 10rand(rng) - 5
         b = a + 10rand(rng) + 0.01

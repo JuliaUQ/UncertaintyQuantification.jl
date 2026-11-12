@@ -442,8 +442,9 @@ end
 Return explicit quantile bounds at probability `u ∈ [0, 1]` for checked moment
 and support constraints.
 
-For interval moments, envelope over the feasible mean endpoints and an analytic
-interior extremum. With an infinite endpoint, reduce to [`cantelli_quantile`](@ref).
+For interval moments, envelope over the feasible mean endpoints, their one-sided
+limits and an analytic interior extremum. With an infinite endpoint, reduce to
+[`cantelli_quantile`](@ref).
 Endpoint probabilities, zero variance and forced endpoint atoms have explicit
 handling, including variance lower bounds. See [`meanvarminmax_cdf`](@ref) for
 the corresponding CDF bounds and their sources.
@@ -466,7 +467,13 @@ function meanvarminmax_quantile(
     # Pass both complementary probabilities to preserve tiny tails when 1-u
     # rounds to one. Reflection gives the upper quantile bound.
     lower = _meanvarminmax_quantile_lower(u, 1 - u, ml, mh, vl, vh, a, b)
-    upper = -_meanvarminmax_quantile_lower(1 - u, u, -mh, -ml, vl, vh, -b, -a)
+    if ml < mh && vl == (mh - a) * (b - mh) && u == (b - mh) / (b - a)
+        # At mh the endpoint law has F(a)=u. Use the limit as m approaches
+        # mh from below, rather than reflecting the other end of its plateau.
+        upper = mh - (b - mh)
+    else
+        upper = -_meanvarminmax_quantile_lower(1 - u, u, -mh, -ml, vl, vh, -b, -a)
+    end
     return Interval(lower, upper)
 end
 
@@ -477,11 +484,16 @@ function _meanvarminmax_quantile_lower(p, q, ml, mh, vl, vh, a, b)
     ml == mh && return lower
     lower = min(lower, _meanvarminmax_quantile_lower_at_mean(p, q, mh, vl, vh, a, b))
     width = b - a
-    discriminant = (sqrt(vl) / width)^2 - p * q
+    # Avoid squaring a rounded square root and preserve tiny differences at
+    # the endpoint-law plateau, including when the complement rounds to one.
+    tail = min(p, q)
+    discriminant = muladd(tail, tail, (vl / width) / width - tail)
     if discriminant >= 0
         m = a + width * (q + sqrt(discriminant))
         if ml <= m <= mh
-            lower = min(lower, _meanvarminmax_quantile_lower_at_mean(p, q, m, vl, vh, a, b))
+            # At the stationary mean the central inverse simplifies to 2m-a;
+            # evaluating its quotient directly loses precision near the plateau.
+            lower = min(lower, m + (m - a))
         end
     end
     return lower
