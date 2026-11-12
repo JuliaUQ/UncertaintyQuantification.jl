@@ -1,7 +1,10 @@
 """
     Interval(lb::Real, ub::Real)
+    Interval()
 
 Represents a closed numeric interval with a lower bound `lb` and an upper bound `ub`.
+`Interval()` represents the empty interval, displayed as `∅`. Intersections use
+`∩` (or `intersect`); use `isempty` to check whether an intersection is empty.
 
 `Interval` is a data type primarily used for constructing probability boxes (p-boxes) and other uncertainty representations. It is **not** intended for direct use in simulations for that, see [`IntervalVariable`](@ref).
 
@@ -14,11 +17,18 @@ Represents a closed numeric interval with a lower bound `lb` and an upper bound 
 ```jldoctest
 julia> Interval(0.1, 0.14)
 [0.1, 0.14]
+
+julia> Interval(0, 2) ∩ Interval(1, 3)
+[1, 2]
+
+julia> isempty(Interval(0, 1) ∩ Interval(2, 3))
+true
 ```
 """
 struct Interval
     lb::Real
     ub::Real
+    Interval() = new(Inf, -Inf)
     function Interval(lb::Real, ub::Real)
         lb > ub && error(
             "Lower bound parameter must be smaller than upper bound parameter for Intervals.",
@@ -28,9 +38,21 @@ struct Interval
 end
 
 function Base.show(io::IO, i::Interval)
-    print(io, "[$(i.lb), $(i.ub)]")
+    isempty(i) ? print(io, "∅") : print(io, "[$(i.lb), $(i.ub)]")
     return nothing
 end
+
+Base.isempty(i::Interval) = i.lb > i.ub
+
+function Base.intersect(a::Interval, b::Interval)
+    any(isnan, (a.lb, a.ub, b.lb, b.ub)) &&
+        throw(ArgumentError("Cannot intersect intervals with NaN bounds."))
+    lb, ub = max(a.lb, b.lb), min(a.ub, b.ub)
+    return lb <= ub ? Interval(lb, ub) : Interval()
+end
+
+Base.intersect(a::Interval, b::Real) = a ∩ Interval(b, b)
+Base.intersect(a::Real, b::Interval) = Interval(a, a) ∩ b
 
 Base.in(u, i::Interval) = i.lb <= u <= i.ub
 

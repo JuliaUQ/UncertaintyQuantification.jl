@@ -40,7 +40,7 @@ end
 names(input::UQInput) = only(names([input])) # need this to get the name of a single input in gps
 
 function count_rvs(inputs::Vector{<:UQInput})
-    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, ProbabilityBox), inputs)
+    random_inputs = filter(i -> isa(i, RandomUQInput) || isa(i, AbstractProbabilityBox), inputs)
     return mapreduce(dimensions, +, random_inputs)
 end
 

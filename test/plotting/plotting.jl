@@ -24,6 +24,38 @@
         pb = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 2)), :X2)
         plt = plot(pb)
         @test typeof(plt) <: Plots.Plot
+        @test plt.series_list[1][:label] == "X2"
+    end
+
+    @testset "Direct ProbabilityBox Plot" begin
+        pboxes = [
+            ProbabilityBox(; mean = 0, var = 1),
+            ProbabilityBox(; mean = 2, lb = 0),
+            ProbabilityBox(; mean = Interval(1, 2), var = Interval(0.2, 1), range = Interval(0, 5)),
+            ProbabilityBox{Normal}(Dict(:μ => Interval(0, 1), :σ => 1)),
+        ]
+        for pbox in pboxes
+            plt = plot(pbox)
+            @test plt isa Plots.Plot
+            @test length(plt.series_list) == 3
+            xs = plt.series_list[1][:x]
+            @test all(isfinite, xs)
+            cdfs = cdf.(Ref(pbox), xs)
+            @test plt.series_list[1][:y] == getproperty.(cdfs, :ub)
+            @test plt.series_list[2][:y] == getproperty.(cdfs, :lb)
+            @test plt.series_list[3][:fillrange] == plt.series_list[1][:y]
+        end
+        pbox = first(pboxes)
+        plt = plot(pbox; shade = false, label = "a")
+        @test length(plt.series_list) == 2
+        @test plt.series_list[1][:label] == "a"
+        named = plot(RandomVariable(pbox, :x); shade = false)
+        @test length(named.series_list) == 2
+        @test named.series_list[1][:label] == "x"
+        @test named.series_list[1][:x] == plt.series_list[1][:x]
+        @test named.series_list[1][:y] == plt.series_list[1][:y]
+        plot!(plt, pbox; shade = false, label = "b")
+        @test length(plt.series_list) == 4
     end
 
     @testset "Vector of UQInputs Plot" begin

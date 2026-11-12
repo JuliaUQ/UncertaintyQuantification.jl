@@ -106,6 +106,42 @@ plot(inputs)#hide
 
 ```
 
+#### Distribution-free p-boxes
+
+When no distribution family is known, construct a p-box from moments and support
+bounds using [`MomentProbabilityBox`](@ref), or the keyword-only `ProbabilityBox`
+constructor. The mean and variance may be numbers or [`Interval`](@ref)s; `var`
+is the population variance. Specify support using `range=Interval(a, b)` or
+`lb` and `ub`.
+
+```@example moment_pbox
+using UncertaintyQuantification # hide
+pbox = ProbabilityBox(; mean = Interval(1, 2), var = Interval(0.2, 1), range = Interval(0, 5))
+x = RandomVariable(pbox, :x)
+```
+
+The constructor checks consistency and tightens the supplied constraints where
+possible. With a finite range, the mean or variance may be omitted. The functions
+`cdf(pbox, x)` and `quantile(pbox, p)` return interval bounds, and `plot(pbox)`
+draws the CDF envelopes.
+
+Bounds are constructed using Chebyshev inequalities (mean and variance only), Markov inequalities (mean and support), the Cantelli construction (mean, variance and one support bound), and min–max–mean–variance bounds (mean, variance and finite support), following Gray et al. [grayDistributionFreeRiskAnalysis2022](@cite).
+
+Examples of six moment-based p-boxes are shown below.
+
+```@example moment_pbox
+using Plots # hide
+inputs = [ # hide
+    RandomVariable(ProbabilityBox(; mean = 2, var = 1), Symbol("mean + variance")), # hide
+    RandomVariable(ProbabilityBox(; mean = 2, range = Interval(0, 5)), Symbol("mean + range")), # hide
+    RandomVariable(ProbabilityBox(; mean = 2, var = 1, lb = 0), Symbol("mean + variance + lb")), # hide
+    RandomVariable(ProbabilityBox(; var = 6, range = Interval(0, 5)), Symbol("variance + range")), # hide
+    RandomVariable(ProbabilityBox(; mean = 2, var = 1, range = Interval(0, 5)), Symbol("mean + variance + range")), # hide
+    RandomVariable(ProbabilityBox(; mean = Interval(1, 2), var = Interval(0.2, 1), range = Interval(0, 5)), Symbol("interval moments + range")), # hide
+] # hide
+plot(inputs; xlims = (-1, 6), size = (900, 500)) # hide
+```
+
 ## Dependencies
 
 Modelling of dependent variables is exposed through the [`JointDistribution`](@ref). In its simplest form, this is a wrapper around any implementation of the `MultivariateDistribution` interface defined by _Distributions.jl_. To construct a [`JointDistribution`](@ref) pass the `MultivariateDistribution` and a `vector{`Symbol`}` of matching dimension.

@@ -25,6 +25,32 @@
     @test lo(2.0) == 2.0
 end
 
+@testitem "Interval intersections" begin
+    using UncertaintyQuantification: bounds
+
+    a, b = Interval(0, 2), Interval(1, 3)
+    @test bounds(a ∩ b) == (1, 2)
+    @test bounds(b ∩ a) == (1, 2)
+    @test bounds(a ∩ a) == (0, 2)
+    @test bounds(a ∩ Interval(2, 4)) == (2, 2)
+    @test bounds(a ∩ Interval(0.5, 1.5)) == (0.5, 1.5)
+    @test !isempty(a)
+    @test !isempty(a ∩ b)
+    @test !isempty(Interval(2, 2))
+    @test isempty(a ∩ Interval(3, 4))
+    @test isempty(Interval(3, 4) ∩ a)
+    @test isempty(Interval())
+    @test isempty(Interval() ∩ a)
+    @test isempty(a ∩ Interval())
+    @test !(0 ∈ Interval())
+    @test sprint(show, Interval()) == "∅"
+    @test bounds(a ∩ 1) == (1, 1)
+    @test bounds(1 ∩ a) == (1, 1)
+    @test isempty(a ∩ 3)
+    @test isempty(3 ∩ a)
+    @test_throws ArgumentError a ∩ Interval(NaN, 1)
+end
+
 @testitem "IntervalVariable" setup = [TestSetup, QMC] begin
     name = :l
     lb = 0.14
