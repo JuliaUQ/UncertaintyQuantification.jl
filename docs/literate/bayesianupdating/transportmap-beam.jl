@@ -88,7 +88,7 @@ The likelihood assumes that the measurement errors are independent and normally 
 For better stability, we use the log-likelihood for the updating.
 ===#
 
-M = Model(df -> s(df.a, df.F), :disp)
+M = Model(df -> s(df.a, df.F), [:a, :F], :disp)
 Like = df -> sum([logpdf.(Normal(y, σ), df.disp) for y in data])
 #md nothing #hide
 

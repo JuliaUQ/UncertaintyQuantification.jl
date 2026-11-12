@@ -15,7 +15,7 @@ Random.seed!(42)
 x = RandomVariable.(Normal(), [:x1, :x2])
 
 # Model
-y = Model(df -> 0.1 * (df.x1 - df.x2) .^ 2 - 1 / sqrt(2) * (df.x1 + df.x2), :y)
+y = Model(df -> 0.1 * (df.x1 - df.x2) .^ 2 - 1 / sqrt(2) * (df.x1 + df.x2), [:x1, :x2], :y)
 
 # Performance function
 g(df) = df.y .+ 4

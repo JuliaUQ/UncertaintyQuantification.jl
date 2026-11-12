@@ -8,6 +8,7 @@
     ishigami = Model(
         df ->
         sin.(df.x1) .+ df.a .* sin.(df.x2) .^ 2 .+ df.b .* (df.x3 .^ 4) .* sin.(df.x1),
+        [:x1, :x2, :x3, :a, :b],
         :y,
     )
 

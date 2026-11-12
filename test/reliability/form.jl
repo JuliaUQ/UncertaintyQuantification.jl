@@ -6,7 +6,7 @@
 
     inputs = [x1, x2]
 
-    model = Model(df -> df.x1 .- df.x2, :y)
+    model = Model(df -> df.x1 .- df.x2, [:x1, :x2], :y)
 
     pf, β, dp, α = probability_of_failure(df -> df.x1 .- df.x2, inputs, form)
 

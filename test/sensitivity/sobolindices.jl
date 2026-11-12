@@ -7,11 +7,11 @@
     ishigami_fun = (x1, x2, x3, a, b) -> sin(x1) + a * sin(x2)^2 + b * x3^4 * sin(x1)
     a1 = 7; b1 = 0.1
     ishigami1 = Model(
-        df -> ishigami_fun.(df.x1, df.x2, df.x3, a1, b1), :f1
+        df -> ishigami_fun.(df.x1, df.x2, df.x3, a1, b1), [:x1, :x2, :x3], :f1
     )
     a2 = 7; b2 = 0.05
     ishigami2 = Model(
-        df -> ishigami_fun.(df.x1, df.x2, df.x3, a2, b2), :f2
+        df -> ishigami_fun.(df.x1, df.x2, df.x3, a2, b2), [:x1, :x2, :x3], :f2
     )
 
     n_mc = 10000
@@ -146,8 +146,8 @@ end
 @testitem "Sobol Indices: Convenience Functions" setup = [sobolindices] begin
     x1 = RandomVariable(Uniform(-π, +π), :x1)
     x2 = RandomVariable(Uniform(0, +π), :x2)
-    t1 = Model(df -> sin.(df.x1), :t1)
-    t2 = Model(df -> cos.(df.x1), :t2)
+    t1 = Model(df -> sin.(df.x1), [:x1], :t1)
+    t2 = Model(df -> cos.(df.x1), [:x1], :t2)
 
     @test isa(
         sobolindices([t1; t2], x1, :t1, QuasiMonteCarloSampling(2, QuasiMonteCarlo.SobolSample())), DataFrame

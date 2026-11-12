@@ -1,17 +1,18 @@
 """
-    Model(f::Function, name::Symbol; distributed::Bool = false)
+    Model(f::Function, inputs::Union{Symbol, Vector{Symbol}}, name::Symbol; distributed::Bool = false)
 
-By default the function `f` must accept a `DataFrame` and return the result of the model for each row in the `DataFrame` as a vector. The `name` is used to add the output to the `DataFrame`.
+By default the function `f` must accept a `DataFrame` and return the result of the model for each row in the `DataFrame` as a vector. The `inputs` parameter specifies which columns from the `DataFrame` the function uses. The `name` is used to add the output to the `DataFrame`.
 When `distributed` is set to `true` a `pmap` will evaluate each row the the `DataFrame` in parallel, making use of any available workers. In this case `f` must accept a `DataFrameRow`.
 """
 struct Model <: UQModel
     func::Function
+    inputs::Vector{Symbol}
     name::Symbol
     distributed::Bool
 end
 
-function Model(f::Function, name::Symbol; distributed::Bool = false)
-    return Model(f, name, distributed)
+function Model(f::Function, inputs::Union{Symbol, Vector{Symbol}}, name::Symbol; distributed::Bool = false)
+    return Model(f, wrap(inputs), name, distributed)
 end
 
 """

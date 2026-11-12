@@ -5,7 +5,7 @@
     input = RandomVariable(Uniform(-2, 12), :x1)
     n_design_points = 8
     design = QuasiMonteCarloSampling(n_design_points, LatinHypercubeSample())
-    model = Model(df -> df.x1 .^ 2 .* sin.(df.x1), :y)
+    model = Model(df -> df.x1 .^ 2 .* sin.(df.x1), [:x1], :y)
     acquisition_function = MaximumVariance()
     candidate_sampling = MonteCarlo(200)
 end
@@ -41,8 +41,8 @@ end
 @testitem "Adaptive Gaussian process configuration and input selection" setup = [TestSetup, AdaptiveGPSetup] begin
     inputs = [Parameter(2.0, :p), input]
     models = [
-        Model(df -> df.p .* sin.(df.x1), :intermediate),
-        Model(df -> df.intermediate .+ 1, :y),
+        Model(df -> df.p .* sin.(df.x1), [:p, :x1], :intermediate),
+        Model(df -> df.intermediate .+ 1, [:intermediate], :y),
     ]
 
     for normalize in (true, false)
@@ -140,7 +140,7 @@ end
 
 @testitem "Adaptive Gaussian process with 2D inputs" setup = [TestSetup, AdaptiveGPSetup] begin
     inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
-    model = Model(df -> 0.3 .* sin.(2.0 .* df.x1) .+ 0.3 .* cos.(2.0 .* df.x2), :y)
+    model = Model(df -> 0.3 .* sin.(2.0 .* df.x1) .+ 0.3 .* cos.(2.0 .* df.x2), [:x1, :x2], :y)
     design = QuasiMonteCarloSampling(100, HaltonSample())
 
     Random.seed!(42)

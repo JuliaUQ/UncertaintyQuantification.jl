@@ -1,7 +1,7 @@
 @testitem "Model" setup = [TestSetup] begin
     input = DataFrame(; a = 1, b = 2)
 
-    model = Model(df -> df.a + 2 * df.b, :c)
+    model = Model(df -> df.a + 2 * df.b, [:a, :b], :c)
     @test isa(model, Model)
 
     evaluate!(model, input)
@@ -16,7 +16,7 @@ end
 
     input = DataFrame(; a = rand(6), b = rand(6))
 
-    model = Model(df -> df.a + 2 * df.b, :c; distributed = true)
+    model = Model(df -> df.a + 2 * df.b, [:a, :b], :c; distributed = true)
 
     try
         evaluate!(model, input)

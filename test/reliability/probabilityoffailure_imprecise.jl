@@ -200,7 +200,7 @@ end
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 1)), :x2)
     ϵ = IntervalVariable(-0.5, 0.5, :ϵ)
 
-    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, :y)
+    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, [:x1, :x2, :ϵ], :y)
 
     # Noisy training data; the noise is not an input of the IPM
     data = UncertaintyQuantification.sample(
@@ -236,7 +236,7 @@ end
     x2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 1)), :x2)
     ϵ = IntervalVariable(-0.5, 0.5, :ϵ)
 
-    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, :y)
+    m = Model(df -> df.x1 .+ df.x2 .+ df.ϵ, [:x1, :x2, :ϵ], :y)
 
     # Noisy training data; the noise is not an input of the IPM
     data = UncertaintyQuantification.sample(

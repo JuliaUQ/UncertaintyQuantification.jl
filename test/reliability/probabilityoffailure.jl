@@ -82,7 +82,7 @@ end
 
     y = Parameter(sqrt(2) * quantile(Normal(), 1 - pf_analytical), :y)
 
-    g = Model(df -> df.x1 + df.x2, :g)
+    g = Model(df -> df.x1 + df.x2, [:x1, :x2], :g)
 
     F = df -> df.y .- df.g
 end
@@ -116,8 +116,8 @@ end
 
 @testitem "Probability of Failure: Radial Based Importance Sampling" setup = [PoF] begin
     inputs = RandomVariable.(Normal(), [:x1, :x2, :x3])
-    g1 = @. Model(df -> -df.x1 - df.x2 - df.x3 + 3 * sqrt(3), :g1)
-    g2 = @. Model(df -> -df.x3 + 3, :g2)
+    g1 = @. Model(df -> -df.x1 - df.x2 - df.x3 + 3 * sqrt(3), [:x1, :x2, :x3], :g1)
+    g2 = @. Model(df -> -df.x3 + 3, [:x3], :g2)
 
     # reference solution 2.57e-3
     pf, _, _ = probability_of_failure(

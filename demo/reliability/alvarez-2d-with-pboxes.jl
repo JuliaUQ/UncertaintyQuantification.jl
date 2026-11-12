@@ -15,7 +15,7 @@ X1 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 2), :σ => 1
 X2 = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :X2)
 
 inputs = [X1, X2]
-models = Model(df -> df.X1 .^ 2 .+ df.X2, :g)
+models = Model(df -> df.X1 .^ 2 .+ df.X2, [:X1, :X2], :g)
 performance(df) = 7 .- df.g
 
 rs = RandomSlicing(ss_infinity_adaptive, mc)

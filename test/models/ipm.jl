@@ -9,6 +9,7 @@
         df ->
         df.x .^ 2 .* cos.(df.x) .- sin.(3 * df.x) .* exp.(-df.x .^ 2) .- df.x .-
             cos.(df.x .^ 2) .+ df.x .* randn(size(df, 1)),
+        [:x],
         :y,
     )
 
@@ -43,7 +44,7 @@ end
     X4 = Parameter(5, :X4)
 
     inputs = [X1, X2, X3, X4]
-    models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, :g)
+    models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, [:X1, :X2, :X3, :X4], :g)
 
     data_ipm = UncertaintyQuantification.sample(
         [

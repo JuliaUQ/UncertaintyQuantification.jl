@@ -2,7 +2,7 @@
     GPTestSetup,
 ] begin
     x = RandomVariable(Uniform(0, 10), :x)
-    m = Model(df -> sin.(df.x) .+ df.x, :y)
+    m = Model(df -> sin.(df.x) .+ df.x, [:x], :y)
 
     mean = ConstMean(0.0)
     kernel = SqExponentialKernel() ∘ ScaleTransform(10.0)
@@ -21,7 +21,7 @@ end
     GPTestSetup,
 ] begin
     x = RandomVariable.(Uniform(0, 5), [:x1, :x2])
-    m = Model(df -> sin.(df.x1) .+ cos.(df.x2), :y)
+    m = Model(df -> sin.(df.x1) .+ cos.(df.x2), [:x1, :x2], :y)
 
     samples = sample(x, QuasiMonteCarloSampling(100, HaltonSample()))
     data = copy(samples[1:20, :])

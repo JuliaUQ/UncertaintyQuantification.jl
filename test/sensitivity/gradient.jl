@@ -3,7 +3,7 @@
     x = RandomVariable(Uniform(-2.0, 2.0), :x)
     y = RandomVariable(Uniform(-2.0, 2.0), :y)
 
-    model = Model(df -> df.p .* df.x .^ 2 - df.y .^ 2, :f)
+    model = Model(df -> df.p .* df.x .^ 2 - df.y .^ 2, [:p, :x, :y], :f)
 
     g = gradient([model], [p, x, y], DataFrame(; p = 2.0, x = 2.0, y = 1.0), :f)
 

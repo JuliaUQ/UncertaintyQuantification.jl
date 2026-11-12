@@ -29,7 +29,7 @@ end
 @testitem "SubSetSimulation: nextlevelsamples" begin
     x = RandomVariable(Uniform(0.0, 1.0), :x)
     y = RandomVariable(Uniform(0.0, 1.0), :y)
-    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), [:x, :y], :z)
     inputs = [x, y]
     performancefunction = df -> df.z
     sim = SubSetSimulation(10, 0.1, 10, Uniform(-0.2, 0.2))
@@ -57,7 +57,7 @@ end
         end
     end
     inputs = [x]
-    models = Model(df -> dummy_model.(df.x), :z)
+    models = Model(df -> dummy_model.(df.x), [:x], :z)
 
     samples = sample(inputs, 1)
     evaluate!(models, samples)
@@ -95,7 +95,7 @@ end
 @testitem "SubSetInfinity: nextlevelsamples" begin
     x = RandomVariable(Uniform(0.0, 1.0), :x)
     y = RandomVariable(Uniform(0.0, 1.0), :y)
-    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), [:x, :y], :z)
     inputs = [x, y]
     performancefunction = df -> df.z
     sim = SubSetInfinity(400, 0.1, 10, 0.5)
@@ -175,7 +175,7 @@ end
 @testitem "SubSetInfinityAdaptive: nextlevelsamples" begin
     x = RandomVariable(Uniform(0.0, 1.0), :x)
     y = RandomVariable(Uniform(0.0, 1.0), :y)
-    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), :z)
+    model = Model(df -> 1 .- sqrt.(df.x .^ 2 + df.y .^ 2), [:x, :y], :z)
     inputs = [x, y]
     performancefunction = df -> df.z
     sim = SubSetInfinityAdaptive(400, 0.1, 10, 2)

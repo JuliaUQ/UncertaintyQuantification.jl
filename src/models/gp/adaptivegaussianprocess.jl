@@ -71,7 +71,7 @@ julia> using DataFrames: nrow
 
 julia> x = RandomVariable(Uniform(-2, 2), :x);
 
-julia> model = Model(df -> sin.(df.x), :y);
+julia> model = Model(df -> sin.(df.x), [:x], :y);
 
 julia> agp = AdaptiveGaussianProcess(
            x, model, QuasiMonteCarloSampling(6, LatinHypercubeSample()), :y;

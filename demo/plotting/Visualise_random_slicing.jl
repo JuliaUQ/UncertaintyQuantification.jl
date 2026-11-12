@@ -8,7 +8,7 @@ function limitstate(df)
     return 300 .- 2 * df.X2 .^ 2 + df.X1 .+ df.X2 .^ 3 - 3 * df.X1 .^ 2 .+ df.X1 .* df.X2
 end
 
-model = Model(limitstate, :g)
+model = Model(limitstate, [:X1, :X2], :g)
 
 inputs = [X1; X2]
 
