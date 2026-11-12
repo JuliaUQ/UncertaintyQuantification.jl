@@ -177,9 +177,9 @@ scatter(mh_samples.x, mh_samples.y; lim=[-2, 2], legend = :none) # hide
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
-contour!(xs, ys, likelihood_eval, lim = [-2,2], legend = :none) # hide
+contour!(xs, ys, reshape(likelihood_eval, length(xs), length(ys)), lim = [-2,2], legend = :none) # hide
 savefig("mh-bimodal.svg"); nothing # hide
 ```
 
@@ -294,14 +294,14 @@ mlestimate = maximumlikelihood(loglikelihood, MLE)
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 prior_eval = priorFunction(df_points) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
-contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red, colorbar = false) # hide
-contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue, colorbar = false) # hide
+contour(xs, ys, reshape(likelihood_eval, length(xs), length(ys)), lim = [-1,1], c = :red, colorbar = false) # hide
+contour!(xs, ys, reshape(prior_eval, length(xs), length(ys)), lim = [-1,1], c = :blue, colorbar = false) # hide
 contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black, colorbar = false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1,1], label = "MAP estimate", c = :black)
 scatter!(mlestimate.x, mlestimate.y; lim=[-1,1], label = "ML estimate", c = :red)
@@ -356,15 +356,15 @@ laplace_estimate = bayesianupdating(prior, loglikelihood, LaplaceEstimator)
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-lapl_pdf = pdf.(laplace_estimate, eachrow(sample_points)) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+lapl_pdf = pdf.(Ref(laplace_estimate), eachrow(sample_points)) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 prior_eval = priorFunction(df_points) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
 contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1, colorbar=false)
-contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
+contour!(xs, ys, reshape(lapl_pdf, length(xs), length(ys)), lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1, 1], label = "MAP estimate", c = :black)
 plot!([0,0],[0,0],c = :black, label = "Posterior", colorbar=false)
 plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate", colorbar=false)
