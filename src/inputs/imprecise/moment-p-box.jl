@@ -271,8 +271,8 @@ function chebyshev_quantile(u::Real, m::Union{Real, Interval}, v::Union{Real, In
     iszero(u) && return Interval(-Inf, mh)
     u == 1 && return Interval(ml, Inf)
     return Interval(
-        ml - sqrt(vh) * sqrt((1 - u) / u),
-        mh + sqrt(vh) * sqrt(u / (1 - u)),
+        ml - sqrt(vh) * (sqrt(1 - u) / sqrt(u)),
+        mh + sqrt(vh) * (sqrt(u) / sqrt(1 - u)),
     )
 end
 
