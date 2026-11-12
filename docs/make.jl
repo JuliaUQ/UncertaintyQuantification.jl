@@ -61,6 +61,7 @@ makedocs(;
             "Gaussian Processes" => "api/gaussianprocesses.md",
             "Simulations" => "api/simulations.md",
             "Bayesian Updating" => "api/bayesianupdating.md",
+            "Maximum Likelihood" => "api/maximumlikelihood.md",
             "Transport Maps" => "api/transportmaps.md",
             "Power Spectral Density Functions" => "api/psd.md",
             "Stochastic Processes (Spectral Representation)" => "api/spectralrepresentation.md",
