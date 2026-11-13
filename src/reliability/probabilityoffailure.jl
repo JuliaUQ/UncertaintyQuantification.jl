@@ -291,7 +291,7 @@ function probability_of_failure(
     end
 
     # add the performance to the model vector
-    push!(models, Model(df -> performance(df), :g))
+    models = UQModel[models..., Model(df -> performance(df), :g)]
 
     adaptive_gp = AdaptiveGaussianProcess(
         inputs,
