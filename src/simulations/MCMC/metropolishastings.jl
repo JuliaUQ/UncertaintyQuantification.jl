@@ -71,27 +71,3 @@ function _sample_chain(target::Function, sim::MetropolisHastings, start::DataFra
     return DataFrame(states[(sim.burnin + 1):end, :], inputvariables),
         rejected / max(total - 1, 1)
 end
-
-# Each chain has the same number of attempted transitions, so the mean of its
-# rejection fractions is also the aggregate rejection fraction.
-"""
-    sample(
-        target, method::Union{
-            MetropolisHastings, AdaptiveMetropolisHastings,
-            SingleComponentMetropolisHastings,
-        }; islog = method.islog
-    )
-
-Sample a density with one chain per starting row in `method.x0`. The target
-accepts a one-row DataFrame and returns a one-element vector. `islog` specifies
-whether the target returns log densities, defaulting to the method's setting.
-Returns `(samples, rejection_fraction)` with `method.n` samples per chain.
-"""
-function sample(
-        target::Function,
-        sim::Union{MetropolisHastings, AdaptiveMetropolisHastings, SingleComponentMetropolisHastings};
-        islog::Bool = sim.islog,
-    )
-    chains = [_sample_chain(target, sim, sim.x0[i:i, :]; islog = islog) for i in 1:nrow(sim.x0)]
-    return reduce(vcat, first.(chains)), mean(last.(chains))
-end

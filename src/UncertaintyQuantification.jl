@@ -101,6 +101,7 @@ export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
 export AbstractMonteCarlo
+export AbstractMarkovChainMonteCarlo
 export AbstractPowerSpectralDensity
 export AbstractStochasticProcess
 export AbstractSimulation
@@ -285,6 +286,7 @@ include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
 include("simulations/radialbasedimportancesampling.jl")
+include("simulations/MCMC/markovchainmontecarlo.jl")
 include("simulations/MCMC/singlecomponentmetropolishastings.jl")
 include("simulations/MCMC/adaptivemetropolishastings.jl")
 include("simulations/MCMC/metropolishastings.jl")

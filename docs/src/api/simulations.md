@@ -21,5 +21,5 @@ QuasiMonteCarloSampling
 ## Methods
 
 ```@docs
-sample(target::Function, method::Union{MetropolisHastings, AdaptiveMetropolisHastings, SingleComponentMetropolisHastings})
+sample(target::Function, method::AbstractMarkovChainMonteCarlo)
 ```

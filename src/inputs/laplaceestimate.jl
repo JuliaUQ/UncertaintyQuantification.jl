@@ -6,8 +6,8 @@
     )
 
 Configure a Laplace approximation of a target density. Each row of `x0` is an
-optimization start, and its columns name the target's variables. The estimator
-does not contain a prior. Use [`laplaceestimate`](@ref) for a general density or
+optimization start, and its columns name the target's variables.
+Use [`laplaceestimate`](@ref) for a general density or
 [`bayesianupdating`](@ref) for a Bayesian posterior.
 
 `islog` specifies whether the target (or Bayesian likelihood) returns log
