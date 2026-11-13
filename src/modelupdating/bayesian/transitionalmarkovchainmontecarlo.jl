@@ -19,7 +19,7 @@ struct TransitionalMarkovChainMonteCarlo <: AbstractBayesianMethod # Transitiona
 
     function TransitionalMarkovChainMonteCarlo(
             n::Int,
-            burnin::Int,
+            burnin::Int = 0,
             γ::Real = 0.2,
             islog::Bool = true,
         )

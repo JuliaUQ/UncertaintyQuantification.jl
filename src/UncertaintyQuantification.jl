@@ -190,6 +190,8 @@ export UpperConfidenceBound
 export QuasiMonteCarloSampling
 
 # Methods
+export abc_likelihood
+export abc_rejection
 export bayesianupdating
 export count_rvs
 export dimensions
