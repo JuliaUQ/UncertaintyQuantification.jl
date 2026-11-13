@@ -26,7 +26,7 @@ loglik = lik(samples)  # Returns log-likelihoods for each sample
 """
 function gaussian_likelihood(data::DataFrame, σ::Float64)
     obs_names = names(data)
-    return function likelihood(df::DataFrame)
+    likelihood_ = function likelihood(df::DataFrame)
         @assert all(x -> x in names(df), obs_names) "DataFrame must contain columns $(obs_names)"
         lkl = zeros(size(df, 1))
         for _n in obs_names
@@ -34,6 +34,7 @@ function gaussian_likelihood(data::DataFrame, σ::Float64)
         end
         return lkl
     end
+    return likelihood_
 end
 
 """
@@ -70,7 +71,7 @@ function gaussian_likelihood(data::DataFrame, σ::Vector{Float64})
     obs_names = names(data)
     @assert length(σ) == length(obs_names) "Length of σ must match number of observed variables"
 
-    return function likelihood(df::DataFrame)
+    likelihood_ = function likelihood(df::DataFrame)
         @assert all(x -> x in names(df), obs_names) "DataFrame must contain columns $(obs_names)"
         lkl = zeros(size(df, 1))
         for (_n, _σ) in zip(obs_names, σ)
@@ -78,6 +79,7 @@ function gaussian_likelihood(data::DataFrame, σ::Vector{Float64})
         end
         return lkl
     end
+    return likelihood_
 end
 
 """
@@ -115,12 +117,13 @@ function gaussian_likelihood(data::DataFrame, Σ::Matrix{Float64})
     obs_names = names(data)
     @assert size(Σ, 1) == length(obs_names) && size(Σ, 2) == length(obs_names) "Size of Σ must match number of observed variables"
 
-    return function likelihood(df::DataFrame)
+    likelihood_ = function likelihood(df::DataFrame)
         @assert all(x -> x in names(df), obs_names) "DataFrame must contain columns $(obs_names)"
         all(x -> x in names(df), obs_names) || throw(ArgumentError("DataFrame must contain columns $(obs_names)"))
         lkl = logpdf.([MvNormal(Vector(s_), Σ) for s_ in eachrow(df)], Vector.(eachrow(data)))
         return lkl
     end
+    return likelihood_
 end
 
 """
@@ -172,7 +175,7 @@ loglik = lik(samples)  # Returns log-likelihoods for each sample
 """
 function abc_likelihood(data::DataFrame, ε::Float64, distance_metric::Function)
     obs_names = names(data)
-    return function likelihood(df::DataFrame)
+    likelihood_ = function likelihood(df::DataFrame)
         @assert all(x -> x in names(df), obs_names) "DataFrame must contain columns $(obs_names)"
         lkl = zeros(size(df, 1))
         for _n in obs_names
@@ -180,4 +183,5 @@ function abc_likelihood(data::DataFrame, ε::Float64, distance_metric::Function)
         end
         return lkl
     end
+    return likelihood_
 end

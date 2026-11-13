@@ -26,4 +26,5 @@ TransportMapBayesian
 ```@docs
 bayesianupdating
 gaussian_likelihood
+abc_likelihood
 ```
