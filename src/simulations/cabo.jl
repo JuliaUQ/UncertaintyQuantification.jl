@@ -68,7 +68,7 @@ struct CABO
             σ²::Real = 1.0e-8,
             jitter::Real = 1.0e-10,
         )
-        
+
         initial_points >= 2 || throw(ArgumentError("initial_points must be at least 2"))
         lower_bound_iterations >= 0 && upper_bound_iterations >= 0 || throw(ArgumentError("iteration budgets must be nonnegative"))
         aleatory_samples >= 2 || throw(ArgumentError("aleatory_samples must be at least 2"))

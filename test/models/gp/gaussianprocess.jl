@@ -67,11 +67,15 @@ end
     data = DataFrame(x = [-1.0, 0.0, 1.0], y = [0.8, 0.0, 1.2])
     optimizer = MaximumLikelihoodEstimation(NelderMead(), Optim.Options(; iterations = 20); restarts = 2)
     global_rng = copy(Random.default_rng())
-    first = GaussianProcess(data, :y; kernel = 2.0 * SqExponentialKernel(),
-        optimizer = optimizer, rng = MersenneTwister(41))
+    first = GaussianProcess(
+        data, :y; kernel = 2.0 * SqExponentialKernel(),
+        optimizer = optimizer, rng = MersenneTwister(41)
+    )
     @test rand() == rand(global_rng)
-    second = GaussianProcess(data, :y; kernel = 2.0 * SqExponentialKernel(),
-        optimizer = optimizer, rng = MersenneTwister(41))
+    second = GaussianProcess(
+        data, :y; kernel = 2.0 * SqExponentialKernel(),
+        optimizer = optimizer, rng = MersenneTwister(41)
+    )
     a, b = DataFrame(x = [-0.5, 0.5]), DataFrame(x = [-0.5, 0.5])
     evaluate!(first, a; variance = true)
     evaluate!(second, b; variance = true)
