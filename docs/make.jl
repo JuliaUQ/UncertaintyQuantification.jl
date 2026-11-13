@@ -37,6 +37,7 @@ makedocs(;
             "Reliability Analysis" => "manual/reliability.md",
             "Metamodelling" => "manual/metamodels.md",
             "Simulations" => "manual/simulations.md",
+            "Markov Chain Monte Carlo" => "manual/markovchainmontecarlo.md",
             "Bayesian Updating" => "manual/bayesianupdating.md",
             "Parallelisation" => "manual/parallelisation.md",
             "Stochastic Dynamics" => "manual/dynamics.md",
