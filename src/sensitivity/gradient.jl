@@ -1,29 +1,35 @@
 function gradient(
-        models::Vector{<:UQModel},
-        inputs::Vector{<:UQInput},
-        x::DataFrame,
+        models::Union{UQModel, Vector{<:UQModel}},
+        inputs::Union{Symbol, Vector{Symbol}},
+        df::DataFrame,
         output::Symbol;
-        fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+        backend::AbstractADType = any(isa.(wrap(models), ExternalModel)) ? AutoFiniteDiff() : AutoMooncake()
     )
-    samples = copy(x)
+    models = wrap(models)
+    inputs = wrap(inputs)
 
-    random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
+    constants = setdiff(vcat(getproperty.(models, :inputs)...), inputs)
 
-    function f(x)
-        samples = sample(inputs, size(x, 1))
-        samples[:, random_names] .= x
+    out = copy(df[:, inputs])
 
-        evaluate!(models, samples)
+    function f(x, c...)
+        r = DataFrame([inputs..., constants...] .=> [x..., collect(c)...])
+        evaluate!(models, r)
 
-        return samples[:, output][1]
+        return only(r[1, output])
     end
 
-    reference = Matrix{Float64}(samples[:, random_names])
+    for (i, row) in enumerate(eachrow(df))
+        x = collect(row[inputs])
+        c = Constant.(collect(row[constants]))
 
-    g = _grad(f, fdm, reference)
+        g = DifferentiationInterface.gradient(f, backend, x, c...)
+        out[i, inputs] .= g
+    end
 
-    return (; zip(random_names, g)...)
+    return out
 end
+
 
 function gradient_in_standard_normal_space(
         models::Vector{<:UQModel},
