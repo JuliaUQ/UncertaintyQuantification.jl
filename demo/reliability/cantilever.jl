@@ -19,13 +19,12 @@ jd = JointDistribution(c, [E, ρ])
 
 inputs = [l, b, h, P, jd]
 
-inertia = Model(df -> df.b .* df.h .^ 3 / 12, [:b, :h], :I)
+inertia = Model(df -> df.b .* df.h .^ 3 / 12, :I)
 
 displacement = Model(
     df ->
     (df.ρ .* 9.81 .* df.b .* df.h .* df.l .^ 4) ./ (8 .* df.E .* df.I) .+
         (df.P .* df.l .^ 3) ./ (3 .* df.E .* df.I),
-    [:ρ, :b, :h, :l, :E, :I, :P],
     :w,
 )
 

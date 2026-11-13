@@ -15,7 +15,7 @@ using UncertaintyQuantification
 x = RandomVariable.(Normal(), [:x1, :x2])
 
 # Model
-y = Model(df -> df.x2 .+ 0.01 * df.x1 .^ 3 .+ sin.(df.x1), [:x1, :x2], :y)
+y = Model(df -> df.x2 .+ 0.01 * df.x1 .^ 3 .+ sin.(df.x1), :y)
 
 # Limit-state function
 g(df) = 3 .- df.y

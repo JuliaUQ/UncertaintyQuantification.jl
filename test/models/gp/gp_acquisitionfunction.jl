@@ -6,7 +6,7 @@
     input = RandomVariable(Uniform(-2, 12), :x1)
     n_input_samples = 10
     design = QuasiMonteCarloSampling(n_input_samples, LatinHypercubeSample())
-    model = Model(df -> df.x1 .^ 2 .* sin.(df.x1), [:x1], :y)
+    model = Model(df -> df.x1 .^ 2 .* sin.(df.x1), :y)
 
     data = sample(input, design)
     evaluate!(model, data)

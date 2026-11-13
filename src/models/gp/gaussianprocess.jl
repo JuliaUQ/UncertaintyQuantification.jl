@@ -205,7 +205,7 @@ julia> using QuasiMonteCarlo
 
 julia> x = RandomVariable(Uniform(0, 5), :x);
 
-julia> model = Model(df -> sin.(df.x), [:x], :y);
+julia> model = Model(df -> sin.(df.x), :y);
 
 julia> gp = GaussianProcess(
            x, model, QuasiMonteCarloSampling(10, LatinHypercubeSample()), :y;

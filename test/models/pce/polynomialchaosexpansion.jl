@@ -6,13 +6,13 @@
     model1 = Model(
         df -> begin
             return df.x1 .+ df.x2 .* df.x3
-        end, [:x1, :x2, :x3], :y1
+        end, :y1
     )
 
     model2 = Model(
         df -> begin
             return df.y1
-        end, [:y1], :y
+        end, :y
     )
 
     model = [model1, model2]
@@ -62,13 +62,13 @@ end
     model_a = Model(
         df -> begin
             return df.x1 .^ 2
-        end, [:x1], :ya
+        end, :ya
     )
 
     model_b = Model(
         df -> begin
             return df.ya .* 2
-        end, [:ya], :yb
+        end, :yb
     )
 
     Ψ0 = PolynomialChaosBasis([LegendreBasis()], p)
@@ -102,13 +102,13 @@ end
     model_a = Model(
         df -> begin
             return df.x1 .^ 2
-        end, [:x1], :ya
+        end, :ya
     )
 
     model_b = Model(
         df -> begin
             return df.ya .* 2
-        end, [:ya], :yb
+        end, :yb
     )
 
     Ψ1 = PolynomialChaosBasis([LegendreBasis()], p)

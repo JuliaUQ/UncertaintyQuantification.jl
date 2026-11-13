@@ -5,7 +5,7 @@
     X4 = Parameter(5, :X4)
 
     inputs = [X1, X2, X3, X4]
-    models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, [:X1, :X2, :X3, :X4], :g)
+    models = Model(df -> df.X1 .^ 2 .+ df.X2 .+ df.X3 .+ df.X4, :g)
 
     df = sample(inputs, 500)
 

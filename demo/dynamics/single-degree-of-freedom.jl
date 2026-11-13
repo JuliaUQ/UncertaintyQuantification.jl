@@ -35,7 +35,7 @@ function sdof(df)
     end
 end
 
-displacement = Model(sdof, [:gm, :m, :k, :c], :d)
+displacement = Model(sdof, :d)
 
 inputs = [gm, m, k, c]
 

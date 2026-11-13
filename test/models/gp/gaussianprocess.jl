@@ -38,7 +38,7 @@ end
 
     inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
 
-    model = Model(df -> df.a .* sin.(df.b .* df.x), [:x, :a, :b], :y)
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
 
     gp = GaussianProcess(
         inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
@@ -67,7 +67,7 @@ end
 
     inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
 
-    model = Model(df -> df.a .* sin.(df.b .* df.x), [:x, :a, :b], :y)
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
 
     gp = GaussianProcess(
         inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
@@ -92,7 +92,7 @@ end
 ] begin
 
     inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
-    model = Model(df -> df.a .* sin.(df.b .* df.x), [:x, :a, :b], :y)
+    model = Model(df -> df.a .* sin.(df.b .* df.x), :y)
 
     data = sample(inputs, (QuasiMonteCarloSampling(200, HaltonSample())))
     evaluate!(model, data)
@@ -127,7 +127,7 @@ end
     GPTestSetup,
 ] begin
     inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
-    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), [:x1, :x2], :y)
+    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), :y)
 
     gp = GaussianProcess(
         inputs, model, QuasiMonteCarloSampling(100, HaltonSample()), :y;
@@ -150,7 +150,7 @@ end
     GPTestSetup,
 ] begin
     inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
-    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), [:x1, :x2], :y)
+    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), :y)
 
     data = sample(inputs, (QuasiMonteCarloSampling(200, HaltonSample())))
     evaluate!(model, data)
@@ -176,7 +176,7 @@ end
     GPTestSetup,
 ] begin
     inputs = [RandomVariable(Uniform(0, 3), :x1), RandomVariable(Uniform(0, 3), :x2)]
-    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), [:x1, :x2], :y)
+    model = Model(df -> 0.3 .* sin.(2.0 * df.x1) .+ 0.3 .* cos.(2.0 * df.x2), :y)
 
     data = sample(inputs, (QuasiMonteCarloSampling(200, HaltonSample())))
     evaluate!(model, data)
@@ -212,7 +212,7 @@ end
 ] begin
 
     inputs = [RandomVariable(Uniform(0, 3), :x), Parameter(0.5, :a), Parameter(2.0, :b)]
-    model = Model(df -> df.a .* sin.(df.b .* df.x) .+ randn(size(df, 1)), [:x, :a, :b], :y)
+    model = Model(df -> df.a .* sin.(df.b .* df.x) .+ randn(size(df, 1)), :y)
 
     gp = GaussianProcess(
         inputs, model, QuasiMonteCarloSampling(200, HaltonSample()), :y;

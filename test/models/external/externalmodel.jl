@@ -43,7 +43,6 @@ end
 @testitem "Directory management" setup = [ReadWriteUtil, ExternalModel] begin
     dirname = tempname()
     ext = ExternalModel(
-        [:x, :y],
         sourcedir,
         sourcefile,
         radius,
@@ -70,7 +69,6 @@ end
     @test isapprox(result[1], sqrt.(df.x[1] .^ 2 + df.y[1] .^ 2))
 
     ext = ExternalModel(
-        [:x, :y],
         sourcedir,
         sourcefile,
         radius,
@@ -88,7 +86,6 @@ end
 
 @testitem "No Cleanup" setup = [ExternalModel] begin
     ext = ExternalModel(
-        [:x, :y],
         sourcedir,
         sourcefile,
         radius,
@@ -107,7 +104,6 @@ end
 
 @testitem "Cleanup" setup = [ExternalModel] begin
     ext = ExternalModel(
-        [:x, :y],
         sourcedir,
         sourcefile,
         radius,
@@ -125,7 +121,7 @@ end
     workdir = tempname()
 
     ext1 = ExternalModel(
-        [:x, :y], sourcedir, sourcefile, radius, solver; formats = numberformats, workdir = workdir
+        sourcedir, sourcefile, radius, solver; formats = numberformats, workdir = workdir
     )
 
     squared = Extractor(
@@ -135,7 +131,7 @@ end
     )
 
     ext2 = ExternalModel(
-        [:x, :y], sourcedir, ["squared.jl"], squared, solver2; workdir = workdir, cleanup = true
+        sourcedir, ["squared.jl"], squared, solver2; workdir = workdir, cleanup = true
     )
 
     evaluate!([ext1, ext2], df)
@@ -153,7 +149,6 @@ end
     )
 
     ext = ExternalModel(
-        [:x, :y],
         sourcedir,
         sourcefile,
         [radius, radiusvector],

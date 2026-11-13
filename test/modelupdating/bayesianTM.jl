@@ -4,7 +4,7 @@
 
     loglikelihood = (x1, x2) -> logpdf.(Normal(), x1) + logpdf.(Normal(), x2 - x1 .^ 2)
 
-    logL = Model(df -> loglikelihood(df.x1, df.x2), [:x1, :x2], :L)
+    logL = Model(df -> loglikelihood(df.x1, df.x2), :L)
 
     map = PolynomialMap(2, 2, Normal(), Softplus())
     quadrature = GaussHermiteWeights(3, 2)
@@ -42,7 +42,7 @@ end
 
     loglikelihood = (x1, x2) -> logpdf.(Normal(), x1) + logpdf.(Normal(), x2 - x1 .^ 2)
 
-    logL = Model(df -> loglikelihood(df.x1, df.x2), [:x1, :x2], :L)
+    logL = Model(df -> loglikelihood(df.x1, df.x2), :L)
 
     map = PolynomialMap(2, 2, Normal(), Softplus())
     quadrature = GaussHermiteWeights(3, 2)
@@ -70,7 +70,7 @@ end
     binary = joinpath(Sys.BINDIR, "julia")
     solver = Solver(binary, "radius.jl")
 
-    ext = ExternalModel([:x, :y], sourcedir, sourcefile, radius, solver)
+    ext = ExternalModel(sourcedir, sourcefile, radius, solver)
     tm_mooncake = TransportMapBayesian(prior, map, quadrature, AutoMooncake())
     @test_throws AssertionError bayesianupdating(df -> df.L, [ext], tm_mooncake)
 end

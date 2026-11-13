@@ -1,5 +1,4 @@
 struct ExternalModel <: UQModel
-    inputs::Vector{Symbol}
     sourcedir::String
     sources::Vector{String}
     extractors::Vector{Extractor}
@@ -11,7 +10,6 @@ struct ExternalModel <: UQModel
     scheduler::Union{<:AbstractHPCScheduler, Nothing}
 
     function ExternalModel(
-            inputs::Union{Symbol, Vector{Symbol}},
             sourcedir::String,
             sources::Union{String, Vector{String}},
             extractors::Union{Extractor, Vector{Extractor}},
@@ -22,9 +20,8 @@ struct ExternalModel <: UQModel
             cleanup::Bool,
             scheduler::Union{<:AbstractHPCScheduler, Nothing},
         )
-        inputs, sources, extractors, extras = wrap.([inputs, sources, extractors, extras])
+        sources, extractors, extras = wrap.([sources, extractors, extras])
         return new(
-            inputs,
             sourcedir,
             sources,
             extractors,
@@ -39,7 +36,6 @@ struct ExternalModel <: UQModel
 end
 
 function ExternalModel(
-        inputs::Union{Symbol, Vector{Symbol}},
         sourcedir::String,
         sources::Union{String, Vector{String}},
         extractors::Union{Extractor, Vector{Extractor}},
@@ -51,7 +47,7 @@ function ExternalModel(
         scheduler::Union{<:AbstractHPCScheduler, Nothing} = nothing,
     )
     return ExternalModel(
-        inputs, sourcedir, sources, extractors, solver, workdir, extras, formats, cleanup, scheduler
+        sourcedir, sources, extractors, solver, workdir, extras, formats, cleanup, scheduler
     )
 end
 

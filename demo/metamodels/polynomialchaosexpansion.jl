@@ -5,7 +5,7 @@ x = RandomVariable.(Uniform(-1, 1), [:x1, :x2])
 model = Model(
     df -> begin
         π .* (df.x1 .- 1) .* sin.(π .* df.x1) .* (1 .- df.x2 .^ 2)
-    end, [:x1, :x2], :y
+    end, :y
 )
 
 p = 8

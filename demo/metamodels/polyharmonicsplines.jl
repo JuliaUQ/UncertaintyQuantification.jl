@@ -7,7 +7,7 @@ b = Parameter(0.05, :b)
 inputs = [x; a; b]
 
 ishigami = Model(
-    df -> sin.(df.x1) .+ df.a .* sin.(df.x2) .^ 2 .+ df.b .* (df.x3 .^ 4) .* sin.(df.x1), [:x1, :x2, :x3, :a, :b], :y
+    df -> sin.(df.x1) .+ df.a .* sin.(df.x2) .^ 2 .+ df.b .* (df.x3 .^ 4) .* sin.(df.x1), :y
 )
 
 data = UncertaintyQuantification.sample(inputs, QuasiMonteCarloSampling(512, SobolSample()))

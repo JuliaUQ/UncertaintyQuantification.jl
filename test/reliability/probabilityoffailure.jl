@@ -17,12 +17,11 @@ end
     # Example 1
     u = RandomVariable.(Normal(), [:u1, :u2])
 
-    m = Model(df -> df.u1 .+ df.u2, [:u1, :u2], :u)
-    g = df -> 2^(1 / 2) .- df.u
+    g = df -> 2^(1 / 2) .- (df.u1 .+ df.u2)
 
-    _, β, dp, α = probability_of_failure(m, g, u, FORM())
+    _, β, dp, α = probability_of_failure(g, u, FORM())
 
-    pf, _, _ = probability_of_failure(m, g, u, ImportanceSampling(10000, β, dp, α))
+    pf, _, _ = probability_of_failure(g, u, ImportanceSampling(10000, β, dp, α))
 
     @test pf ≈ 0.159 rtol = 0.05
 end
@@ -37,18 +36,17 @@ end
     # Example 1
     u = RandomVariable.(Normal(), [:u1, :u2])
 
-    m = Model(df -> df.u1 .+ df.u2, [:u1, :u2], :u)
-    g = df -> 2^(1 / 2) .- df.u
+    g = df -> 2^(1 / 2) .- (df.u1 .+ df.u2)
 
-    pf, _ = probability_of_failure(m, g, u, LineSampling(100))
+    pf, _ = probability_of_failure(g, u, LineSampling(100))
 
     @test pf ≈ 0.159 rtol = 0.05
 
     @test_logs (:warn, "All samples for line 1 are outside the failure domain") probability_of_failure(
-        m, g, u, LineSampling(1, [0, 0.1])
+        g, u, LineSampling(1, [0, 0.1])
     )
     @test_logs (:warn, "All samples for line 1 are inside the failure domain") probability_of_failure(
-        m, g, u, LineSampling(1, collect(6:0.1:8))
+        g, u, LineSampling(1, collect(6:0.1:8))
     )
 end
 
@@ -58,18 +56,17 @@ end
     # Example 1
     u = RandomVariable.(Normal(), [:u1, :u2])
 
-    m = Model(df -> df.u1 .+ df.u2, [:u1, :u2], :u)
-    g = df -> 2^(1 / 2) .- df.u
+    g = df -> 2^(1 / 2) .- (df.u1 .+ df.u2)
 
-    pf, _ = probability_of_failure(m, g, u, AdvancedLineSampling(100))
+    pf, _ = probability_of_failure(g, u, AdvancedLineSampling(100))
 
     @test pf ≈ 0.159 rtol = 0.05
 
     @test_throws "No root found on initial line" probability_of_failure(
-        m, g, u, AdvancedLineSampling(1, [0, 0.1])
+        g, u, AdvancedLineSampling(1, [0, 0.1])
     )
     @test_throws "No root found on initial line" probability_of_failure(
-        m, g, u, AdvancedLineSampling(1, [10, 20])
+        g, u, AdvancedLineSampling(1, [10, 20])
     )
 end
 
@@ -85,7 +82,7 @@ end
 
     y = Parameter(sqrt(2) * quantile(Normal(), 1 - pf_analytical), :y)
 
-    g = Model(df -> df.x1 + df.x2, [:x1, :x2], :g)
+    g = Model(df -> df.x1 + df.x2, :g)
 
     F = df -> df.y .- df.g
 end
@@ -119,8 +116,8 @@ end
 
 @testitem "Probability of Failure: Radial Based Importance Sampling" setup = [PoF] begin
     inputs = RandomVariable.(Normal(), [:x1, :x2, :x3])
-    g1 = Model(df -> -df.x1 .- df.x2 .- df.x3 .+ 3 .* sqrt(3), [:x1, :x2, :x3], :g1)
-    g2 = Model(df -> -df.x3 .+ 3, [:x3], :g2)
+    g1 = @. Model(df -> -df.x1 - df.x2 - df.x3 + 3 * sqrt(3), :g1)
+    g2 = @. Model(df -> -df.x3 + 3, :g2)
 
     # reference solution 2.57e-3
     pf, _, _ = probability_of_failure(
@@ -147,11 +144,9 @@ end
     # Example 1
     u = RandomVariable.(Normal(), [:u1, :u2])
 
-    m = Model(df -> df.u1 .+ df.u2, [:u1, :u2], :u)
+    g = df -> 2^(1 / 2) .- (df.u1 .+ df.u2)
 
-    g = df -> 2^(1 / 2) .- df.u
-
-    pf, _, _ = probability_of_failure(m, g, u, RadialBasedImportanceSampling(10000))
+    pf, _, _ = probability_of_failure(g, u, RadialBasedImportanceSampling(10000))
 
     @test pf ≈ 0.159 rtol = 0.05
 end

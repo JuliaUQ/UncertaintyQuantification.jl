@@ -32,7 +32,7 @@ data = [
     0.05735639275860812
 ]
 
-M = Model(df -> s(df.a, df.F), [:a, :F], :disp)
+M = Model(df -> s(df.a, df.F), :disp)
 Like = df -> sum([logpdf.(Normal(y, σ), df.disp) for y in data])
 
 tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
