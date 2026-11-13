@@ -193,3 +193,44 @@ end
         @test nrow(agp.gp.data) == 10
     end
 end
+
+@testitem "Adaptive Reliability Acquisition Functions" setup = [TestSetup, AdaptiveGPSetup] begin
+
+    function concrete_subtypes(type)
+        concrete_types = []
+        for subtype in subtypes(type)
+            if isconcretetype(subtype)
+                push!(concrete_types, subtype)
+            else
+                append!(concrete_types, concrete_subtypes(subtype))
+            end
+        end
+        return concrete_types
+    end
+
+    acquistion_functions = concrete_subtypes(AbstractReliabilityAcquisitionFunction)
+    stopping = [
+        5.0,  # this will throw a warning for DeviationNumber
+        10.0e-10, # this will throw a warning for ExpectedFeasibility
+    ]
+
+    for acquisition_function in acquistion_functions
+        agp = AdaptiveGaussianProcess(
+            input, model, design, :y, acquisition_function();
+            candidate_sampling = candidate_sampling,
+            learn_hyperparameters = false,
+        )
+
+        @test agp.acquisition_function === acquisition_function()
+        if acquisition_function == ExpectedFeasibility
+            @test refine!(deepcopy(agp), 1.0e-5, 10) === nothing
+            @test_logs (:warn, "Iteration budget exceede during adaptive refinement")
+        end
+        if acquisition_function == DeviationNumber
+            @test refine!(deepcopy(agp), 1.0e-5, 10) === nothing
+            @test_logs (:warn, "Iteration budget exceede during adaptive refinement")
+        end
+        @test refine!(agp, 2) === nothing
+        @test nrow(agp.gp.data) == 10
+    end
+end
