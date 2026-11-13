@@ -113,12 +113,10 @@ export UQModel
 export AdvancedLineSampling
 export AdaptiveGaussianProcess
 export EmpiricalDistribution
-export BackwardFiniteDifferences
 export LinearBasisFunctionModel
 export BinnedData
 export BoxBehnken
 export CentralComposite
-export CentralFiniteDifferences
 export CloughPenzien
 export DeviationNumber
 export DoubleLoop
@@ -130,7 +128,6 @@ export ExpectedImprovement
 export ExpectedImprovementForGlobalFit
 export Extractor
 export FORM
-export ForwardFiniteDifferences
 export FractionalFactorial
 export FullFactorial
 export GaussianMixtureModel
@@ -272,7 +269,6 @@ include("modelupdating/bayesianMAP.jl")
 include("modelupdating/bayesianTM.jl")
 include("modelupdating/bayesianupdating.jl")
 
-include("sensitivity/finitedifferences.jl")
 include("sensitivity/gradient.jl")
 
 include("simulations/doe.jl")

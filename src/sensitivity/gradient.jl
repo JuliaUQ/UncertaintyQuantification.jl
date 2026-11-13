@@ -1,72 +1,65 @@
 function gradient(
-        models::Vector{<:UQModel},
-        inputs::Vector{<:UQInput},
-        x::DataFrame,
+        models::Union{UQModel, Vector{<:UQModel}},
+        inputs::Union{Symbol, Vector{Symbol}},
+        df::DataFrame,
         output::Symbol;
-        fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+        backend::AbstractADType = any(isa.(wrap(models), ExternalModel)) ? AutoFiniteDiff() : AutoMooncake()
     )
-    samples = copy(x)
+    models = wrap(models)
+    inputs = wrap(inputs)
 
-    random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
+    constants = setdiff(propertynames(df), inputs)
 
-    function f(x)
-        samples = sample(inputs, size(x, 1))
-        samples[:, random_names] .= x
+    out = copy(df[:, inputs])
 
-        evaluate!(models, samples)
+    function f(x, c...)
+        r = DataFrame([inputs..., constants...] .=> [x..., collect(c)...])
+        evaluate!(models, r)
 
-        return samples[:, output][1]
+        return only(r[1, output])
     end
 
-    reference = Matrix{Float64}(samples[:, random_names])
+    for (i, row) in enumerate(eachrow(df))
+        x = collect(row[inputs])
+        c = Constant.(collect(row[constants]))
 
-    g = _grad(f, fdm, reference)
+        g = DifferentiationInterface.gradient(f, backend, x, c...)
+        out[i, inputs] .= g
+    end
 
-    return (; zip(random_names, g)...)
+    return out
 end
 
 function gradient_in_standard_normal_space(
-        models::Vector{<:UQModel},
-        inputs::Vector{<:UQInput},
-        reference::DataFrame,
+        models::Union{UQModel, Vector{<:UQModel}},
+        inputs::Union{UQInput, Vector{<:UQInput}},
+        df::DataFrame,
         output::Symbol;
-        fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
-    )
-    samples = copy(reference)
-
-    random_names = names(
-        filter(
-            i ->
-            isa(i, RandomVariable{<:UnivariateDistribution}) ||
-                isa(i, JointDistribution),
-            inputs,
-        ),
+        backend::AbstractADType = any(isa.(wrap(models), ExternalModel)) ? AutoFiniteDiff() : AutoMooncake()
     )
 
-    function f(x)
-        samples[:, random_names] .= x
-        to_physical_space!(inputs, samples)
+    models = wrap(models)
+    inputs = wrap(inputs)
 
-        evaluate!(models, samples)
+    input_names = names(inputs)
 
-        return samples[:, output][1]
+    constants = setdiff(propertynames(df), input_names)
+
+    out = copy(df[:, input_names])
+
+    function f(x, c...)
+        r = DataFrame([input_names..., constants...] .=> [x..., collect(c)...])
+        to_physical_space!(inputs, r)
+        evaluate!(models, r)
+        return only(r[1, output])
     end
 
-    reference = Matrix{Float64}(samples[:, random_names])
+    for (i, row) in enumerate(eachrow(df))
+        x = collect(row[input_names])
+        c = Constant.(collect(row[constants]))
+        g = DifferentiationInterface.gradient(f, backend, x, c...)
+        out[i, input_names] .= g
+    end
 
-    g = _grad(f, fdm, reference)
-
-    return (; zip(random_names, g)...)
-end
-
-function _grad(f::Function, fdm::CentralFiniteDifferences, x)
-    return grad(central_fdm(fdm.order, fdm.derivative), f, x)[1]
-end
-
-function _grad(f::Function, fdm::ForwardFiniteDifferences, x)
-    return grad(forward_fdm(fdm.order, fdm.derivative), f, x)[1]
-end
-
-function _grad(f::Function, fdm::BackwardFiniteDifferences, x)
-    return grad(backward_fdm(fdm.order, fdm.derivative), f, x)[1]
+    return out
 end
