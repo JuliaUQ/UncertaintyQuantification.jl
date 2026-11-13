@@ -309,7 +309,7 @@ function probability_of_failure(
         learn_hyperparameters = sim.learn_hyperparameters
     )
 
-    refine!(adaptive_gp, sim.stopping, sim.maximum_samples)
+    refine!(adaptive_gp, sim.stopping, sim.maximum_samples - sim.initial_design.n)
 
     mc = MonteCarlo(sim.n)
 
