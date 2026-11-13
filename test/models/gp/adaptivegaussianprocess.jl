@@ -167,7 +167,19 @@ end
 
 @testitem "Adaptive Gaussian Process Acquisition Functions" setup = [TestSetup, AdaptiveGPSetup] begin
 
-    acquistion_functions = subtypes(AbstractGaussianProcessAcquisitionFunction)
+    function concrete_subtypes(type)
+        concrete_types = []
+        for subtype in subtypes(type)
+            if isconcretetype(subtype)
+                push!(concrete_types, subtype)
+            else
+                append!(concrete_types, concrete_subtypes(subtype))
+            end
+        end
+        return concrete_types
+    end
+
+    acquistion_functions = concrete_subtypes(AbstractGaussianProcessAcquisitionFunction)
 
     for acquisition_function in acquistion_functions
         agp = AdaptiveGaussianProcess(
