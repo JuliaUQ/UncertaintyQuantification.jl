@@ -35,14 +35,14 @@ data = [
 M = Model(df -> s(df.a, df.F), :disp)
 Like = df -> sum([logpdf.(Normal(y, σ), df.disp) for y in data])
 
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
-samples, evidence = bayesianupdating(Like, [M], tmcmc)
+tmcmc = TransitionalMarkovChainMonteCarlo(1_000, 3)
+samples, evidence = bayesianupdating(prior, Like, tmcmc, [M])
 
 T = PolynomialMap(2, 2)
 quadrature = GaussHermiteWeights(3, 2)
-transportmap = TransportMapBayesian(prior, T, quadrature)
+transportmap = TransportMapBayesian(T, quadrature)
 
-tm = bayesianupdating(Like, [M], transportmap)
+tm = bayesianupdating(prior, Like, transportmap, [M])
 
 df = sample(tm, 1000)
 scatter(df.a, df.F, alpha = 0.5, label = "TM Samples")

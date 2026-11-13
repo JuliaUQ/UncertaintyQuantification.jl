@@ -2,6 +2,20 @@
 
 Bayesian updating is a method of statistical inference where Bayes' theorem is used to update the probability distributions of model parameters based on prior beliefs and available data.
 
+All Bayesian methods use the same calling convention:
+
+```julia
+result = bayesianupdating(prior, likelihood, method)
+result = bayesianupdating(prior, likelihood, method, models)
+```
+
+Pass the prior explicitly as a `JointDistribution` or a vector of univariate
+`RandomVariable`s. `models` can be omitted, a single model, or a vector of models.
+The method object stores algorithm settings, including `islog`, which describes
+the likelihood values. Return values depend on the method: MCMC returns samples
+and a rejection fraction, TMCMC returns samples and log evidence, MAP returns
+modes, and Laplace estimation and transport maps return a joint distribution.
+
 ## Bayes' Theorem
 
 Bayes' theorem is defined as
@@ -71,6 +85,7 @@ As an example consider a synthetic data sequence ``Y`` as the outcome of 100 Ber
 
 ```@example metropolis
 using UncertaintyQuantification # hide
+using DataFrames # hide
  n = 100
  Y = rand(n) .<= 0.8
  return nothing # hide
@@ -89,22 +104,24 @@ logprior = df -> logpdf.(Beta(1,1), df.p)
 return nothing # hide
 ```
 
-**UncertaintyQuantification.jl** implements a variant of the MH algorithm known as single-component Metropolis-Hastings, where the proposal and acceptance step is performed independently for each dimension. To run the algorithm, we must first define the `SingleComponentMetropolisHastings` object which requires the `UnivariateDistribution` as a `proposal` (or a vector of proposal distributions), a `NamedTuple` for `x0` which defines the starting point of the Markov chain, the number of samples and the number of burn-in samples. The burn-in samples are used to start the chain but later discarded.
+**UncertaintyQuantification.jl** implements a variant of the MH algorithm known as single-component Metropolis-Hastings, where the proposal and acceptance step is performed independently for each dimension. To run the algorithm, we must first define the `SingleComponentMetropolisHastings` object which requires the `UnivariateDistribution` as a `proposal` (or a vector of proposal distributions), a `DataFrame` for `x0` with one starting point per row and one parameter per column, the number of samples per chain and the number of burn-in states per chain. The burn-in states are discarded before returning the samples.
+
+`MetropolisHastings` and `AdaptiveMetropolisHastings` accept the same DataFrame format for `x0`. Each starting row defines a separate chain. The returned samples are stacked in starting-row order, with `n` consecutive rows per chain, and the rejection fraction is aggregated across all chains. Each adaptive chain maintains its own covariance history. For example, `DataFrame(p=[0.2, 0.8])` starts two chains for the parameter `p`.
 
 ```@example metropolis
     proposal = Normal(0, 0.2)
-    x0 = (;p=0.5)
+    x0 = DataFrame(p=[0.5])
     n_samples= 4000
     burnin = 500
 
     mh = SingleComponentMetropolisHastings(proposal, x0, n_samples, burnin)
 ```
 
-The final optional argument `islog=true` can be omitted when passing the log-likelihood and log-prior. When set to `false`, the algorithm will `log` for both the likelihood and prior. Finally, the algorithm is executed using the `bayesianupdating` function. This function returns the samples and the average acceptance rate.
+The final optional argument `islog=true` can be omitted when passing a log-likelihood. Set it to `false` for likelihood densities. The prior is always passed as a distribution and evaluated using its `logpdf`. Finally, the algorithm is executed using the `bayesianupdating` function. This function returns the samples and the rejection fraction.
 
 ```@example metropolis
 
-mh_samples, α   = bayesianupdating(logprior, loglikelihood, mh)
+mh_samples, α   = bayesianupdating([RandomVariable(Beta(1, 1), :p)], loglikelihood, mh)
 return nothing # hide
 ```
 
@@ -148,21 +165,21 @@ loglikelihood =
 n = 2000
 burnin = 500
 
-x0 = (; x=0.0, y=0.0)
+x0 = DataFrame(x=[0.0], y=[0.0])
 
 proposal = Normal()
 
 mh = SingleComponentMetropolisHastings(proposal, x0, n, burnin)
 
-mh_samples, α = bayesianupdating(logprior, loglikelihood, mh)
+mh_samples, α = bayesianupdating(RandomVariable.(prior, [:x, :y]), loglikelihood, mh)
 
 scatter(mh_samples.x, mh_samples.y; lim=[-2, 2], legend = :none) # hide
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
-contour!(xs, ys, likelihood_eval, lim = [-2,2], legend = :none) # hide
+contour!(xs, ys, reshape(likelihood_eval, length(xs), length(ys)), lim = [-2,2], legend = :none) # hide
 savefig("mh-bimodal.svg"); nothing # hide
 ```
 
@@ -193,13 +210,13 @@ The complete TMCMC algorithm can be summarized as
 5. Generate a single-step Markov chain for each ``\theta_i``.
 6. Repeat steps (2) to (5) until (and including) ``(\beta_j=1)``.
 
-Returning to the bimodal example, this time using the TMCMC algorithm. In order to apply a different MCMC algorithm we only need to construct a [`TransitionalMarkovChainMonteCarlo`](@ref) object and pass it to the `bayesianupdating` method. The definition of prior and likelihood remains the same. In difference to the [`SingleComponentMetropolisHastings`](@ref) the log evidence is returned instead of the acceptance rate.
+Returning to the bimodal example, this time using the TMCMC algorithm. In order to apply a different MCMC algorithm we only need to construct a [`TransitionalMarkovChainMonteCarlo`](@ref) object and pass it to the `bayesianupdating` method. The definition of prior and likelihood remains the same. In difference to the [`SingleComponentMetropolisHastings`](@ref) the log evidence is returned instead of the rejection fraction.
 
 ```@example tmcmc
 
-tmcmc = TransitionalMarkovChainMonteCarlo(RandomVariable.(Uniform(-2,2), [:x, :y]), n, burnin)
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
-tmcmc_samples, S = bayesianupdating(logprior, loglikelihood, tmcmc)
+tmcmc_samples, S = bayesianupdating(RandomVariable.(prior, [:x, :y]), loglikelihood, tmcmc)
 
 scatter(tmcmc_samples.x, tmcmc_samples.y; lim=[-2, 2], label="TMCMC") # hide
 savefig("tmcmc.svg"); nothing # hide
@@ -207,17 +224,18 @@ savefig("tmcmc.svg"); nothing # hide
 
 ![](tmcmc.svg)
 
-The resulting scatter plot shows how TMCMC is able to sample both peaks of the bimodal target distribution. The standard implementation of TMCMC uses a multivariate Gaussian proposal distribution centred at each ``\theta_i`` with covariance matrix ``\Sigma`` estimated from the current likelihood scaled by a factor ``\beta^2``. This scaling factor defaults to ``0.2`` as suggested by the authors, but can optionally be passed to the constructor as a fourth argument. Application of different MCMC Algorithms nested in the TMCMC give rise to variants of the algorithm. For example, it is possible to use the previously introduced `SingleComponentMetropolisHastings` resulting in `SingleComponentTransitionalMarkovChainMonteCarlo`.
+The resulting scatter plot shows how TMCMC is able to sample both peaks of the bimodal target distribution. The standard implementation of TMCMC uses a multivariate Gaussian proposal distribution centred at each ``\theta_i`` with covariance matrix ``\Sigma`` estimated from the current likelihood scaled by a factor ``\gamma^2``. This scaling factor defaults to ``0.2`` as suggested by the authors, but can optionally be passed to the constructor as its third argument. Application of different MCMC Algorithms nested in the TMCMC give rise to variants of the algorithm. For example, it is possible to use the previously introduced `SingleComponentMetropolisHastings` resulting in `SingleComponentTransitionalMarkovChainMonteCarlo`.
 
 !!! note "Note"
 `SingleComponentTransitionalMarkovChainMonteCarlo` is currently not available but planned for implementation.
 
-For convenience, the prior can be automatically constructed from the random variables passed to `TransitionalMarkovChainMonteCarlo`.
+A vector of random variables can be passed directly as the prior; it is
+converted to an independent joint distribution for every Bayesian method.
 
 ```julia
-tmcmc = TransitionalMarkovChainMonteCarlo(RandomVariable.(Uniform(-2, 2), [:x, :y]), n, burnin)
-
-tmcmc_samples, S = bayesianupdating(loglikelihood, tmcmc)
+prior = RandomVariable.(Uniform(-2, 2), [:x, :y])
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
+tmcmc_samples, S = bayesianupdating(prior, loglikelihood, tmcmc)
 ```
 
 ## Maximum likelihood and maximum a posteriori estimates
@@ -234,7 +252,17 @@ Instead of using sample-based methods it is also possible to calculate the local
 
 Generally, the MAP estimate can be considered as regularized version of the MLE, since the prior distribution is used to constrain the estimates. Both estimates are found with optimization schemes (using Optim.jl) and thus come with the usual drawbacks, including convergence to local maxima. Both methods are therefore sensitive to initial conditions. Further note that both estimates do not calculate the mean but the mode of the respective distributions, i.e. for distributions that have a high variance these estimates do not provide much information about the parmater distribution.
 
-The implementation in **UncertaintyQuantification.jl** is analgous to the sampling methods. A [`MaximumAPosterioriBayesian`](@ref) or a [`MaximumLikelihoodBayesian`](@ref) object is created that takes the important settings as input. These are the prior, the optimization method to use and the starting points for optimization. For convenience, multiple points can be specified here. The optimization method can be chosen by setting the `optimizer` in the input, where `optimizer` is an optimizer specified by Optim.jl. The default is LBFGS. Finally, the `bayesianupdate`-function can be used again with the known syntax, i.e. a likelihood, `UQ-Model`-array and the desired object for the method are given and a `DataFrame` is returned. The log-densities are given in the `DataFrame` with the column name corresponding to the chosen approximation. Below is an example for the implementation.
+Create a [`MaximumLikelihoodEstimate`](@ref) for MLE and a
+[`MaximumAPosterioriBayesian`](@ref) for MAP. Both take a DataFrame of named
+starting points and store the bounds, filtering tolerance, `optimizer`, and
+`optimoptions`. Each row starts an optimization, and nearby modes are merged.
+The default optimizer is Optim.jl's LBFGS.
+
+Call `maximumlikelihood(likelihood, estimate, models)` for MLE; it does not take
+a prior. Call `bayesianupdating(prior, likelihood, estimate, models)` for MAP.
+The models argument is optional in both calls. Results are DataFrames with
+parameter columns and `logMLE` or `logMAP` for log-likelihood input. With
+`islog=false`, the value columns are `MLE` or `MAP` and contain densities.
 
 ```@example pointestimates
 using UncertaintyQuantification # hide
@@ -244,7 +272,7 @@ using DataFrames # hide
 μ = 0
 σ = .2
 
-prior = RandomVariable.(Normal(μ,σ), [:x, :y])
+prior = JointDistribution(RandomVariable.(Normal(μ,σ), [:x, :y]))
 
 N1 = MvNormal([-0.5, -0.5], 0.1)
 N2 = MvNormal([0.5, 0.5], 0.1)
@@ -253,27 +281,27 @@ loglikelihood =
     df -> log.([0.5 * pdf(N1, collect(x)) + 0.5 * pdf(N2, collect(x)) for x in eachrow(df)])
 
 priorFunction =
-    df -> prod.([pdf(Normal(μ, σ), collect(x)) for x in eachrow(df)])
+    df -> exp.(logpdf.(Normal(μ, σ), df.x) .+ logpdf.(Normal(μ, σ), df.y))
 
-x0 = [[.1, .1],[-.1,-.1]]
+x0 = DataFrame(x=[0.1, -0.1], y=[0.1, -0.1])
 
-MAP = MaximumAPosterioriBayesian(prior, x0)
-MLE = MaximumLikelihoodBayesian(prior, x0)
+MAP = MaximumAPosterioriBayesian(x0)
+MLE = MaximumLikelihoodEstimate(x0)
 
-mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
-mlestimate = bayesianupdating(loglikelihood, UQModel[], MLE)
+mapestimate = bayesianupdating(prior, loglikelihood, MAP)
+mlestimate = maximumlikelihood(loglikelihood, MLE)
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 prior_eval = priorFunction(df_points) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
-contour(xs, ys, likelihood_eval, lim = [-1,1], c = :red, colorbar = false) # hide
-contour!(xs, ys, prior_eval, lim = [-1,1], c = :blue, colorbar = false) # hide
+contour(xs, ys, reshape(likelihood_eval, length(xs), length(ys)), lim = [-1,1], c = :red, colorbar = false) # hide
+contour!(xs, ys, reshape(prior_eval, length(xs), length(ys)), lim = [-1,1], c = :blue, colorbar = false) # hide
 contour!(xs, ys, posterior_normalized, lim = [-1,1], c = :black, colorbar = false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1,1], label = "MAP estimate", c = :black)
 scatter!(mlestimate.x, mlestimate.y; lim=[-1,1], label = "ML estimate", c = :red)
@@ -292,6 +320,12 @@ The figure shows the (bimodal) likelihood in red and the prior distribution in b
 
 Laplace estimates extend the MAP to also include approximations of the covariance, leading to a Gaussian approximation of the posterior. `UQ.jl` implements the covariance estimation by calculating the inverse Hessian at the MAP estimates using `DifferentiationInterface.jl`. Similar to MLE and MAP, it is possible to use multi-point optimization to obtain a `MixtureModel` including multiple Gaussian components that are weighted according to their function values at the MAP estimates.
 
+The general `LaplaceEstimate` also approximates densities directly with
+`laplaceestimate(target, estimate)`. It stores the starting points and all
+optimization settings, including `optimizer`, `optimoptions`, and `adbackend`.
+For Bayesian updating, pass the prior separately; the wrapper constructs the
+log posterior and applies the same estimator.
+
 ```@example pointestimates
 using UncertaintyQuantification # hide
 using Plots # hide
@@ -300,7 +334,7 @@ using DataFrames # hide
 μ = 0
 σ = .2
 
-prior = RandomVariable.(Normal(μ,σ), [:x, :y])
+prior = JointDistribution(RandomVariable.(Normal(μ,σ), [:x, :y]))
 
 N1 = MvNormal([-0.5, -0.5], 0.1)
 N2 = MvNormal([0.5, 0.5], 0.1)
@@ -309,28 +343,28 @@ loglikelihood =
     df -> log.([0.5 * pdf(N1, collect(x)) + 0.5 * pdf(N2, collect(x)) for x in eachrow(df)])
 
 priorFunction =
-    df -> prod.([pdf(Normal(μ, σ), collect(x)) for x in eachrow(df)])
+    df -> exp.(logpdf.(Normal(μ, σ), df.x) .+ logpdf.(Normal(μ, σ), df.y))
 
-x0 = [[.1, .1],[-.1,-.1]]
+x0 = DataFrame(x=[0.1, -0.1], y=[0.1, -0.1])
 
-MAP = MaximumAPosterioriBayesian(prior, x0)
-LaplaceEstimator = LaplaceEstimateBayesian(prior, x0)
+MAP = MaximumAPosterioriBayesian(x0)
+LaplaceEstimator = LaplaceEstimate(x0)
 
-mapestimate = bayesianupdating(loglikelihood, UQModel[], MAP)
-laplaceestimate = bayesianupdating(loglikelihood, UQModel[], LaplaceEstimator)
+mapestimate = bayesianupdating(prior, loglikelihood, MAP, UQModel[])
+laplace_estimate = bayesianupdating(prior, loglikelihood, LaplaceEstimator)
 
 xs = range(-2, 2, length = 100); ys = range(-2, 2, length = 100) # hide
 ds = xs[2] - xs[1] # hide
 sample_points = reduce(vcat,[[x y] for x in xs, y in ys][:]) # hide
-lapl_pdf = pdf.(laplaceestimate, eachrow(sample_points)) # hide
-df_points = DataFrame(sample_points, :auto) # hide
+lapl_pdf = pdf.(Ref(laplace_estimate), eachrow(sample_points)) # hide
+df_points = DataFrame(sample_points, [:x, :y]) # hide
 prior_eval = priorFunction(df_points) # hide
 likelihood_eval = exp.(loglikelihood(df_points)) # hide
 posterior_unnormalized = likelihood_eval.*prior_eval # hide
 posterior_normalized = reshape(posterior_unnormalized / (sum(posterior_unnormalized) * ds^2), length(xs), length(ys)) # hide
 
 contour(xs, ys, posterior_normalized, lim = [-1,1], c = :black, levels = 5, linewidth=1, colorbar=false)
-contour!(xs, ys, lapl_pdf, lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
+contour!(xs, ys, reshape(lapl_pdf, length(xs), length(ys)), lim = [-1,1], c = :red, style=:dash, levels = 5, linewidth=2, colorbar=false)
 scatter!(mapestimate.x, mapestimate.y; lim=[-1, 1], label = "MAP estimate", c = :black)
 plot!([0,0],[0,0],c = :black, label = "Posterior", colorbar=false)
 plot!([0,0],[0,0],c = :red, style=:dash, label = "Laplace Estimate", colorbar=false)
@@ -354,19 +388,18 @@ The map coefficients are determined by minimizing the Kullback-Leibler (KL) dive
 
 For Bayesian updating with transport maps, create a [`TransportMapBayesian`](@ref) object that combines:
 
-- `prior`: The prior distribution over parameters given as a `Vector{RandomVariable}`
 - `transportmap`: A polynomial map structure (e.g., [`TransportMaps.PolynomialMap`](https://juliauq.github.io/TransportMaps.jl/stable/api/maps#TransportMaps.PolynomialMap))
 - `quadrature`: A quadrature scheme for KL divergence evaluation (see [TransportMaps.jl: Quadrature methods](https://juliauq.github.io/TransportMaps.jl/stable/Manuals/quadrature_methods))
 
-By default, the prior is transformed to standard normal for improved numerical conditioning.
+By default, independent univariate prior marginals are transformed to standard normal for improved numerical conditioning. For other joint priors, set `transformprior=false`. The prior is passed to `bayesianupdating`, rather than stored on the method.
 
-Pass the [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref) along with the log-likelihood function and any required models to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
+Pass the prior, log-likelihood, and [`TransportMapBayesian`](@ref) object to [`bayesianupdating`](@ref), followed by any required models, to optimize the map coefficients. The resulting optimized [`TransportMap`](@ref) can then:
 
 - Generate samples from the posterior by mapping from the reference space
 - Evaluate the posterior probability density function
 - Provide an analytical approximation of the posterior (unlike sampling methods)
 
-Optional settings include custom prior functions, gradient estimation methods via `DifferentiationInterface.jl`, and optimizers from `Optim.jl`.
+Optional settings include gradient estimation methods via `DifferentiationInterface.jl`, and optimizers from `Optim.jl`.
 
 The following example demonstrates Bayesian updating with transport maps using the same banana-shaped posterior as in [Map Construction from Target Density](@ref):
 
@@ -390,10 +423,10 @@ pm = PolynomialMap(2, 2)
 quad = GaussHermiteWeights(3, 2)
 
 # Create the TransportMapBayesian object
-tm = TransportMapBayesian(prior, pm, quad)
+tm = TransportMapBayesian(pm, quad)
 
 # Perform Bayesian updating to optimize the map coefficients
-tm_opt = bayesianupdating(loglikelihood, UQModel[], tm)
+tm_opt = bayesianupdating(prior, loglikelihood, tm)
 
 # Generate samples from the posterior
 samples = sample(tm_opt, 1000)

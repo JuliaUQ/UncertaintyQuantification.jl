@@ -1,5 +1,7 @@
 using UncertaintyQuantification
 using Plots
+using DataFrames
+using LinearAlgebra
 
 Y = [
     1.51 0.33
@@ -31,14 +33,35 @@ end
 
 prior = RandomVariable.(Uniform(0.01, 4), [:θ1, :θ2])
 
+x0 = DataFrame(θ1 = [1.0, 3.0], θ2 = [1.0, 0.5])
+Σ = 0.1 * I(2)
+proposal = MvNormal([0, 0], Σ)
+n, burnin = 1000, 1000
+mh = MetropolisHastings(proposal, x0, n, burnin)
+
+samples_mh, _ = bayesianupdating(prior, likelihood, mh, [λ1, λ2])
+scatter(samples_mh.θ1, samples_mh.θ2; lim = [0, 4], label = "MH (σ=0.1)", xlabel = "θ1", ylabel = "θ2")
+
+proposal_2 = MvNormal([0, 0], 2 * I(2))
+mh_2 = MetropolisHastings(proposal_2, x0, n, burnin)
+
+samples_mh_2, _ = bayesianupdating(prior, likelihood, mh_2, [λ1, λ2])
+scatter(samples_mh_2.θ1, samples_mh_2.θ2; lim = [0, 4], label = "MH (σ=2)", xlabel = "θ1", ylabel = "θ2")
+
+amh = AdaptiveMetropolisHastings(proposal, x0, n, burnin)
+
+samples_amh, _ = bayesianupdating(prior, likelihood, amh, [λ1, λ2])
+scatter(samples_amh.θ1, samples_amh.θ2; lim = [0, 4], label = "Adaptive MH (σ=0.1)", xlabel = "θ1", ylabel = "θ2")
+
+amh_2 = AdaptiveMetropolisHastings(proposal_2, x0, n, burnin)
+samples_amh_2, _ = bayesianupdating(prior, likelihood, amh_2, [λ1, λ2])
+scatter(samples_amh_2.θ1, samples_amh_2.θ2; lim = [0, 4], label = "Adaptive MH (σ=2)", xlabel = "θ1", ylabel = "θ2")
+
 n = 1000
 burnin = 0
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
-x0 = [[1.0, 1.0], [3.0, 0.5], [2.0, 2.0]]
-
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-
-samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
+samples, _ = bayesianupdating(prior, likelihood, tmcmc, [λ1, λ2])
 
 scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 

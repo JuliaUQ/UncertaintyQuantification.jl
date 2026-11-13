@@ -17,3 +17,9 @@ SubSetInfinity
 SubSetInfinityAdaptive
 QuasiMonteCarloSampling
 ```
+
+## Methods
+
+```@docs
+sample(target::Function, method::AbstractMarkovChainMonteCarlo)
+```
