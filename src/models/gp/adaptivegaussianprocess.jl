@@ -179,6 +179,10 @@ function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 
     iterations = 0
     while !converged
         iterations += 1
+        if iterations > budget
+            @warn "Iteration budget exceede during adaptive refinement"
+            break
+        end
         candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
         next_point, converged = _find_next_point_stopping(agp.gp, candidates, stopping, agp.acquisition_function)
 
@@ -188,10 +192,6 @@ function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 
         )
 
         @debug "added point" iteration = iterations point = NamedTuple(next_point[1, :])
-        if iterations > budget
-            @warn "Iteration budget exceede during adaptive refinement"
-            break
-        end
     end
     return nothing
 end

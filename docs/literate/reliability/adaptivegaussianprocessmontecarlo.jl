@@ -70,6 +70,7 @@ optimized after each enrichment.
 
 #md using Random #hide
 #md Random.seed!(67) #hide
+optim = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
 akmcs = AdaptiveGaussianProcessMonteCarlo(
     1_000_000,
     QuasiMonteCarloSampling(10, LatinHypercubeSample()),
@@ -87,5 +88,43 @@ evalauted, and the fitted GP surrogate. The fitted GP surrogate can be used to v
 the limit state function and the uncertainty of the prediction.
 ===#
 
-pf, std, samples, adaptive_gp = probability_of_failure([g1, g2, g3, g4], g, x, akmcs)
+pf_akmcs, std_akmcs, samples_akmcs, adaptive_gp = probability_of_failure([g1, g2, g3, g4], g, x, akmcs)
 #md nothing # hide
+
+#===
+Finally, we visualize the limit state function. We will also plot the GP approximation
+of the limit state function, and the samples evaluated by the adaptive GP Monte Carlo simulation.
+We also compare the results with a standard Monte Carlo simulation with 1 million samples.
+===#
+
+mc = MonteCarlo(1.0e6)
+
+pf_mc, std_mc, samples = probability_of_failure(models, g, x, mc)
+#md nothing # hide
+
+#jl # 2d functions for plotting the limit state function
+#jl # Exact limit state function
+lsf(x, y) = minimum(
+    [
+        3 + 0.1 * (x - y)^2 - (x + y) / sqrt(2),
+        3 + 0.1 * (x - y)^2 + (x + y) / sqrt(2),
+        (x - y) + k / sqrt(2),
+        (y - x) + k / sqrt(2),
+    ]
+)
+
+#jl # GP approximation of the limit state function
+function lsf_GP_adapt(x, y)
+    df = DataFrame([:x1, :x2] .=> [x, y])
+    evaluate!(adaptive_gp, df)
+    return only(df.g_mean)
+end
+
+implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
+implicit_plot!(lsf_GP_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
+scatter!(adaptive_gp.gp.data.x1, adaptive_gp.gp.data.x2)
+#md savefig("agp-lsf-and-samples.svg"); nothing # hide
+
+# Finally, the probability of failure estimates are printed.
+println("Probability of failure (Adaptive GP):  $pf_akmcs ± $std_akmcs")
+println("Probability of failure (Standard MC):  $pf_mc ± $std_mc")
