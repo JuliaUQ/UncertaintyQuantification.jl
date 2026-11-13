@@ -48,7 +48,7 @@ function probability_of_failure(
     random_names = names(filter(i -> isa(i, RandomUQInput), inputs))
     y::Vector{Float64} = zeros(length(random_names))
 
-    G = [models..., Model(performance, :performance)]
+    G = [models..., Model(performance, names(models), :performance)]
 
     sns = sample(inputs, 1)
 

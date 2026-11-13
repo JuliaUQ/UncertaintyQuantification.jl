@@ -260,7 +260,7 @@ function probability_of_failure(
 
     sns_inputs = mapreduce(transform_to_sns_input, vcat, inputs)
 
-    models = [models..., Model(x -> performance(x), :g_slice)]
+    models = [models..., Model(x -> performance(x), names(models), :g_slice)]
 
     sm_min = SlicingModel(models, inputs, false)
 

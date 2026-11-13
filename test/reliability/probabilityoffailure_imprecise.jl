@@ -7,7 +7,8 @@
     )
 
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z
+        , [X, Y], DoubleLoop(FORM())
     )
 
     @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1.0e-6
@@ -30,8 +31,9 @@ end
 
     jd = JointDistribution(c, [X, Y])
 
+    m = Model(df -> df.X .+ df.Y, [:X, :Y], :Z)
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, jd, DoubleLoop(FORM())
+        m, df -> 9 .+ df.Z, jd, DoubleLoop(FORM())
     )
 
     @test pf.lb ≈ cdf(Normal(2, sqrt(2)), -9) atol = 1.0e-6
@@ -46,7 +48,8 @@ end
     jd = JointDistribution(c, [X, Y])
 
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, jd, DoubleLoop(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z
+        , jd, DoubleLoop(FORM())
     )
 
     @test pf.lb ≈ cdf(Normal(2, sqrt(1^2 + 1^2 + 2 * (0.71 * 1 * 1))), -9)
@@ -57,8 +60,9 @@ end
     X = IntervalVariable(-1, 1, :X)
     Y = RandomVariable(Normal(0, 2), :Y)
 
+    m = Model(df -> df.X .+ df.Y, [:X, :Y], :Z)
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
+        m, df -> 9 .+ df.Z, [X, Y], DoubleLoop(FORM())
     )
 
     @test pf.lb ≈ cdf(Normal(1, 2), -9) atol = 1.0e-6
@@ -71,9 +75,11 @@ end
     )
     Y = RandomVariable(Normal(0, 2), :Y)
 
+    m = Model(df -> df.X .+ df.Y, [:X, :Y], :Z)
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
+        m, df -> 9 .+ df.Z, [X, Y], DoubleLoop(FORM())
     )
+
 
     @test pf.lb ≈ cdf(Normal(1, sqrt(5)), -9) atol = 1.0e-6
     @test pf.ub ≈ cdf(Normal(-1, sqrt(8)), -9) atol = 1.0e-6
@@ -84,7 +90,8 @@ end
     Y = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(1, 2))), :Y)
 
     pf, x_lb, x_ub = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], DoubleLoop(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z
+        , [X, Y], DoubleLoop(FORM())
     )
 
     @test pf.lb ≈ cdf(Normal(1, 1), -9) atol = 1.0e-6
@@ -103,7 +110,8 @@ end
     )
 
     pf, _ = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], RandomSlicing(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z
+        , [X, Y], RandomSlicing(FORM())
     )
 
     pbox_analyt = ProbabilityBox{Normal}(
@@ -131,7 +139,7 @@ end
     jd = JointDistribution(c, [X, Y])
 
     pf, _ = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, jd, RandomSlicing(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z, jd, RandomSlicing(FORM())
     )
 
     pbox_analyt = ProbabilityBox{Normal}(
@@ -148,7 +156,8 @@ end
     Y = RandomVariable(Normal(0, 2), :Y)
 
     pf, _ = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], RandomSlicing(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z
+        , [X, Y], RandomSlicing(FORM())
     )
 
     pbox_analyt = ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => 2))
@@ -165,9 +174,8 @@ end
     Y = RandomVariable(Normal(0, 2), :Y)
 
     pf, _ = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], RandomSlicing(FORM())
+        Model(df -> df.X .+ df.Y, [:X, :Y], :Z), df -> 9 .+ df.Z, [X, Y], RandomSlicing(FORM())
     )
-
     pbox_analyt = ProbabilityBox{Normal}(
         Dict(:μ => Interval(-1, 1), :σ => Interval(sqrt(5), sqrt(8)))
     )
@@ -181,8 +189,13 @@ end
     X = IntervalVariable(-1, 1, :X)
     Y = RandomVariable(ProbabilityBox{Normal}(Dict(:μ => 0, :σ => Interval(1, 2))), :Y)
 
+    m = Model(df -> df.X .+ df.Y, [:X, :Y], :Z)
     pf, _ = probability_of_failure(
-        UQModel[], df -> 9 .+ df.X .+ df.Y, [X, Y], RandomSlicing(FORM())
+        m, df -> 9 .+ df.Z, [X, Y], RandomSlicing(FORM())
+    )
+
+    pf, _ = probability_of_failure(
+        m, df -> 9 .+ df.Z, [X, Y], RandomSlicing(FORM())
     )
 
     pbox_analyt = ProbabilityBox{Normal}(Dict(:μ => Interval(-1, 1), :σ => Interval(1, 2)))

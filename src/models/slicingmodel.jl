@@ -5,6 +5,8 @@ struct SlicingModel <: UQModel
     max::Bool
 end
 
+name(m::SlicingModel) = name(m.models[end])
+
 # evaluates the transformed SNS problem
 function evaluate!(m::SlicingModel, df::DataFrame)
     intervals = filter(x -> isa(x, IntervalVariable), m.inputs)
