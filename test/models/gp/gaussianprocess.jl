@@ -32,6 +32,52 @@ end
 
 end
 
+@testitem "GaussianProcess explicit RNG and latent sampling" begin
+    using DataFrames
+    using Random
+    using Statistics
+    training = DataFrame(x = [-1.0, 1.0], y = [1.0, -1.0])
+    gp = GaussianProcess(training, :y; σ² = 0.25, learn_hyperparameters = false)
+    locations = DataFrame(x = [0.0, 0.0])
+    global_rng = copy(Random.default_rng())
+    @test sample!(MersenneTwister(17), gp, locations, 256; latent = true, jitter = 1.0e-10) === nothing
+    @test rand() == rand(global_rng)
+    @test maximum(abs.(locations.y[1] .- locations.y[2])) < 1.0e-3
+    @test all((locations.y[1] .< 0) .== (locations.y[2] .< 0))
+    @test 0.1 < mean(locations.y[1] .< 0) < 0.9
+    repeated = DataFrame(x = [0.0, 0.0])
+    sample!(MersenneTwister(17), gp, repeated, 256; latent = true, jitter = 1.0e-10)
+    @test locations.y == repeated.y
+    noisy = DataFrame(x = [0.0, 0.0])
+    sample!(MersenneTwister(17), gp, noisy, 256)
+    @test std(noisy.y[1] .- noisy.y[2]) > 0.3
+    @test_throws ArgumentError sample!(gp, locations; jitter = -1)
+    @test_throws ArgumentError sample!(gp, locations; jitter = NaN)
+    @test gp.data == training
+    agp = AdaptiveGaussianProcess(gp, RandomVariable(Normal(), :x), Model(df -> df.x, :y))
+    wrapped = DataFrame(x = [0.0, 0.0])
+    sample!(MersenneTwister(17), agp, wrapped, 256; latent = true, jitter = 1.0e-10)
+    @test wrapped == locations
+end
+
+@testitem "GaussianProcess explicit RNG for hyperparameter restarts" begin
+    using DataFrames
+    using Random
+    using Optim
+    data = DataFrame(x = [-1.0, 0.0, 1.0], y = [0.8, 0.0, 1.2])
+    optimizer = MaximumLikelihoodEstimation(NelderMead(), Optim.Options(; iterations = 20); restarts = 2)
+    global_rng = copy(Random.default_rng())
+    first = GaussianProcess(data, :y; kernel = 2.0 * SqExponentialKernel(),
+        optimizer = optimizer, rng = MersenneTwister(41))
+    @test rand() == rand(global_rng)
+    second = GaussianProcess(data, :y; kernel = 2.0 * SqExponentialKernel(),
+        optimizer = optimizer, rng = MersenneTwister(41))
+    a, b = DataFrame(x = [-0.5, 0.5]), DataFrame(x = [-0.5, 0.5])
+    evaluate!(first, a; variance = true)
+    evaluate!(second, b; variance = true)
+    @test a == b
+end
+
 @testitem "GaussianProcess 1D Inputs" setup = [
     GPTestSetup,
 ] begin
