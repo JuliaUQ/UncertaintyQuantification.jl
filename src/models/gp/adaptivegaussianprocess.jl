@@ -185,6 +185,7 @@ function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 
         end
         candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
         next_point, converged = _find_next_point_stopping(agp.gp, candidates, stopping, agp.acquisition_function)
+        converged && break
 
         evaluate!(agp.model, next_point)
         agp.gp = _refit_gp(
