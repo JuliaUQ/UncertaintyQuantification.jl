@@ -65,7 +65,7 @@ Jones, D. R., Schonlau, M., & Welch, W. J. (1998). Efficient Global
 Optimization of Expensive Black-Box Functions. Journal of Global
 Optimization, 13(4), 455–492. https://doi.org/10.1023/A:1008306431147
 """
-Base.@kwdef struct ExpectedImprovement <: AbstractReliabilityAcquisitionFunction
+Base.@kwdef struct ExpectedImprovement <: AbstractGaussianProcessAcquisitionFunction
     ξ::Float64 = 0.0
 end
 
@@ -215,7 +215,7 @@ J. M. (2008). Efficient Global Reliability Analysis for Nonlinear Implicit
 Performance Functions. AIAA Journal, 46(10), 2459-2468.
 https://doi.org/10.2514/1.34321
 """
-Base.@kwdef struct ExpectedFeasibility <: AbstractGaussianProcessAcquisitionFunction
+Base.@kwdef struct ExpectedFeasibility <: AbstractReliabilityAcquisitionFunction
     threshold::Float64 = 0.0
     epsilon_factor::Float64 = 2.0
 end
