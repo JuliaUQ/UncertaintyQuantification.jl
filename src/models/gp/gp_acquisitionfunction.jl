@@ -328,3 +328,14 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::Expected
     ind = argmax(eigf)
     return candidates[[ind], Cols(input)]
 end
+
+# generic function that returns next point and `false as stopping condition for learning
+# functions without explicitly defined stopping criterion
+function _find_next_point_stopping(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        stopping::Float64,
+        acquisition::AbstractGaussianProcessAcquisitionFunction
+    )
+    return _find_next_point(gp, candidates, acquisition), false
+end
