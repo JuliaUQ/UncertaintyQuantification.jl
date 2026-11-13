@@ -2,16 +2,16 @@
 
 ## Adaptive Gaussian Process Monte Carlo simulation
 
-This method estimates the probability of failure of a performance function by building 
-a Gaussian process (GP) surrogate from an initial design and iteratively enriching it 
-with one point at a time, chosen from a set of candidate samples by an acquisition 
-function, until the stopping criterion or the sample budget is reached. 
+This method estimates the probability of failure of a performance function by building
+a Gaussian process (GP) surrogate from an initial design and iteratively enriching it
+with one point at a time, chosen from a set of candidate samples by an acquisition
+function, until the stopping criterion or the sample budget is reached.
 It is also known in literature as AK-MCS (Adaptive Kriging Monte Carlo Simulation).
 
-### Example 1 from Echard et al. (2011)
+### Four-Branch Function (Example 1 from Echard et al. (2011))
 
-We consider the following series system of perfomance functions, as in Example 1
-of Echard et al. (2011):
+We consider the following series system of performance functions, as in Example 1
+of [echard2011akmcs](@cite):
 
 ```math
 G(x_1, x_2) = \min \left\{
@@ -24,19 +24,19 @@ G(x_1, x_2) = \min \left\{
 \right\}
 ```
 where ``k=6.0`` or ``k=7.0`` usually. The input random variables are independent and normally distributed, with
-``x_1, x_2 ∼ N(0, 1)``.
+``x_1, x_2 ∼ \mathcal{N}(0, 1)``.
 
 ===#
 
 #md using UncertaintyQuantification # hide
 #md using QuasiMonteCarlo # hide
-#md using ImplicitPlots, Plots # hide
+#md using Plots # hide
 #md using DataFrames # hide
 #md using Optim # hide
 
 #jl using UncertaintyQuantification
 #jl using QuasiMonteCarlo
-#jl using ImplicitPlots, Plots
+#jl using Plots
 #jl using DataFrames
 #jl using Optim
 
@@ -56,21 +56,23 @@ g = df -> min.(df.g1, df.g2, df.g3, df.g4)
 #md nothing # hide
 
 #===
-We now construct the adaptive Gaussian process Monte Carlo simulation. 
+We now construct the adaptive Gaussian process Monte Carlo simulation.
 We use a small number of initial samples to initially train the GP surrogate. The initial
-samples are generated using a quasi-Monte Carlo method. Very few samples are needed to 
+samples are generated using a quasi-Monte Carlo method. Very few samples are needed to
 initially train the GP surrogate. The acquisition function is set to `DeviationNumber()`,
 which selects the next point to evaluate based on the deviation number, i.e., the points
-with a high potential risk of crossing the predicted separator limit state function, 
-approximated by GP. The enrichment stops when the deviation number is below a threshold 
-of 2.0, or when the maximum number of samples is reached. The GP surrogate is fitted with 
-a constant mean function and a squared exponential kernel, and the hyperparameters are 
+with a high potential risk of crossing the predicted separator limit state function,
+approximated by GP. The enrichment stops when the deviation number is below a threshold
+of 2.0, or when the maximum number of samples is reached. The GP surrogate is fitted with
+a constant mean function and a squared exponential kernel, and the hyperparameters are
 optimized after each enrichment.
 ===#
 
 #md using Random #hide
 #md Random.seed!(67) #hide
-optim = MaximumLikelihoodEstimation(Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false))
+optim = MaximumLikelihoodEstimation(
+    Optim.Adam(alpha = 0.005), Optim.Options(; iterations = 10, show_trace = false)
+)
 akmcs = AdaptiveGaussianProcessMonteCarlo(
     1_000_000,
     QuasiMonteCarloSampling(10, LatinHypercubeSample()),
@@ -88,7 +90,8 @@ evalauted, and the fitted GP surrogate. The fitted GP surrogate can be used to v
 the limit state function and the uncertainty of the prediction.
 ===#
 
-pf_akmcs, std_akmcs, samples_akmcs, adaptive_gp = probability_of_failure([g1, g2, g3, g4], g, x, akmcs)
+pf_akmcs, std_akmcs, samples_akmcs, adaptive_gp =
+    probability_of_failure([g1, g2, g3, g4], g, x, akmcs)
 #md nothing # hide
 
 #===
@@ -102,31 +105,43 @@ mc = MonteCarlo(1.0e6)
 pf_mc, std_mc, samples = probability_of_failure(models, g, x, mc)
 #md nothing # hide
 
-#jl # 2d functions for plotting the limit state function
-#jl # Exact limit state function
-lsf(x, y) = minimum(
-    [
-        3 + 0.1 * (x - y)^2 - (x + y) / sqrt(2),
-        3 + 0.1 * (x - y)^2 + (x + y) / sqrt(2),
-        (x - y) + k / sqrt(2),
-        (y - x) + k / sqrt(2),
-    ]
+grid = -7.5:0.05:7.5
+n_grid = length(grid)
+
+contour_data = DataFrame(x1 = repeat(grid, inner = n_grid), x2 = repeat(grid, outer = n_grid))
+#md nothing # hide
+
+# Evaluate the `models` and compute the final limit state value ``g``
+evaluate!(models, contour_data)
+contour_data.g = g(contour_data)
+evaluate!(adaptive_gp, contour_data)
+#md nothing # hide
+
+# Reshape the data and contour the limit states
+true_values = reshape(contour_data.g, n_grid, n_grid)
+gp_values = reshape(contour_data.g_mean, n_grid, n_grid)
+
+contour(
+    grid, grid, true_values; levels = [0.0], linewidth = 1, label = "g",
+    xlabel = "x₁", ylabel = "x₂", cbar = false, xlims = (-8, 8), ylims = (-8, 8),
+    aspect_ratio = :equal, color = :gray,
 )
+contour!(grid, grid, gp_values; levels = [0.0], linewidth = 2, label = "GP mean", cbar = false, color = :black)
 
-#jl # GP approximation of the limit state function
-function lsf_GP_adapt(x, y)
-    df = DataFrame([:x1, :x2] .=> [x, y])
-    evaluate!(adaptive_gp, df)
-    return only(df.g_mean)
-end
+n_initial = akmcs.initial_design.n
+n_added = size(adaptive_gp.gp.data, 1) - n_initial
 
-implicit_plot(lsf; xlims = (-8, 8), ylims = (-8, 8), linecolor = :gray)
-implicit_plot!(lsf_GP_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :black)
-scatter!(adaptive_gp.gp.data.x1, adaptive_gp.gp.data.x2)
+scatter!(
+    adaptive_gp.gp.data.x1[1:n_initial], adaptive_gp.gp.data.x2[1:n_initial],
+    label = "$(n_initial) Initial"
+)
+scatter!(
+    adaptive_gp.gp.data.x1[(n_initial + 1):end], adaptive_gp.gp.data.x2[(n_initial + 1):end],
+    label = "$(n_added) Added"
+)
 #md savefig("agp-lsf-and-samples.svg"); nothing # hide
 
 # ![Exact limit state function and fitted GP, and samples from the GP](agp-lsf-and-samples.svg)
-
 
 # Finally, the probability of failure estimates are printed.
 println("Probability of failure (Adaptive GP):  $pf_akmcs ± $std_akmcs")
