@@ -21,4 +21,5 @@ probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Fun
 probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function,inputs::Union{Vector{<:UQInput},UQInput},sim::AbstractMonteCarlo)
 probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function,inputs::Union{Vector{<:UQInput},UQInput},dl::DoubleLoop)
 probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function,inputs::Union{Vector{<:UQInput},UQInput},rs::RandomSlicing)
+probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function,inputs::Union{Vector{<:UQInput},UQInput},agpmc::AdaptiveGaussianProcessMonteCarlo)
 ```

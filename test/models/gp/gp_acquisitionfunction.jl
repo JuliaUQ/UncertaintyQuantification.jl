@@ -78,7 +78,8 @@ end
 end
 
 @testitem "GP acquisition: DeviationNumber" setup = [TestSetup, QMC, GPAcquisitionSetup] begin
-    dn = DeviationNumber(; threshold = 0.0, stopping = 2.0)
+    stopping = 2.0
+    dn = DeviationNumber(; threshold = 0.0)
     μ, σ = mean_and_std(gp, candidates)
 
     u = abs.(μ .- dn.threshold) ./ σ
@@ -88,12 +89,13 @@ end
     @test result == expected
 
     # stopping criterion is true once min(U) exceeds the threshold
-    _, converged = UncertaintyQuantification._find_next_point_stopping(gp, candidates, dn)
-    @test converged == (minimum(u) >= dn.stopping)
+    _, converged = UncertaintyQuantification._find_next_point_stopping(gp, candidates, stopping, dn)
+    @test converged == (minimum(u) >= stopping)
 end
 
 @testitem "GP acquisition: ExpectedFeasibility" setup = [TestSetup, QMC, GPAcquisitionSetup] begin
-    eff = ExpectedFeasibility(; threshold = 0.0, epsilon_factor = 2.0, stopping = 0.001)
+    stopping = 0.001
+    eff = ExpectedFeasibility(; threshold = 0.0, epsilon_factor = 2.0)
     μ, σ = mean_and_std(gp, candidates)
     ε = eff.epsilon_factor .* σ
 
@@ -112,8 +114,8 @@ end
     result = UncertaintyQuantification._find_next_point(gp, candidates, eff)
     @test result == expected
 
-    _, converged = UncertaintyQuantification._find_next_point_stopping(gp, candidates, eff)
-    @test converged == (maximum(eff_values) <= eff.stopping)
+    _, converged = UncertaintyQuantification._find_next_point_stopping(gp, candidates, stopping, eff)
+    @test converged == (maximum(eff_values) <= stopping)
 end
 
 @testitem "GP acquisition: MaximinDistance" setup = [TestSetup, QMC, GPAcquisitionSetup] begin

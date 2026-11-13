@@ -50,11 +50,11 @@ original scale.
 # Keyword Arguments
 - `candidate_sampling`: Monte Carlo method for sampling candidates during
   refinement. Defaults to `MonteCarlo(100_000)`.
-- `mean`: Prior mean function. Defaults to `ZeroMean()`.
+- `mean`: Prior mean function. Defaults to `ConstMean(0.0)`.
 - `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
 - `normalize`: Whether to map inputs to standard normal space using their
   distributions. Defaults to `true`; `false` uses physical-space inputs.
-- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-5`.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
 - `learn_noise`: Whether to optimize the noise variance along with the other
   hyperparameters. Defaults to `false`; only takes effect when
   `learn_hyperparameters = true`.
@@ -91,10 +91,10 @@ function AdaptiveGaussianProcess(
         output::Symbol,
         acquisition_function::AbstractGaussianProcessAcquisitionFunction = MaximumVariance();
         candidate_sampling = MonteCarlo(100_000),
-        σ² = 1.0e-5,
+        σ² = 1.0e-10,
         learn_noise = false,
         learn_hyperparameters = true,
-        mean::AbstractGPs.MeanFunction = ZeroMean(),
+        mean::AbstractGPs.MeanFunction = ConstMean(0.0),
         kernel::Kernel = SqExponentialKernel(),
         normalize::Bool = true,
         optimizer::UncertaintyQuantification.AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
@@ -155,7 +155,46 @@ function refine!(agp::AdaptiveGaussianProcess, n::Int = 1)
 
         @debug "added point" iteration = i point = NamedTuple(next_point[1, :])
     end
-    return
+    return nothing
+end
+
+
+"""
+    refine!(agp::AdaptiveGaussianProcess, stopping, budget::Int = 1)
+
+Adaptively add up observations to `agp` until the stopping condition is met.
+Each iteration samples a candidates using `agp.candidate_sampling`, selects a
+candidate with `agp.acquisition_function`, evaluates `agp.model` there, and
+updates `agp.gp`. Training rows that duplicate existing rows are not appended.
+The fitted model is changed in place; the function returns `nothing`. Passing
+`n = 0` leaves the model unchanged.
+
+# Arguments
+- `agp`: Adaptive Gaussian process to refine.
+- `stopping`: stopping value for the termination criterion of the acquisition function
+- `budget`: Number of maximum adaptive iterations. Defaults to `1`.
+"""
+function refine!(agp::AdaptiveGaussianProcess, stopping::Float64, budget::Int = 1)
+    converged = false
+    iterations = 0
+    while !converged
+        iterations += 1
+        if iterations > budget
+            @warn "Iteration budget exceede during adaptive refinement"
+            break
+        end
+        candidates = UncertaintyQuantification.sample(agp.input, agp.candidate_sampling)
+        next_point, converged = _find_next_point_stopping(agp.gp, candidates, stopping, agp.acquisition_function)
+        converged && break
+
+        evaluate!(agp.model, next_point)
+        agp.gp = _refit_gp(
+            agp.gp, next_point[:, [agp.gp.inputs..., agp.gp.output]], agp.optimizer, agp.gp.σ², agp.learn_noise, agp.learn_hyperparameters
+        )
+
+        @debug "added point" iteration = iterations point = NamedTuple(next_point[1, :])
+    end
+    return nothing
 end
 
 """
