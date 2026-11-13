@@ -61,17 +61,29 @@ objective(
     ::MaximumLikelihoodEstimation
 ) = -logpdf(f(x), y)
 
-_initializer(θ) = θ .+ 0.5 .* randn(length(θ))
+_initializer(θ, rng::AbstractRNG = Random.default_rng()) = θ .+ 0.5 .* randn(rng, length(θ))
 
 function optimize_hyperparameters(
         gp::PriorGP,
         x::Union{Matrix{<:Real}, Vector{<:Real}},
         y::Vector{<:Real},
-        mle::MaximumLikelihoodEstimation
+        mle::MaximumLikelihoodEstimation;
+        rng::AbstractRNG = Random.default_rng(),
     )
     model, θ₀ = parameterize(gp)
     θ₀_flat, unflatten = ParameterHandling.flatten(θ₀)
-    obj = θ -> objective(model(unflatten(θ)), x, y, mle)
+    obj = if mle.optimizer isa Optim.ZerothOrderOptimizer
+        θ -> try
+            objective(model(unflatten(θ)), x, y, mle)
+        catch err
+            # Derivative-free searches can propose numerically singular kernels
+            # (e.g. huge length scales). Reject the trial, retaining valid fits.
+            err isa PosDefException || rethrow()
+            Inf
+        end
+    else
+        θ -> objective(model(unflatten(θ)), x, y, mle)
+    end
 
     # Prepare once, then reuse across restarts
     d = if mle.optimizer isa Optim.FirstOrderOptimizer
@@ -84,7 +96,7 @@ function optimize_hyperparameters(
     best_objective = Inf
 
     for restart in 0:mle.restarts
-        θ_init = restart == 0 ? copy(θ₀_flat) : _initializer(θ₀_flat)
+        θ_init = restart == 0 ? copy(θ₀_flat) : _initializer(θ₀_flat, rng)
 
         # Reset cached values and call counters; retain preparation.
         NLSolversBase.clear!(d)
@@ -98,5 +110,6 @@ function optimize_hyperparameters(
         end
     end
 
+    isnothing(best_gp) && error("GP hyperparameter optimization found no finite likelihood")
     return best_gp
 end

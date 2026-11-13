@@ -79,6 +79,7 @@ scale. The training DataFrame is stored by reference.
   Defaults to `true`.
 - `optimizer`: Hyperparameter-optimization strategy. Defaults to
   `MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))`.
+- `rng`: Random generator for hyperparameter restarts. Defaults to `Random.default_rng()`.
 
 # Examples
 ```jldoctest
@@ -103,7 +104,8 @@ function GaussianProcess(
         σ²::Float64 = 1.0e-10,
         learn_noise::Bool = false,
         learn_hyperparameters::Bool = true,
-        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
+        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false)),
+        rng::AbstractRNG = Random.default_rng(),
     )
 
     gp = GP(mean, kernel)
@@ -127,7 +129,8 @@ function GaussianProcess(
         σ² = σ²,
         learn_noise = learn_noise,
         learn_hyperparameters = learn_hyperparameters,
-        optimizer = optimizer
+        optimizer = optimizer,
+        rng = rng,
     )
 
     return GaussianProcess(gp, output, input_names, σ², transform, data[:, [input_names..., output]])
@@ -141,7 +144,8 @@ function _fit_gp(
         σ²::Float64 = 1.0e-10,
         learn_noise::Bool = false,
         learn_hyperparameters::Bool = true,
-        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false))
+        optimizer::AbstractHyperparameterOptimization = MaximumLikelihoodEstimation(Optim.LBFGS(), Optim.Options(; iterations = 100, show_trace = false)),
+        rng::AbstractRNG = Random.default_rng(),
     )
     # force learn_noise to false if learn_hyperparameters is false
     if !learn_hyperparameters && learn_noise
@@ -153,7 +157,7 @@ function _fit_gp(
 
     # optimize hyperparameters
     if learn_hyperparameters
-        _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer)
+        _gp = optimize_hyperparameters(PriorGP(gp, σ², learn_noise), x, y, optimizer; rng = rng)
         σ² = _gp.σ²
         # _gp is a PriorGP object, calling it directly involves the noise, so no need to add σ² again
         return posterior(_gp(x), y), σ²
@@ -318,7 +322,8 @@ function evaluate!(
     end
 
     if variance
-        σ² = var(finite_projection)
+        # Covariance subtraction can leave tiny negative variances through roundoff.
+        σ² = max.(var(finite_projection), 0.0)
         col = Symbol(string(gp.output, "_var"))
         data[!, col] = σ²
     end
@@ -326,7 +331,8 @@ function evaluate!(
 end
 
 """
-    sample!(gp::GaussianProcess, data::DataFrame, n::Int = 1)
+    sample!([rng::AbstractRNG,] gp::GaussianProcess, data::DataFrame, n::Int = 1;
+            latent = false, jitter = 0.0)
 
 Draw `n` independent realizations from the GP's joint posterior
 predictive distribution at the input locations in `data`. Each realization
@@ -338,6 +344,11 @@ replacing any existing values in that column. Return `nothing`.
 - `gp`: [`GaussianProcess`](@ref).
 - `data`: Prediction locations containing the columns in `gp.inputs`.
 - `n`: Number of realizations to draw. Defaults to `1`.
+
+Set `latent = true` to draw latent function values without observation noise.
+`jitter` is a nonnegative numerical variance added to the sampling covariance,
+useful for latent draws at nearly repeated locations. An explicit `rng` controls
+the draws; otherwise `Random.default_rng()` is used.
 
 Only the `gp.output` column of `data` is modified; other columns are left
 unchanged. The fitted posterior is not modified.
@@ -366,15 +377,29 @@ true
 function sample!(
         gp::GaussianProcess,
         data::DataFrame,
-        n::Int = 1
+        n::Int = 1;
+        latent::Bool = false,
+        jitter::Real = 0.0,
     )
+    return sample!(Random.default_rng(), gp, data, n; latent = latent, jitter = jitter)
+end
 
+function sample!(
+        rng::AbstractRNG,
+        gp::GaussianProcess,
+        data::DataFrame,
+        n::Int = 1;
+        latent::Bool = false,
+        jitter::Real = 0.0,
+    )
+    isfinite(jitter) && jitter >= 0 || throw(ArgumentError("jitter must be finite and nonnegative"))
     x = transform(data[:, gp.inputs], gp.transform)
-    finite_projection = gp.posterior(x, gp.σ²; obsdim = 2)
+    noise = (latent ? 0.0 : gp.σ²) + jitter
+    finite_projection = gp.posterior(x, noise; obsdim = 2)
 
-    samples = rand(finite_projection, n)
+    samples = rand(rng, finite_projection, n)
 
-    data[!, gp.output] .= collect(eachrow(samples))
+    data[!, gp.output] = collect(eachrow(samples))
     return nothing
 end
 

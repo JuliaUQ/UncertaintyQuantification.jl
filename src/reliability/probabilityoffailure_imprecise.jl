@@ -288,3 +288,95 @@ function transform_to_sns_input(i::UQInput)
 
     return UQInput[]
 end
+
+"""
+    probability_of_failure(
+        models, performance, inputs, method::CABO;
+        rng = Random.default_rng(), return_diagnostics = false,
+        initial_design = nothing, aleatory_design = nothing
+    )
+
+Estimate parametric imprecise failure probability, with failure defined by
+`performance(samples) < 0`. Evaluate `models` on physical inputs and fit one GP
+to the resulting performance values. Each adaptive iteration evaluates exactly
+one new input row; the total budget is `initial_points + lower_bound_iterations +
+upper_bound_iterations`. A row runs the complete model chain, so this count is not
+the number of individual component-model invocations.
+
+Returns `(pf::Interval, xmin::Vector, xmax::Vector)`, where locations follow the
+epistemic ordering documented for [`CABO`](@ref). Both endpoints use the final GP
+and all observations. With `return_diagnostics = true`, append a
+[`CABODiagnostics`](@ref) object as the fourth return value.
+
+The supplied RNG controls designs, GP optimization restarts and posterior draws.
+Models themselves are expected to be deterministic. No quadrature reference or
+knowledge of the model's analytical solution is used.
+
+Optional `initial_design` and `aleatory_design` matrices supply unit-cube designs
+instead of generating them. `initial_design` has `initial_points` rows, with random
+input quantiles first (input order), followed by normalized epistemic coordinates
+in the candidate-column order. `aleatory_design` has `aleatory_samples` rows and
+one quantile column per random input. Aleatory quantiles must be strictly in (0,1);
+epistemic coordinates may include 0 and 1. Designs must have distinct rows.
+"""
+function probability_of_failure(
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        method::CABO;
+        rng::AbstractRNG = Random.default_rng(),
+        return_diagnostics::Bool = false,
+        initial_design = nothing,
+        aleatory_design = nothing,
+    )
+    inputs, models = wrap.([inputs, models])
+    any(isimprecise, models) && throw(ArgumentError("CABO currently supports precise models only"))
+    layout = _cabo_input_map(inputs)
+    candidates = _cabo_candidates(layout, method)
+    na = length(layout.a)
+    data = if isnothing(initial_design)
+        _cabo_design(rng, layout, method.initial_points)
+    else
+        q = _cabo_validate_design(initial_design, method.initial_points, na + length(layout.e), na)
+        _cabo_design(layout, q)
+    end
+    aleatory = if isnothing(aleatory_design)
+        _cabo_aleatory(rng, layout, method.aleatory_samples)
+    else
+        q = _cabo_validate_design(aleatory_design, method.aleatory_samples, na, na)
+        _cabo_aleatory_table(layout, q)
+    end
+    _cabo_check_design(data, aleatory, candidates, layout, method)
+
+    samples = _cabo_evaluate!(data, layout, models, performance)
+    gp = _cabo_fit_gp(data, layout, method, rng)
+    probabilities, sampling_jitter = _cabo_probability_draws(gp, layout, candidates, aleatory, method, rng)
+    history = DataFrame(phase = Symbol[], call = Int[], candidate = Int[], expected_improvement = Float64[])
+
+    for (phase, budget) in ((:minimum, method.lower_bound_iterations), (:maximum, method.upper_bound_iterations))
+        for _ in 1:budget
+            # EI selects the epistemic setting; DeviationNumber selects the aleatory point.
+            ei = _cabo_expected_improvement(probabilities, phase == :minimum)
+            point, index = _cabo_next_point(gp, data, layout, candidates, aleatory, ei)
+            append!(samples, _cabo_evaluate!(point, layout, models, performance))
+            append!(data, point)
+
+            gp = _cabo_fit_gp(data, layout, method, rng)
+            probabilities, jitter = _cabo_probability_draws(gp, layout, candidates, aleatory, method, rng)
+            sampling_jitter = max(sampling_jitter, jitter)
+            push!(history, (phase, nrow(data), index, ei[index]))
+        end
+    end
+
+    means = vec(mean(probabilities; dims = 2))
+    imin, imax = argmin(means), argmax(means)
+    result = (Interval(means[imin], means[imax]), candidates[imin, :], candidates[imax, :])
+    if return_diagnostics
+        diagnostics = CABODiagnostics(
+            gp, data, samples, nrow(data), history,
+            layout.coordinates, candidates, aleatory, probabilities, sampling_jitter
+        )
+        return (result..., diagnostics)
+    end
+    return result
+end
