@@ -54,7 +54,7 @@ original scale.
 - `kernel`: Prior covariance kernel. Defaults to `SqExponentialKernel()`.
 - `normalize`: Whether to map inputs to standard normal space using their
   distributions. Defaults to `true`; `false` uses physical-space inputs.
-- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-5`.
+- `σ²`: Nonnegative observation-noise variance. Defaults to `1.0e-10`.
 - `learn_noise`: Whether to optimize the noise variance along with the other
   hyperparameters. Defaults to `false`; only takes effect when
   `learn_hyperparameters = true`.
