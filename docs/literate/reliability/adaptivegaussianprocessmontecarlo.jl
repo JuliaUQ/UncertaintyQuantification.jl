@@ -125,6 +125,9 @@ implicit_plot!(lsf_GP_adapt; xlims = (-8, 8), ylims = (-8, 8), linecolor = :blac
 scatter!(adaptive_gp.gp.data.x1, adaptive_gp.gp.data.x2)
 #md savefig("agp-lsf-and-samples.svg"); nothing # hide
 
+# ![Exact limit state function and fitted GP, and samples from the GP](agp-lsf-and-samples.svg)
+
+
 # Finally, the probability of failure estimates are printed.
 println("Probability of failure (Adaptive GP):  $pf_akmcs ± $std_akmcs")
 println("Probability of failure (Standard MC):  $pf_mc ± $std_mc")

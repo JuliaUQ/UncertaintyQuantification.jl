@@ -14,7 +14,7 @@ TransportMaps = "6fd49bf0-03ac-4dd1-b9b3-42e511274d6e"
 UncertaintyQuantification = "7183a548-a887-11e9-15ce-a56ab60bad7a"
 
 [sources]
-UncertaintyQuantification = {path = "/home/broggi/src/UncertaintyQuantification.jl"}
+UncertaintyQuantification = {path = "../"}
 
 [compat]
 Documenter = "1.14.1"
