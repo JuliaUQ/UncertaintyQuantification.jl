@@ -1,5 +1,5 @@
 """
-	SlurmInterface(options::Dict{String,String}, throttle::Integer, btachsize::Integer, extras::Vector{String})
+    SlurmInterface(options::Dict{String, String}, throttle::Integer, btachsize::Integer, extras::Vector{String})
 
 When `SlurmInterface` is passed to an `ExternalModel`, model evaluations are executed using slurm job arrays. This allows for heavier simulations or workflows to be sampled, without relying on Julia's native parallelism. `SlurmInterface` automatically generates a slurm job array script, and Julia waits for this job to finish before extracting results.
 
@@ -175,4 +175,73 @@ function run_slurm_array(
     cd(() -> run(p), dirpath)
 
     return nothing
+end
+
+"""
+    verify(si::SlurmInterface, n::Integer = 100)
+
+Verify that a [`SlurmInterface`](@ref) works on the current machine by running a small test workflow through slurm.
+
+A temporary Julia script computing `z = sqrt(x^2 + y^2)` is wrapped in an [`ExternalModel`](@ref) that uses `si` as its scheduler.
+The model is run in the directory `slurm-interface-verification` inside the current working directory, which is left in place after the call. The Julia binary must be available on the compute nodes (e.g. through `extras` of `si`).
+
+# Arguments
+
+    si : The `SlurmInterface` to verify
+    n  : The number of samples to evaluate, defaults to 100
+
+Returns `nothing`.
+
+# Examples
+```julia
+julia > slurm = SlurmInterface(Dict("account" => "HPC_account_1", "partition" => "CPU_partition"));
+
+julia > verify(slurm, 10)
+```
+"""
+function verify(si::SlurmInterface, n::Integer = 100)
+    sourcedir = tempdir()
+    sourcefile = basename(tempname())
+
+    open(
+        joinpath(sourcedir, sourcefile)
+        , "w"
+    ) do input
+        println(input, "x = {{{:x}}}")
+        println(input, "y = {{{:y}}}")
+        println(input, "z = sqrt(x^2+y^2)")
+        println(input, "write(\"out.txt\", string(z))")
+    end
+
+    radius = Extractor(
+        base -> begin
+            return parse(Float64, readline(joinpath(base, "out.txt")))
+        end, :r
+    )
+
+    binary = joinpath(Sys.BINDIR, "julia")
+    solver = Solver(binary, sourcefile)
+
+    ext = ExternalModel(
+        sourcedir,
+        sourcefile,
+        radius,
+        solver;
+        workdir = joinpath(pwd(), "slurm-interface-verification"),
+        scheduler = si,
+    )
+
+    inputs = RandomVariable.(Uniform(), [:x, :y])
+
+    samples = sample(inputs, n)
+    @info "Verifying SlurmInterface..."
+    evaluate!(ext, samples)
+    if isapprox(sqrt.(samples.x .^ 2 + samples.y .^ 2), samples.r)
+        @info "SlurmInterface verification sucessful."
+    else
+        @error "Failed to verify SlurmInterface."
+    end
+
+    return nothing
+
 end

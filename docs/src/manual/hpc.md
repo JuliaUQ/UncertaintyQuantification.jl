@@ -54,23 +54,27 @@ Slurm is tested _only_ on linux systems, not Mac or Windows. When testing `Uncer
 !!! warning "Testing locally on Linux"
     Certain Slurm tests may fail unless `test/test_utilities/` is added to PATH. To do this: `export PATH=UncertaintyQuantification.jl/test/test_utilities/:$PATH`. Additionally, _actual_ slurm submissions may fail if `test/test_utilities/sbatch` is called in place of your system installation. To find out which sbatch you're using, call `which sbatch`.
 
-If you'd like to **actually** test the Slurm interface your HPC machine:
+If you'd like to **actually** test the Slurm interface your HPC machine us the [`verify`](@ref) function.
 
 ```julia
-using Pkg
-Pkg.test("UncertaintyQuantification"; test_args = ["HPC", "YOUR_ACCOUNT", "YOUR_PARTITION"])
+options = Dict(
+    "account" => "YOUR_ACCOUNT",
+    "partition" => "YOUR_PARTITION",
+    "job-name" => "VerifySlurmInterface",
+    "nodes" => "1",
+    "ntasks" => "4",
+    "time" => "01:00:00"
+)
+
+slurm = SlurmInterface(
+    options;
+    throttle = 4,
+    batchsize = 50,
+)
+
+verify(slurm)
 ```
-
-or if you have a local clone, from the top directory:
-
-```julia
-julia --project
-using Pkg
-Pkg.test(; test_args=["HPC", "YOUR_ACCOUNT", "YOUR_PARTITION"])
-```
-
-`YOUR_ACCOUNT` and `YOUR_PARTITION` should be replaced with your account and partition you wish to use for testing. This test will submit 4 slurm job arrays, of a lightweight calculation (> 1 minute per job) requiring 1 core/task each.
-
+`YOUR_ACCOUNT` and `YOUR_PARTITION` should be replaced with your account and partition you wish to use for the verification. The function will submit 2 slurm job arrays of a lightweight calculation running 4 jobs at a time. This requires the `julia` binary to be available on your `$PATH`.
 ### Usage
 
 See [High Performance Computing](@ref) for a detailed example.
