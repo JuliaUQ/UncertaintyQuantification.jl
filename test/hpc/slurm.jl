@@ -1,6 +1,8 @@
 include("../test_utilities/read_write_utils.jl")
 
 @testset "Slurm" begin
+    HPC_account = "HPC_Account"
+    HPC_partition = "CPU_partition"
     sourcedir = tempdir()
     sourcefile = ["radius.jl"]
 
