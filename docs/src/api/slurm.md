@@ -11,3 +11,9 @@ Pages = ["slurm.md"]
 ```@docs
 SlurmInterface
 ```
+
+## Methods
+
+```@docs
+verify(si::SlurmInterface, n::Integer=100)
+```
