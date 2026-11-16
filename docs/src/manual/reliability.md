@@ -274,6 +274,55 @@ println("Coefficient of variation: $(std_sus/pf_sus)")
 
 For all the SubSet algorithms, the termination criteria are either reaching the failure domain or reaching the specified maximum number of levels. The latter is spurious (no samples have a negative performance function value), and the probability of failure is upper bounded by ``p_0^{N_{levels}}``. To avoid excessively long simulations when the failure domain does not exist or is not identified, the maximum number of levels is limited to ``\frac{\log(\epsilon)}{\log(p_0)}``, where ``\epsilon`` is machine epsilon for 1.0 (i.e. `eps(1.0)`).
 
+## Reliability Analysis with Surrogate Models
+
+Another approach to reduce the amount of costly model evaluations lies in the usage of (adaptive) surrogate models.
+There, the limit state function ``g(\boldsymbol{x})`` is replaced with a cheap-to-evaluate surrogate model.
+Often, an adaptive enrichment of the surrogate model is performed, where a new point is added to the design of the surrogate model based on an *acquisition function* (or *learning function*).
+
+### Adaptive Kriging Monte Carlo Simulation
+
+The AK-MCS method [echard2011akmcs](@cite) constructs an adaptive Gaussian Process surrogate model for the limit state function and uses traditional Monte Carlo Simulation to estimate the probability of failure.
+
+It is constructed with [`AdaptiveGaussianProcessMonteCarlo`](@ref) and one must pass it options of the adaptive GP surrogate and the Monte Carlo Smiluation performed with the refined surrogate. Specifically, the requiered inputs are:
+
+- `n`: The number of MC sample
+- `initial_design`: The sampler for the initial design
+- `acquisition_function`: A learning function of the type `AbstractReliabilityAcquisitionFunction`
+- `stopping`: The stopping threashold of the learning function
+- `maximum_samples`: The maximum number of samples added
+
+Optional arguments allow customization of the adaptive GP surrogate, for more information on that see [`AdaptiveGaussianProcess`](@ref) and its associated [manual](@ref adaptive-gp-manual) and [example](@ref adaptive-gp-example).
+
+Two acquisition functions are supported for [`AdaptiveGaussianProcessMonteCarlo`](@ref):
+
+- [`DeviationNumber`](@ref) following [echard2011akmcs](@cite), commonly also referred to as ``U``-function
+- [`ExpectedFeasibility`](@ref) following [bichon2008efficient](@cite)
+
+Then, the usage is the same as in the other simulation methods:
+
+```@example reliability
+using QuasiMonteCarlo # hide
+using Optim # hide
+akmcs = AdaptiveGaussianProcessMonteCarlo(
+    10_000_000,
+    QuasiMonteCarloSampling(10, LatinHypercubeSample()),
+    DeviationNumber(),
+    2.0,
+    200;
+    optimizer = MaximumLikelihoodEstimation(Optim.Adam())
+)
+
+pf_akmcs, std_akmcs, samples_akmcs, adaptive_gp =
+      probability_of_failure([y], g, x, akmcs)
+
+println("Probability of failure: $pf_akmcs")
+println("Coefficient of variation: $(std_akmcs/pf_akmcs)")
+println("Model evaluations: $(nrow(adaptive_gp.gp.data))")
+```
+
+A more in-depth guide is presented in the [Adaptive Gaussian Process Monte Carlo simulation](@ref) example.
+
 ## Imprecise Reliability Analysis
 
 if *epistemic* uncertainty is considered in the input variables it must also be propagated through the analysis, converting the probability of failure into an interval itself. The goal of the reliability analysis is then to find the lower bound ``\underline{p}_f`` and upper bound ``\overline{p}_f`` of the probability of failure such that ``p_f \in [\underline{p}_f, \overline{p}_f]``. Formally, this can be defined as

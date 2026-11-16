@@ -501,7 +501,7 @@ Further, GP models containing the following kernels are not supported for hyperp
 - Neural kernel networks `NeuralKernelNetwork`,
 - The [`GibbsKernel`](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/kernels/#KernelFunctions.GibbsKernel), whose lengthscale is defined by a function.
 
-## Adaptive Gaussian Process Regression
+## [Adaptive Gaussian Process Regression](@id adaptive-gp-manual)
 
 Fitting a good GP surrogate can require many expensive model evaluations if the initial
 experimental design is chosen naively. **Adaptive** (or _active learning_) Gaussian process

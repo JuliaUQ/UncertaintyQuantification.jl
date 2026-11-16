@@ -1,5 +1,5 @@
 #===
-## Adaptive Gaussian Process Regression
+## [Adaptive Gaussian Process Regression](@id adaptive-gp-example)
 
 Adaptive Gaussian process regression enriches an initial surrogate model with
 new evaluations selected by a learning function. At every iteration, the
