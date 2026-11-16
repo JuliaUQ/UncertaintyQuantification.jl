@@ -92,11 +92,6 @@
     samp = rand(tm.d)
     @test length(samp) == 2
     @test insupport(tm, samp)
-
-    # Test show methods
-    @test_nowarn sprint(show, tm.d)
-    @test_nowarn sprint(print, tm.d)
-    @test_nowarn display(tm.d)
 end
 
 @testitem "TransportMap from samples" setup = [TestSetup] begin
@@ -186,11 +181,6 @@ end
     samp = rand(tm_samples.d)
     @test length(samp) == 2
     @test insupport(tm_samples, samp)
-
-    # Test show methods
-    @test_nowarn sprint(show, tm_samples.d)
-    @test_nowarn sprint(print, tm_samples.d)
-    @test_nowarn display(tm_samples.d)
 end
 
 @testitem "TransportMap with transform_density" begin

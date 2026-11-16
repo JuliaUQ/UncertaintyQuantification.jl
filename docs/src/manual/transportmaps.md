@@ -58,7 +58,7 @@ where:
 
 ## Implementation
 
-In _UncertaintyQuantification.jl_, transport maps are implemented using the [TransportMaps.jl](https://juliauq.github.io/TransportMaps.jl/stable/) package.
+In _UncertaintyQuantification.jl_, transport maps are implemented using the [TransportMaps.jl](https://juliauq.github.io/TransportMaps.jl/stable/) package [transportmapsjl](@cite).
 This package provides the backend implementation, including the construction of basis functions, rectifier functions, and the optimization procedures to determine the map coefficients.
 
 There are two main approaches to constructing transport maps, depending on the available information about the target distribution:
@@ -116,8 +116,8 @@ logtarget(x) = logpdf.(Normal(), x[1]) + logpdf.(Normal(), x[2] .- x[1].^2)
 # Defaults: reference=Normal(), rectifier=Softplus(), basis=LinearizedHermiteBasis()
 pm = PolynomialMap(2, 2)
 
-# Define 2D quadrature using a Gauss-Hermite tensor product with 3 points per dimension
-quad = GaussHermiteWeights(3, 2)
+# Define 2D quadrature using a Gauss-Hermite tensor product with order 1
+quad = GaussHermiteWeights(1, 2)
 
 # Construct the target density and fit the map
 target = MapTargetDensity(logtarget) # Requires a log-density function
