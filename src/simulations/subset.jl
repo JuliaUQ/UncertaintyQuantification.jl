@@ -194,7 +194,9 @@ function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::AbstractSubSetSimulation,
+        sim::AbstractSubSetSimulation;
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
     )
     inputs, models = wrap.([inputs, models])
     print("11111111")
@@ -204,8 +206,7 @@ function probability_of_failure(
 
     samples = [sample(inputs, sim)]
 
-    # TODO give simname etc here
-    evaluate!(models, samples[end]; sim_name = "subset", subset_lvl = 1)
+    evaluate!(models, samples[end]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = 1)
 
     performance = [performancefunction(samples[end])]
 
@@ -252,7 +253,10 @@ function probability_of_failure(
             models,
             performancefunction,
             inputs,
-            sim,
+            sim;
+            sim_name = sim_name,
+            sim_folder = sim_folder,
+            subset_lvl = i
         )
 
         push!(samples, nextsamples)
@@ -279,7 +283,10 @@ function nextlevelsamples(
         models::Union{Vector{<:UQModel}, UQModel},
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::SubSetSimulation,
+        sim::SubSetSimulation;
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        subset_lvl = nothing,
     )
     nextlevelsamples = [samples]
     nextlevelperformance = [performance]
@@ -323,8 +330,7 @@ function nextlevelsamples(
         α_accept_indices = findall(α_accept)
         if any(α_accept)
             new_samples = chainsamples[α_accept, :]
-            # TODO give sim name here
-            evaluate!(models, new_samples)
+            evaluate!(models, new_samples, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
 
             new_samplesperformance = performancefunction(new_samples)
             reject = new_samplesperformance .> threshold
@@ -371,7 +377,10 @@ function nextlevelsamples(
         models::Union{Vector{<:UQModel}, UQModel},
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::SubSetInfinity,
+        sim::SubSetInfinity;
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        subset_lvl = nothing,
     )
     samples_per_seed = Int64(floor(sim.n / length(performance)))
 
@@ -386,7 +395,10 @@ function nextlevelsamples(
         inputs,
         ρ,
         sim.s,
-        samples_per_seed,
+        samples_per_seed;
+        sim_name = sim_name,
+        sim_folder = sim_folder,
+        subset_lvl = subset_lvl,
     )
 
     @debug "Acceptance rate" α
@@ -401,7 +413,10 @@ function nextlevelsamples(
         models::Union{Vector{<:UQModel}, UQModel},
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::SubSetInfinityAdaptive,
+        sim::SubSetInfinityAdaptive;
+        sim_name = sim_name,
+        sim_folder = sim_folder,
+        subset_lvl = subset_lvl,
     )
     a_star = 0.44 # Optimal acceptance rate, so say Papaioannou, I., et. al.
 
@@ -465,7 +480,10 @@ function conditional_sampling(
         inputs::Union{Vector{<:UQInput}, UQInput},
         ρ::Real,
         σ::Real,
-        N::Integer,
+        N::Integer;
+        sim_name::String = "",
+        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        subset_lvl = nothing,
     )
     α = 0.0
 
@@ -488,8 +506,7 @@ function conditional_sampling(
 
         to_physical_space!(inputs, chain_samples[k])
 
-        #TODO give sim name here
-        evaluate!(models, chain_samples[k])
+        evaluate!(models, chain_samples[k]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
 
         chain_performance[k] = performancefunction(chain_samples[k])
 

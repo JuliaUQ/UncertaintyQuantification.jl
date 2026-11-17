@@ -102,14 +102,14 @@ function evaluate!(
         )
     end
 
-    if sim_name
+    if sim_name != ""
         sim_name = "-$(sim_name)"
     end
     n = size(df, 1)
     digits = ndigits(n)
 
     results = pmap(1:n) do i
-        if subset_lvl
+        if !isnothing(subset_lvl)
             path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
         else
             path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
