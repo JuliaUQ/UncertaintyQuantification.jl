@@ -16,4 +16,5 @@ SubSetSimulation
 SubSetInfinity
 SubSetInfinityAdaptive
 QuasiMonteCarloSampling
+AdaptiveGaussianProcessMonteCarlo
 ```

@@ -43,6 +43,7 @@ makedocs(;
             "High Performance Computing" => "manual/hpc.md",
         ],
         "Examples" => [
+            "Reliability Analysis" => "examples/reliability.md",
             "Gaussian Mixture Model" => "examples/inputs.md",
             "External Models" => "examples/external.md",
             "Metamodels" => "examples/metamodels.md",

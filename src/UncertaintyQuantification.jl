@@ -91,10 +91,12 @@ abstract type AbstractTransportMap <: ContinuousMultivariateDistribution end
 
 abstract type AbstractAcquisitionFunction end
 abstract type AbstractGaussianProcessAcquisitionFunction <: AbstractAcquisitionFunction end
+abstract type AbstractReliabilityAcquisitionFunction <: AbstractGaussianProcessAcquisitionFunction end
 
 # Types
 export AbstractAcquisitionFunction
 export AbstractGaussianProcessAcquisitionFunction
+export AbstractReliabilityAcquisitionFunction
 export AbstractBayesianMethod
 export AbstractBayesianPointEstimate
 export AbstractDesignOfExperiments
@@ -112,6 +114,7 @@ export UQModel
 # Structs
 export AdvancedLineSampling
 export AdaptiveGaussianProcess
+export AdaptiveGaussianProcessMonteCarlo
 export EmpiricalDistribution
 export BackwardFiniteDifferences
 export LinearBasisFunctionModel
@@ -278,6 +281,7 @@ include("sensitivity/gradient.jl")
 include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
+include("simulations/adaptivegaussianprocessmontecarlo.jl")
 include("simulations/radialbasedimportancesampling.jl")
 include("simulations/subset.jl")
 

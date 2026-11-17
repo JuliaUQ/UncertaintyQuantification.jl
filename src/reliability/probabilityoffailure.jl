@@ -267,6 +267,62 @@ function probability_of_failure(
     return pf, cov * pf, samples
 end
 
+"""
+    probability_of_failure(models::Union{Vector{<:UQModel},UQModel},performance::Function),inputs::Union{Vector{<:UQInput},UQInput},sim::AdaptiveGaussianProcessMonteCarlo)
+
+Perform a reliability analysis with an adaptive Gaussian process Monte Carlo simulation.
+Returns the estimated probability of failure `pf`, the standard deviation `σ`, the `DataFrame` containing the evaluated `samples`, and the fitted `AdaptiveGaussianProcess`.
+
+## Examples
+```
+pf, σ, samples, adaptive_gp = probability_of_failure(model, performance, inputs, sim)
+```
+"""
+function probability_of_failure(
+        models::Union{Vector{<:UQModel}, UQModel},
+        performance::Function,
+        inputs::Union{Vector{<:UQInput}, UQInput},
+        sim::AdaptiveGaussianProcessMonteCarlo,
+    )
+    inputs, models = wrap.([inputs, models])
+
+    if isimprecise(inputs, models)
+        error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
+    end
+
+    # add the performance to the model vector
+    models = UQModel[models..., Model(df -> performance(df), :g)]
+
+    adaptive_gp = AdaptiveGaussianProcess(
+        inputs,
+        models,
+        sim.initial_design,
+        :g,
+        sim.acquisition_function;
+        candidate_sampling = sim.candidate_sampling,
+        mean = sim.mean,
+        kernel = sim.kernel,
+        normalize = sim.normalize,
+        optimizer = sim.optimizer,
+        σ² = sim.σ²,
+        learn_noise = sim.learn_noise,
+        learn_hyperparameters = sim.learn_hyperparameters
+    )
+
+    refine!(adaptive_gp, sim.stopping, sim.maximum_samples - sim.initial_design.n)
+
+    mc = MonteCarlo(sim.n)
+
+    pf, std, samples = probability_of_failure(
+        adaptive_gp,
+        df -> df.g_mean,
+        inputs,
+        mc
+    )
+
+    return pf, std, samples, adaptive_gp
+end
+
 # Allow to calculate the pf using only a performance function but no model
 function probability_of_failure(
         performance::Function, inputs::Union{Vector{<:UQInput}, UQInput}, sim::Any

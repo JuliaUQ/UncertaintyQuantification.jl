@@ -162,17 +162,27 @@ Echard, B., Gayton, N., & Lemaire, M. (2011). AK-MCS: An active learning
 reliability method combining Kriging and Monte Carlo Simulation. Structural Safety, 33(2),
 145–154. https://doi.org/10.1016/j.strusafe.2011.01.002
 """
-Base.@kwdef struct DeviationNumber <: AbstractGaussianProcessAcquisitionFunction
+Base.@kwdef struct DeviationNumber <: AbstractReliabilityAcquisitionFunction
     threshold::Float64 = 0.0
-    stopping::Float64 = 2.0
 end
 
-function _find_next_point(gp::GaussianProcess, candidates::DataFrame, dn::DeviationNumber)
-    next_point, _ = _find_next_point_stopping(gp, candidates, dn)
+function _find_next_point(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        dn::DeviationNumber
+    )
+
+    next_point, _ = _find_next_point_stopping(gp, candidates, 0.0, dn)
     return next_point
 end
 
-function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, dn::DeviationNumber)
+function _find_next_point_stopping(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        stopping::Float64,
+        dn::DeviationNumber
+    )
+
     input = propertynames(candidates)
     candidates = copy(candidates)
     mean_col, var_col = _mean_var_cols(gp)
@@ -184,7 +194,8 @@ function _find_next_point_stopping(gp::GaussianProcess, candidates::DataFrame, d
     u = [s > 0 ? abs(m - dn.threshold) / s : Inf for (m, s) in zip(μ, σ)]
     val, ind = findmin(u)
 
-    return candidates[[ind], Cols(input)], (val >= dn.stopping)
+    @debug "min(U(x)) value" val
+    return candidates[[ind], Cols(input)], (val >= stopping) # return the true condition for stopping
 end
 
 function _mean_var_cols(gp::GaussianProcess)
@@ -204,10 +215,9 @@ J. M. (2008). Efficient Global Reliability Analysis for Nonlinear Implicit
 Performance Functions. AIAA Journal, 46(10), 2459-2468.
 https://doi.org/10.2514/1.34321
 """
-Base.@kwdef struct ExpectedFeasibility <: AbstractGaussianProcessAcquisitionFunction
+Base.@kwdef struct ExpectedFeasibility <: AbstractReliabilityAcquisitionFunction
     threshold::Float64 = 0.0
     epsilon_factor::Float64 = 2.0
-    stopping::Float64 = 0.001
 end
 
 function _find_next_point(
@@ -215,13 +225,14 @@ function _find_next_point(
         candidates::DataFrame,
         eff::ExpectedFeasibility,
     )
-    next_point, _ = _find_next_point_stopping(gp, candidates, eff)
+    next_point, _ = _find_next_point_stopping(gp, candidates, Inf, eff)
     return next_point
 end
 
 function _find_next_point_stopping(
         gp::GaussianProcess,
         candidates::DataFrame,
+        stopping::Float64,
         eff::ExpectedFeasibility,
     )
     input = propertynames(candidates)
@@ -261,7 +272,7 @@ function _find_next_point_stopping(
 
     val, ind = findmax(eff_values)
 
-    return candidates[[ind], Cols(input)], (val <= eff.stopping)
+    return candidates[[ind], Cols(input)], (val <= stopping)
 end
 
 """
@@ -316,4 +327,15 @@ function _find_next_point(gp::GaussianProcess, candidates::DataFrame, ::Expected
 
     ind = argmax(eigf)
     return candidates[[ind], Cols(input)]
+end
+
+# generic function that returns next point and `false as stopping condition for learning
+# functions without explicitly defined stopping criterion
+function _find_next_point_stopping(
+        gp::GaussianProcess,
+        candidates::DataFrame,
+        stopping::Float64,
+        acquisition::AbstractGaussianProcessAcquisitionFunction
+    )
+    return _find_next_point(gp, candidates, acquisition), false
 end

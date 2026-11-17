@@ -150,3 +150,29 @@ end
 
     @test pf ≈ 0.159 rtol = 0.05
 end
+
+@testitem "Probability of Failure: Adaptive Gaussian Process Monte Carlo" begin
+    using QuasiMonteCarlo
+    # Example 1 from Echard et al. (2011)
+    x = RandomVariable.(Normal(), [:x1, :x2])
+
+    k = 6.0
+    g1 = Model(df -> 3 .+ 0.1 * (df.x1 .- df.x2) .^ 2 .- (df.x1 .+ df.x2) ./ sqrt(2), :g1)
+    g2 = Model(df -> 3 .+ 0.1 * (df.x1 .- df.x2) .^ 2 .+ (df.x1 .+ df.x2) ./ sqrt(2), :g2)
+    g3 = Model(df -> (df.x1 .- df.x2) .+ k / sqrt(2), :g3)
+    g4 = Model(df -> (df.x2 .- df.x1) .+ k / sqrt(2), :g4)
+    models = [g1, g2, g3, g4]
+    g = df -> min.(df.g1, df.g2, df.g3, df.g4)
+
+    akmcs = AdaptiveGaussianProcessMonteCarlo(
+        1_000_000,
+        QuasiMonteCarloSampling(20, LatinHypercubeSample()),
+        DeviationNumber(),
+        2.0,
+        200
+    )
+
+    pf, _, _ = probability_of_failure([g1, g2, g3, g4], g, x, akmcs)
+
+    @test pf ≈ 4.46e-3 rtol = 0.1
+end

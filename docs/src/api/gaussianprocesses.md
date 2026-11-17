@@ -24,7 +24,7 @@ sample!(gp::GaussianProcess, data::DataFrame, n::Int=1)
 logpdf(gp::GaussianProcess, data::DataFrame)
 evaluate!(agp::AdaptiveGaussianProcess, data::DataFrame; mean::Bool=true, variance::Bool=false)
 sample!(agp::AdaptiveGaussianProcess, data::DataFrame, n::Int=1)
-refine!(agp::AdaptiveGaussianProcess, n::Int)
+refine!
 logpdf(agp::AdaptiveGaussianProcess, data::DataFrame)
 ```
 
