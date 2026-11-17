@@ -18,7 +18,7 @@ jobs:
         with:
           version: "1"
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e 'using Pkg; Pkg.instantiate()'
       - name: Check demo files
         run: |
           julia --project=docs/ docs/literateDemo.jl;
