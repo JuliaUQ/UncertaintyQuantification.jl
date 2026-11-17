@@ -106,13 +106,13 @@ UncertaintyQuantification.makedirectory(ext, df[1, :], dirname)
 @test !isnotanywhere(joinpath(dirname, "radius.jl"), formatted_inputs[2])
 
 
-# E = RandomVariable(Uniform(0.3, 0.7), :E)
-# R1 = RandomVariable(Uniform(8, 14), :R1)
+E = RandomVariable(Uniform(0.3, 0.7), :E)
+R1 = RandomVariable(Uniform(8, 14), :R1)
 
-# function limitstate(df)
-#     return reduce(vcat, df.TBR) .- 1
-# end
+function limitstate(df)
+    return reduce(vcat, df.TBR) .- 1
+end
 
-# subset = SubSetInfinity(800, 0.1, 10, 0.5)
-# @time pf, std, samples = probability_of_failure(ext, limitstate, [E, R1], subset)
-# println("Probability of failure: $pf")
+subset = SubSetInfinity(800, 0.1, 10, 0.5)
+@time pf, std, samples = probability_of_failure(ext, limitstate, [E, R1], subset)
+println("Probability of failure: $pf")

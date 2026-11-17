@@ -194,9 +194,7 @@ function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::AbstractSubSetSimulation;
-        sim_name::String = "",
-        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim::AbstractSubSetSimulation
     )
     inputs, models = wrap.([inputs, models])
     print("11111111")
@@ -206,7 +204,7 @@ function probability_of_failure(
 
     samples = [sample(inputs, sim)]
 
-    evaluate!(models, samples[end]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = 1)
+    evaluate!(models, samples[end]; sim_name = string(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), subset_lvl = 1)
 
     performance = [performancefunction(samples[end])]
 
@@ -285,9 +283,10 @@ function nextlevelsamples(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetSimulation;
         sim_name::String = "",
-        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim_folder::String = "",
         subset_lvl = nothing,
     )
+
     nextlevelsamples = [samples]
     nextlevelperformance = [performance]
 
@@ -379,7 +378,7 @@ function nextlevelsamples(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetInfinity;
         sim_name::String = "",
-        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim_folder::String = "",
         subset_lvl = nothing,
     )
     samples_per_seed = Int64(floor(sim.n / length(performance)))
@@ -414,9 +413,9 @@ function nextlevelsamples(
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetInfinityAdaptive;
-        sim_name = sim_name,
-        sim_folder = sim_folder,
-        subset_lvl = subset_lvl,
+        sim_name::String = "",
+        sim_folder::String = "",
+        subset_lvl = nothing,
     )
     a_star = 0.44 # Optimal acceptance rate, so say Papaioannou, I., et. al.
 
@@ -449,6 +448,9 @@ function nextlevelsamples(
             ρ,
             σ,
             samples_per_seed,
+            sim_name=sim_name,
+            sim_folder=sim_folder,
+            subset_lvl=subset_lvl,
         )
 
         α += acceptance_rate
@@ -482,7 +484,7 @@ function conditional_sampling(
         σ::Real,
         N::Integer;
         sim_name::String = "",
-        sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sim_folder::String = "",
         subset_lvl = nothing,
     )
     α = 0.0
