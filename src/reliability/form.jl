@@ -10,14 +10,14 @@ used to perform the first order reliability method using the HLRF algorithm with
 struct FORM <: AbstractSimulation
     n::Integer
     tol::Real
-    fdm::FiniteDifferencesMethod
+    backend::AbstractADType
 
     function FORM(
             n::Integer = 10,
             tol::Real = 1.0e-3;
-            fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+            backend::AbstractADType = AutoMooncake(),
         )
-        return new(n, tol, fdm)
+        return new(n, tol, backend)
     end
 end
 
@@ -60,9 +60,9 @@ function probability_of_failure(
     for it in 1:(sim.n)
         sns[1, random_names] .= y
 
-        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; fdm = sim.fdm)
+        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; backend = sim.backend)
 
-        H = map(n -> H[n], random_names)
+        H = collect(H[1, random_names])
 
         to_physical_space!(inputs, sns)
         evaluate!(G, sns)

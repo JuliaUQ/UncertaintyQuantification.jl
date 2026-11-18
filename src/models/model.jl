@@ -31,13 +31,20 @@ end
 
 function evaluate!(models::Vector{<:UQModel}, df::DataFrame)
     # use same working directory for all external models
-    datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
-    for m in models
-        if isa(m, ExternalModel)
-            evaluate!(m, df; datetime = datetime)
-        else
+    if any(isa.(models, ExternalModel))
+        datetime = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
+        for m in models
+            if isa(m, ExternalModel)
+                evaluate!(m, df; datetime = datetime)
+            else
+                evaluate!(m, df)
+            end
+        end
+    else
+        for m in models
             evaluate!(m, df)
         end
     end
+
     return nothing
 end
