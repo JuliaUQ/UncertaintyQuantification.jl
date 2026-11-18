@@ -58,9 +58,13 @@ To begin the Bayesian model updating procedure we start by defining the data, th
 
 #md using UncertaintyQuantification # hide
 #md using Plots # hide
+#md using DataFrames # hide
+#md using LinearAlgebra #hide
 
 #jl using UncertaintyQuantification
 #jl using Plots
+#jl using DataFrames
+#jl using LinearAlgebra
 
 Y = [
     1.51 0.33
@@ -89,21 +93,78 @@ function likelihood(df)
 
     return log.(exp.([-0.5 * sum(((Y .- λ[n, :]') ./ σ) .^ 2) for n in axes(λ, 1)]))
 end
+#md nothing # hide
 
-# We will solve this problem using the TMCMC algorithm, as well as multi-objective maximum a priori (MAP) and maximum likelihood (ML) estimates. Therefore, the next step is to define the [`RandomVariable`](@ref) vector of the prior, followed by the objects for the estimaters ([`TransitionalMarkovChainMonteCarlo`](@ref)). We also have to choose number of samples and burn-in for TMCMC.
-
+# For solving the Bayesian inverse problem, we use the MCMC methods implemented in the package.
+# We setup the problem by defining the prior distributions using the marginal [`RandomVariable`](@ref).
+# Afterwards, we define the setup of the MCMC methods.
 prior = RandomVariable.(Uniform(0.01, 4), [:θ1, :θ2])
 
+# ### Metropolis Hastings
+# [`MetropolisHastings`](@ref) implements the Metropolis-Hastings algorithm with multivariate
+# proposal. Here, we set the proposal to a multivariate Normal with zero mean and diagonal
+# covariance matrix with ``\sigma = 0.1`` on the diagonal ``\mathcal{N}(\boldsymbol{0}, \boldsymbol{\Sigma})``.
+# We use two starting points of the chains ``x_0`` with a chain length of each `n = 1000`
+# and `burnin = 1000`.
+x0 = DataFrame(θ1 = [1.0, 3.0], θ2 = [1.0, 0.5])
+Σ = 0.1 * I(2)
+proposal = MvNormal([0, 0], Σ)
+n, burnin = 1000, 1000
+mh = MetropolisHastings(proposal, x0, n, burnin)
+#md nothing #hide
+
+# With the prior, likelihood, MCMC sampler and models defined, the last step is to call the
+# [`bayesianupdating`](@ref) method to get the samples:
+
+samples_mh, _ = bayesianupdating(prior, likelihood, mh, [λ1, λ2])
+scatter(samples_mh.θ1, samples_mh.θ2; lim = [0, 4], label = "MH (σ=0.1)", xlabel = "θ1", ylabel = "θ2")
+#md savefig("stiffness-samples-mh.svg"); nothing # hide
+
+# ![Resulting MH](stiffness-samples-mh.svg)
+
+# For comparison, we can run the same updating with a different proposal variance:
+proposal_2 = MvNormal([0, 0], 2 * I(2))
+mh_2 = MetropolisHastings(proposal_2, x0, n, burnin)
+
+samples_mh_2, _ = bayesianupdating(prior, likelihood, mh_2, [λ1, λ2])
+scatter(samples_mh_2.θ1, samples_mh_2.θ2; lim = [0, 4], label = "MH (σ=2)", xlabel = "θ1", ylabel = "θ2")
+#md savefig("stiffness-samples-mh-2.svg"); nothing # hide
+
+# ![Resulting MH](stiffness-samples-mh-2.svg)
+
+# We see that the results are very sensitive to the chosen proposal covariance.
+
+
+# ### Adaptive Metropolis Hastings
+# [`AdaptiveMetropolisHastings`](@ref) implements an adaptation of the proposal covariance
+# of a multivariate Gaussian, following [haarioAdaptiveMetropolisAlgorithm2001](@cite).
+amh = AdaptiveMetropolisHastings(proposal, x0, n, burnin)
+
+samples_amh, _ = bayesianupdating(prior, likelihood, amh, [λ1, λ2])
+scatter(samples_amh.θ1, samples_amh.θ2; lim = [0, 4], label = "Adaptive MH (σ=0.1)", xlabel = "θ1", ylabel = "θ2")
+#md savefig("stiffness-samples-amh.svg"); nothing # hide
+
+# ![Resulting AMH](stiffness-samples-amh.svg)
+
+# We can also investigate the results with a different proposal variance, e.g., with
+# ``\sigma = 100``.
+amh_2 = AdaptiveMetropolisHastings(proposal_2, x0, n, burnin)
+samples_amh_2, _ = bayesianupdating(prior, likelihood, amh_2, [λ1, λ2])
+scatter(samples_amh_2.θ1, samples_amh_2.θ2; lim = [0, 4], label = "Adaptive MH (σ=2)", xlabel = "θ1", ylabel = "θ2")
+#md savefig("stiffness-samples-amh-new.svg"); nothing # hide
+
+# ![Resulting AMH](stiffness-samples-amh-new.svg)
+
+# We see that the results are less sensitive to the initially chosen values due to the adaptive refinement.
+
+# ### Transitional Markov Chain Monte Carlo
+# Finally, we use the [`TransitionalMarkovChainMonteCarlo`](@ref) algorithm proposed by
+# [chingTransitionalMarkovChain2007](@cite). We set `n = 1000` and `burnin = 0`.
 n = 1000
 burnin = 0
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
 
-x0 = [[1.0, 1.0], [3.0, 0.5], [2.0, 2.0]]
-
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-
-# With the prior, likelihood, models and  MCMC sampler defined, the last step is to call the [`bayesianupdating`](@ref) method.
-
-samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
+samples, _ = bayesianupdating(prior, likelihood, tmcmc, [λ1, λ2])
 
 scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 #md savefig("stiffness-samples.svg"); nothing # hide

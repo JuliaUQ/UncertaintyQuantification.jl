@@ -99,8 +99,8 @@ First, we apply the TMCMC algorithm to sample from the posterior distribution.
 We use these samples to compare with the results obtained with the transport map.
 ===#
 
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, 1_000, 3)
-samples, evidence = bayesianupdating(Like, [M], tmcmc)
+tmcmc = TransitionalMarkovChainMonteCarlo(1_000, 3)
+samples, evidence = bayesianupdating(prior, Like, tmcmc, [M])
 #md nothing #hide
 
 #===
@@ -110,18 +110,18 @@ Transport Maps provide an alternative approach to Bayesian inference. They const
 
 We define a polynomial transport map of order 2 with 2 input dimensions.
 Additionally, we define a quadrature scheme used to compute the KL-divergence, i.e., the target of the optimization.
-Finally, we store these along with the `prior` in the [`TransportMapBayesian`](@ref) object:
+Finally, we store the map and quadrature in the [`TransportMapBayesian`](@ref) object:
 ===#
 T = PolynomialMap(2, 2)
 quadrature = GaussHermiteWeights(3, 2)
-transportmap = TransportMapBayesian(prior, T, quadrature)
+transportmap = TransportMapBayesian(T, quadrature)
 
 #===
 The map we defined is optimized by calling the [`bayesianupdating`](@ref) function.
 A [`JointDistribution`](@ref) containing the map is returned.
 ===#
 
-tm = bayesianupdating(Like, [M], transportmap)
+tm = bayesianupdating(prior, Like, transportmap, [M])
 
 #===
 Once the map coefficients are optimized, we can sample from the transport map posterior and compare the samples to those obtained from TMCMC.

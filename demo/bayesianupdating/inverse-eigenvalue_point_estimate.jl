@@ -1,5 +1,6 @@
 using UncertaintyQuantification
 using Plots
+using DataFrames
 
 Y = [
     1.51 0.33
@@ -27,23 +28,23 @@ Y = [
 function likelihood(df)
     λ = [df.λ1 df.λ2]
 
-    return log.(exp.([-0.5 * sum(((Y .- λ[n, :]') ./ σ) .^ 2) for n in axes(λ, 1)]))
+    return [-0.5 * sum(((Y .- λ[n, :]') ./ σ) .^ 2) for n in axes(λ, 1)]
 end
 
-prior = RandomVariable.(Uniform(0.1, 10), [:θ1, :θ2])
+prior = JointDistribution(RandomVariable.(Uniform(0.1, 10), [:θ1, :θ2]))
 
 burnin = 0
 n = 1000
 
-x0 = [[1.0, 1.0], [3.0, 0.5]]
+x0 = DataFrame(θ1 = [1.0, 3.0], θ2 = [1.0, 0.5])
 
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, x0)
-MLE = MaximumLikelihoodBayesian(prior, x0)
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
+MAP = MaximumAPosterioriBayesian(x0; lowerbounds = [0.1, 0.1], upperbounds = [10.0, 10.0])
+MLE = MaximumLikelihoodEstimate(x0)
 
-samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
-MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
-MLEstimate = bayesianupdating(likelihood, [λ1, λ2], MLE)
+samples, evidence = bayesianupdating(prior, likelihood, tmcmc, [λ1, λ2])
+MapEstimate = bayesianupdating(prior, likelihood, MAP, [λ1, λ2])
+MLEstimate = maximumlikelihood(likelihood, MLE, [λ1, λ2])
 
 scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 scatter!((MapEstimate.θ1, MapEstimate.θ2), label = "MAP")
@@ -52,20 +53,20 @@ scatter!((MLEstimate.θ1, MLEstimate.θ2), label = "MLE")
 priorθ1 = RandomVariable(Normal(0.5, 0.5), :θ1)
 priorθ2 = RandomVariable(Normal(1.5, 0.5), :θ2)
 
-prior = [priorθ1, priorθ2]
+prior = JointDistribution([priorθ1, priorθ2])
 
 burnin = 0
 n = 1000
 
-x0 = [[1.0, 1.0], [3.0, 0.5]]
+x0 = DataFrame(θ1 = [1.0, 3.0], θ2 = [1.0, 0.5])
 
-tmcmc = TransitionalMarkovChainMonteCarlo(prior, n, burnin)
-MAP = MaximumAPosterioriBayesian(prior, x0)
-MLE = MaximumLikelihoodBayesian(prior, x0)
+tmcmc = TransitionalMarkovChainMonteCarlo(n, burnin)
+MAP = MaximumAPosterioriBayesian(x0)
+MLE = MaximumLikelihoodEstimate(x0)
 
-samples, evidence = bayesianupdating(likelihood, [λ1, λ2], tmcmc)
-MapEstimate = bayesianupdating(likelihood, [λ1, λ2], MAP)
-MLEstimate = bayesianupdating(likelihood, [λ1, λ2], MLE)
+samples, evidence = bayesianupdating(prior, likelihood, tmcmc, [λ1, λ2])
+MapEstimate = bayesianupdating(prior, likelihood, MAP, [λ1, λ2])
+MLEstimate = maximumlikelihood(likelihood, MLE, [λ1, λ2])
 
 scatter(samples.θ1, samples.θ2; lim = [0, 4], label = "TMCMC", xlabel = "θ1", ylabel = "θ2")
 scatter!((MapEstimate.θ1, MapEstimate.θ2), label = "MAP")
