@@ -14,6 +14,7 @@ using UncertaintyQuantification
 import UncertaintyQuantification: sample
 
 @testsnippet TestSetup begin
+    using ADTypes
     using Copulas
     using DataFrames
     using Distributed
@@ -54,7 +55,6 @@ end
 
 include("models/model.jl")
 include("models/gp/parameterization.jl")
-include("modelupdating/bayesianTM.jl")
 include("inputs/jointdistribution.jl")
 include("inputs/imprecise/p-box.jl")
 include("plotting/plotting.jl")
@@ -62,17 +62,7 @@ include("plotting/plotting.jl")
 @run_package_tests
 
 if Sys.islinux()
-    HPC = false
-    HPC_account = "HPC_account_1"
-    HPC_partition = "CPU_partition"
-    if "HPC" in ARGS
-        HPC = true
-        HPC_account = ARGS[2]
-        HPC_partition = ARGS[3]
-        @warn "Running a slurm test with HPC=ON, using account $HPC_account and partition $HPC_partition. Several (20) small 1-task calculations will be submitted to slurm for testing in different job array configuations."
-    end
-
-    if HPC == false && !occursin("test/test_utilities", ENV["PATH"])
+    if !occursin("test/test_utilities", ENV["PATH"])
         @warn "Adding test utilities to PATH variable"
         path = ENV["PATH"]
         ENV["PATH"] = "$(pwd())/test_utilities:$path"

@@ -32,5 +32,7 @@ evaluate!(gp_model, test_data; variance = true)
 evaluate!(himmelblau, test_data)
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (GP):  $mse")
+R² = 1 - (sum((test_data.y .- test_data.y_mean) .^ 2)) / (sum((test_data.y .- mean(test_data.y)) .^ 2))
+println("R^2 (GP):  $R²")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

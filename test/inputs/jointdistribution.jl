@@ -16,11 +16,16 @@ end
 
 @testitem "JD-Copulas: Constructor" setup = [JDSetup] begin
     @test isa(JointDistribution(copula, marginals), JointDistribution)
+    @test isa(JointDistribution(marginals), JointDistribution)
     @test isa(JointDistribution(copula, imprecise_marginals), JointDistribution)
 
     jd = JointDistribution(copula, marginals)
     @test jd.m == marginals
     @test jd.d == copula
+
+    jd = JointDistribution(marginals)
+    @test jd.m == marginals
+    @test isa(jd.d, IndependentCopula)
 
     jd = JointDistribution(copula, imprecise_marginals)
     @test jd.m == imprecise_marginals
@@ -35,6 +40,7 @@ end
     @test_throws ArgumentError("Marginal names must be unique.") JointDistribution(
         copula, [rv1, rv1]
     )
+    @test_throws ArgumentError JointDistribution([rv1, rv1])
 end
 
 @testitem "JD-Copulas: sample" setup = [JDSetup] begin
@@ -100,6 +106,8 @@ end
 
     @test hcubature(x -> pdf(jd, x), [-1.0, 0.0], [0.5, 0.5])[1] ≈ cdf(jd, [0.5, 0.5]) atol =
         1.0e-4
+
+    @test pdf(jd, [0.2, 0.4]) ≈ exp(logpdf(jd, [0.2, 0.4])) atol = 1.0e-4
 end
 
 @testitem "JD-Copulas: to_physical_space" setup = [JDSetup] begin
@@ -155,4 +163,8 @@ end
         jd, samples
     )
     @test_throws ["Cannot map", "to physical space."] to_physical_space!(jd, samples)
+end
+
+@testitem "JD-Multivariate Distribution: densities" setup = [MVSetup] begin
+    @test pdf(jd, [0.0, 0.0]) ≈ exp(logpdf(jd, [0.0, 0.0])) atol = 1.0e-4
 end

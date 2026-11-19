@@ -9,7 +9,7 @@ himmelblau = Model(
     df -> (df.x1 .^ 2 .+ df.x2 .- 11) .^ 2 .+ (df.x1 .+ df.x2 .^ 2 .- 7) .^ 2, :y
 )
 
-design = QuasiMonteCarloSampling(80, LatinHypercubeSample())
+design = QuasiMonteCarloSampling(40, LatinHypercubeSample())
 mean_f = ConstMean(0.0)
 kernel = SqExponentialKernel()
 
@@ -37,7 +37,7 @@ adaptive_gp = AdaptiveGaussianProcess(
     candidate_sampling;
     optimizer = optimizer
 )
-refine!(adaptive_gp, 20)
+refine!(adaptive_gp, 40)
 
 test_data = UncertaintyQuantification.sample(x, QuasiMonteCarloSampling(1000, LatinHypercubeSample()))
 test_data_adaptive = deepcopy(test_data)
@@ -46,11 +46,15 @@ evaluate!(himmelblau, test_data)
 
 mse = mean((test_data.y .- test_data.y_mean) .^ 2)
 println("MSE (initial GP):  $mse")
+R² = 1 - (sum((test_data.y .- test_data.y_mean) .^ 2)) / (sum((test_data.y .- mean(test_data.y)) .^ 2))
+println("R^2 (initial GP):  $R²")
 
 evaluate!(adaptive_gp, test_data_adaptive)
 evaluate!(himmelblau, test_data_adaptive)
 
 mse_adap = mean((test_data_adaptive.y .- test_data_adaptive.y_mean) .^ 2)
 println("MSE (adaptive GP):  $mse_adap")
+R²_adap = 1 - (sum((test_data_adaptive.y .- test_data_adaptive.y_mean) .^ 2)) / (sum((test_data_adaptive.y .- mean(test_data_adaptive.y)) .^ 2))
+println("R^2 (adaptive GP):  $R²_adap")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
