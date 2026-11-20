@@ -117,6 +117,8 @@ export BackwardFiniteDifferences
 export LinearBasisFunctionModel
 export BinnedData
 export BoxBehnken
+export CABO
+export CABODiagnostics
 export CentralComposite
 export CentralFiniteDifferences
 export CloughPenzien
@@ -278,6 +280,7 @@ include("sensitivity/gradient.jl")
 include("simulations/doe.jl")
 include("simulations/linesampling.jl")
 include("simulations/montecarlo.jl")
+include("simulations/cabo.jl")
 include("simulations/radialbasedimportancesampling.jl")
 include("simulations/subset.jl")
 

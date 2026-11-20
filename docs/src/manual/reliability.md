@@ -290,7 +290,7 @@ and
 
 where ``\theta`` represents the epistemic parameters characterizing the inputs.
 
-The following two sections provide two possible solutions to this challenging problem.
+The following sections provide methods for this problem.
 
 ### Double-loop Monte Carlo Simulation
 
@@ -392,3 +392,160 @@ Here, the lower bound is again estimated using FORM, while we apply subset simul
 ```
 
 As outlined by [alvarez2018estimation](@cite), other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.
+
+### Collaborative and Adaptive Bayesian Optimization
+
+[`CABO`](@ref) estimates parametric failure-probability bounds using one Gaussian
+process (GP) shared across the aleatory and epistemic inputs. The method of
+[hong2023collaborative](@cite) combines Bayesian optimization of the probability
+bounds with active learning of the failure boundary. Each iteration selects one
+new expensive model evaluation.
+
+This implementation supports independent continuous random variables, continuous
+parametric p-boxes, interval variables and fixed parameters, with deterministic
+models. Failure is defined by `performance(samples) < 0`.
+
+#### The augmented space and GP
+
+Let ``\mathbf{X}_p`` denote precise random variables, ``\mathbf{X}_b`` variables
+described by parametric p-boxes, and ``\mathbf{d}`` interval variables. The uncertain
+distribution parameters are collected in ``\boldsymbol{\theta}``. For each p-box
+variable, introduce an independent ``U_j\sim\mathcal{U}(0,1)`` and write
+
+```math
+X_{b,j}=T_j(U_j;\boldsymbol{\theta})
+       =F_j^{-1}(U_j;\boldsymbol{\theta}).
+```
+
+This separates the random quantile level from the uncertain distribution
+parameters. With aleatory coordinates ``\mathbf{a}=(\mathbf{x}_p,\mathbf{u})`` and
+epistemic coordinates ``\mathbf{e}=(\mathbf{d},\boldsymbol{\theta})``, the augmented
+performance function is
+
+```math
+G(\mathbf{a},\mathbf{e})=
+g\!\left(\mathbf{x}_p,T(\mathbf{u};\boldsymbol{\theta}),\mathbf{d}\right).
+```
+
+Precise random variables enter the GP as physical values, while p-box variables
+contribute their quantile levels and varying parameters. Fixed parameters are
+passed to the physical model but do not add GP dimensions. At a fixed epistemic
+setting, the failure probability is
+
+```math
+p_f(\mathbf{e})=
+\mathbb{E}_{\mathbf{X}_p,\mathbf{U}}
+\left[\mathbb{I}\{G(\mathbf{A},\mathbf{e})<0\}\right].
+```
+
+The lower and upper bounds are the minimum and maximum of this probability over
+the admissible epistemic settings. No probability distribution is assigned to
+``\mathbf{e}``; the expectation is over the aleatory variables only.
+
+The GP learns the **continuous performance value** ``G(\mathbf{a},\mathbf{e})``.
+An initial Latin hypercube provides training points, which are mapped to physical
+inputs and evaluated by the model and `performance` function. Failure-probability
+estimates and their surrogate uncertainty are then derived from this GP. Sharing
+one GP allows an observation at one epistemic setting to inform other settings
+and both endpoint searches.
+
+For Hong et al.'s Eq. (34), ``g(x_1,x_2,x_3)=7-(x_1+x_3)^2+x_2``, with
+``X_1\sim\mathcal{N}(0,1)``, ``X_2\sim\mathcal{N}(\mu,2)``,
+``\mu\in[-2,1]`` and ``x_3\in[-1,2]``. Taking the standard deviation as
+``\sigma=2``, the GP regresses over four coordinates:
+
+```math
+G(x_1,u,x_3,\mu)=7-(x_1+x_3)^2+\mu+2\Phi^{-1}(u).
+```
+
+Here ``(x_1,u)`` are aleatory, ``(x_3,\mu)`` are epistemic, and ``\Phi``
+is the standard normal CDF. A selected augmented point is evaluated physically
+at ``(x_1,\mu+2\Phi^{-1}(u),x_3)``.
+
+#### Collaborative point selection
+
+The two acquisition steps choose different parts of the next augmented point:
+
+1. **Choose the epistemic setting.** Expected improvement (EI) ranks settings by
+   the expected amount of improvement in the current probability bound. It balances a
+   promising probability estimate with uncertainty that leaves room for improvement.
+2. **Choose the aleatory point.** At that setting, [`DeviationNumber`](@ref)
+   selects an unevaluated point whose failure classification is most uncertain.
+3. **Evaluate and refit.** Map the combined point to physical inputs, evaluate
+   the model once, and refit the GP using all observations.
+
+For minimization and maximization, respectively, EI is
+
+```math
+\begin{aligned}
+\operatorname{EI}_{\min}(\mathbf{e})
+&=\mathbb{E}\!\left[\max(b_{\min}-P_f(\mathbf{e}),0)\right],\\
+\operatorname{EI}_{\max}(\mathbf{e})
+&=\mathbb{E}\!\left[\max(P_f(\mathbf{e})-b_{\max},0)\right].
+\end{aligned}
+```
+
+Here ``P_f(\mathbf{e})`` represents the uncertain surrogate estimate, and
+``b_{\min}`` and ``b_{\max}`` are the smallest and largest posterior mean
+probabilities on the candidate set. The setting with the largest EI is selected.
+Within it, the deviation number minimizes
+
+```math
+U(\mathbf{a},\mathbf{e})=
+\frac{|m(\mathbf{a},\mathbf{e})|}{s_{\mathrm{pred}}(\mathbf{a},\mathbf{e})},
+```
+
+where ``m`` and ``s_{\mathrm{pred}}`` are the GP predictive mean and standard
+deviation. Small values indicate predictions close to the failure threshold
+relative to their uncertainty. Thus EI directs the search toward a probability
+extremum, while the deviation number locates a useful evaluation near its failure
+boundary.
+
+The minimum search runs first, followed by the maximum search using all previous
+observations. Both endpoints are recomputed from the final GP. The default budget
+is 12 initial evaluations, 13 targeting the minimum and 4 targeting the maximum:
+29 model evaluations in total.
+
+#### Using CABO
+
+The Eq. (34) problem can be run through [`probability_of_failure`](@ref):
+
+```julia
+using UncertaintyQuantification, Random
+
+inputs = [
+    RandomVariable(Normal(), :x1),
+    IntervalVariable(-1, 2, :x3),
+    RandomVariable(ProbabilityBox{Normal}(Dict(:μ => Interval(-2, 1), :σ => 2)), :x2),
+]
+model = Model(df -> 7 .- (df.x1 .+ df.x3) .^ 2 .+ df.x2, :g)
+method = CABO(
+    initial_points = 12,
+    lower_bound_iterations = 13,
+    upper_bound_iterations = 4,
+)
+pf, xmin, xmax = probability_of_failure(
+    model, df -> df.g, inputs, method; rng = MersenneTwister(20261112),
+)
+```
+
+Julia's `Normal(μ, σ)` takes **standard deviation** as its second argument.
+The interval `pf` contains the estimated bounds; `xmin` and `xmax` give their
+locations, here in the order `(x3, x2's μ)`. Epistemic coordinates follow input
+order, with p-box parameters in distribution field order. Set
+`return_diagnostics = true` to also obtain [`CABODiagnostics`](@ref), including
+the fitted GP, observations and acquisition history.
+
+The default epistemic grid uses seven values per varying interval, including
+endpoints. A custom matrix can be supplied through `epistemic_candidates`, with
+one setting per row. See [`CABO`](@ref) for the remaining options.
+
+This version uses a candidate grid, a posterior-mean incumbent and fixed
+evaluation budgets, simplifying the paper's optimization and stopping rules.
+The results are surrogate estimates over the candidate set, rather than certified
+bounds over the continuous domain; accuracy depends on the GP and the resolution
+of the epistemic grid and aleatory samples.
+
+The runnable `demo/reliability/hong-cabo.jl` example includes a fixed-design GP
+comparison and an independent quadrature reference. Quadrature is used only to
+check this benchmark.

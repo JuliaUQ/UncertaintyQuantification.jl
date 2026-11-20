@@ -188,7 +188,8 @@ function evaluate!(
 end
 
 """
-    sample!(agp::AdaptiveGaussianProcess, data::DataFrame, n::Int = 1)
+    sample!([rng::AbstractRNG,] agp::AdaptiveGaussianProcess, data::DataFrame, n::Int = 1;
+            latent = false, jitter = 0.0)
 
 Draw `n` independent realizations from the joint posterior predictive
 distribution of the Gaussian process in `agp` at the locations in `data`.
@@ -202,9 +203,20 @@ This delegates to `sample!(agp.gp, data, n)` and returns its result.
 function sample!(
         gp::AdaptiveGaussianProcess,
         data::DataFrame,
-        n::Int = 1
+        n::Int = 1;
+        kwargs...,
     )
-    return sample!(gp.gp, data, n)
+    return sample!(gp.gp, data, n; kwargs...)
+end
+
+function sample!(
+        rng::AbstractRNG,
+        gp::AdaptiveGaussianProcess,
+        data::DataFrame,
+        n::Int = 1;
+        kwargs...,
+    )
+    return sample!(rng, gp.gp, data, n; kwargs...)
 end
 
 """
