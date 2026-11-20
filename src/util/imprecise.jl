@@ -5,7 +5,7 @@ Returns `true` if input `i` is imprecise.
 """
 isimprecise(_::UQInput) = false
 
-isimprecise(rv::RandomVariable{<:ProbabilityBox}) = true
+isimprecise(rv::RandomVariable{<:AbstractProbabilityBox}) = true
 
 isimprecise(i::IntervalVariable) = true
 

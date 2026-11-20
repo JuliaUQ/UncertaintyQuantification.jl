@@ -136,9 +136,13 @@ end
     end
 end
 
+@recipe function _plot(x::AbstractProbabilityBox)
+    RandomVariable(x, Symbol(DEFAULT_LABEL))
+end
+
 @recipe function _plot(
         x::RandomVariable{T}; shade = DEFAULT_FILL_IMPRECISE
-    ) where {T <: ProbabilityBox}
+    ) where {T <: AbstractProbabilityBox}
     # --- plot-level defaults (soft) ---
     grid --> DEFAULT_GRID
     legend --> DEFAULT_LEGEND
