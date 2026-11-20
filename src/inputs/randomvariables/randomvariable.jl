@@ -1,7 +1,7 @@
 """
-	RandomVariable(dist::UnivariateDistribution, name::Symbol)
+	RandomVariable(dist::Union{UnivariateDistribution, ProbabilityBox, DistributionFreeProbabilityBox}, name::Symbol)
 
-Defines a random variable, with a univariate distribution from Distributions.jl and a name.
+Defines a random variable, with a name and either a univariate distribution from Distributions.jl or an imprecise one: a [`ProbabilityBox`](@ref) or a [`DistributionFreeProbabilityBox`](@ref).
 
 # Examples
 

@@ -1,3 +1,39 @@
+"""
+    DistributionFreeProbabilityBox(lower_cdf::Function, upper_cdf::Function, lb::Real, ub::Real; n::Integer = 10^6, atol::Real = 1.0e-8)
+    DistributionFreeProbabilityBox(lower::EmpiricalDistribution, upper::EmpiricalDistribution)
+
+Represents a distribution-free probability box (p-box): all the cdfs between a lower cdf and an upper cdf, with no assumption on their distribution family. Unlike a [`ProbabilityBox`](@ref), it has no parameters.
+
+To use the `DistributionFreeProbabilityBox` in an analysis it has to be wrapped in a [`RandomVariable`](@ref). In [`probability_of_failure`](@ref) only [`RandomSlicing`](@ref) is supported: [`DoubleLoop`](@ref) optimizes over the parameters of the p-boxes, and a distribution-free p-box has none.
+
+# Constructors
+
+- `DistributionFreeProbabilityBox(lower_cdf, upper_cdf, lb, ub; n = 10^6, atol = 1e-8)`: from two cdf functions `x -> F(x)` and the support `[lb, ub]` of the p-box, where `lb` can be `-Inf` and `ub` can be `Inf`. The lower cdf is the one of the distribution furthest to the right. With no tolerance, the constructor checks that:
+    - both cdfs are exactly 0 at `lb` and 1 at `ub` (at an infinite end, that they go to 0 or 1),
+    - both cdfs are in [0, 1] and non-decreasing,
+    - `lower_cdf` is never above `upper_cdf`.
+  These are checked at `n` evenly spaced points over the region where each cdf rises: the support, or at an infinite end up to where the cdf is within `atol` of 0 or 1 (beyond it only the limit at `-Inf` or `Inf` is checked). The cdfs are stored as given: their tails are never cut.
+- `DistributionFreeProbabilityBox(lower, upper)`: from two [`EmpiricalDistribution`](@ref)s, which are cdfs by construction, so only their order is checked, exactly, at the knots of their cdf splines. Pass the distributions, not `x -> cdf(d, x)`: rounding in the spline evaluation makes these functions fail the exact checks above.
+
+# Methods
+
+- `cdf(pbox, x)`: the [`Interval`](@ref) from `lower_cdf(x)` to `upper_cdf(x)`.
+- `quantile(pbox, u)`: the [`Interval`](@ref) from the quantile of the upper cdf to the quantile of the lower cdf, found by inverting the cdfs exactly (for empirical bounds, their own quantiles). At `u = 0` and `u = 1` it is the end of the support.
+- `rand(pbox, n)`: `n` random quantile intervals.
+
+# Examples
+
+```jldoctest
+julia> pbox = DistributionFreeProbabilityBox(x -> cdf(Normal(1, 1), x), x -> cdf(Normal(0, 1), x), -Inf, Inf)
+DistributionFreeProbabilityBox(median = [0.0, 1.0], -Inf, Inf)
+
+julia> cdf(pbox, 0.5)
+[0.3085375387259869, 0.6914624612740131]
+
+julia> DistributionFreeProbabilityBox(x -> cdf(Uniform(1, 3), x), x -> cdf(Uniform(0, 2), x), 0, 3)
+DistributionFreeProbabilityBox(median = [1.0, 2.0], 0, 3)
+```
+"""
 struct DistributionFreeProbabilityBox
     lower_cdf::Function
     upper_cdf::Function
