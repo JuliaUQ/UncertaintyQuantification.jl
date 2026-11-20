@@ -95,7 +95,7 @@ function evaluate!(
         sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
         subset_lvl = nothing,
     )
-    print("4444444444444444444444444444")
+    print("Evaluate EXT $sim_name $sim_folder $subset_lvl\n")
     if !isnothing(m.scheduler)
         return evaluate!(
             m, df, m.scheduler; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl

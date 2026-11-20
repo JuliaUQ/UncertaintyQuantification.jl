@@ -23,7 +23,7 @@ function probability_of_failure(
     end
 
     samples = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+    evaluate!(models, samples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
 
     # Probability of failure
     pf = sum(performance(samples) .< 0) / sim.n
@@ -55,7 +55,7 @@ function probability_of_failure(
     end
 
     samples = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+    evaluate!(models, samples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
 
     # Evaluate performance function
     p = reshape(performance(samples), length(sim.points), sim.lines)'
@@ -112,7 +112,7 @@ function probability_of_failure(
     end
 
     to_physical_space!(inputs, samples)
-    evaluate!(models, samples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+    evaluate!(models, samples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
 
     β⁺ = rootinterpolation(sim.points, performance(samples))
     βᵢ = copy(β⁺)
@@ -165,7 +165,7 @@ function probability_of_failure(
                 )
             end
             to_physical_space!(inputs, linesamples)
-            evaluate!(models, linesamples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+            evaluate!(models, linesamples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
             append!(samples, linesamples)
             β[i] = rootinterpolation(sim.points, performance(linesamples), i)
         end
@@ -222,7 +222,7 @@ function probability_of_failure(
     end
 
     samples, weights = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+    evaluate!(models, samples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
 
     # Probability of failure
     weighted_failures = (performance(samples) .< 0) .* weights
@@ -252,7 +252,7 @@ function probability_of_failure(
 
     samples = sample(inputs, sim)
 
-    evaluate!(models, samples; sim_folder = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
+    evaluate!(models, samples; sim_name = str(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"))
 
     # Probability of failure
 

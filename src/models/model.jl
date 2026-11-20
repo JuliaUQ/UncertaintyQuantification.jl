@@ -54,7 +54,6 @@ function evaluate!(models::Vector{<:UQModel}, df::DataFrame; sim_name::String = 
     # use same working directory for all external models
     for m in models
         if isa(m, ExternalModel)
-            print("3333333\n", typeof(m), typeof(df))
             evaluate!(m, df, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
         else
             evaluate!(m, df)

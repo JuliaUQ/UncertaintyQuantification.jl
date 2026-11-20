@@ -196,15 +196,17 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::AbstractSubSetSimulation
     )
+    sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
+    sim_name = string(typeof(sim))
     inputs, models = wrap.([inputs, models])
-    print("11111111")
+    print("START PoF SUBSET\n")
     if isimprecise(inputs, models)
         error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
     end
 
     samples = [sample(inputs, sim)]
-
-    evaluate!(models, samples[end]; sim_name = string(typeof(sim)), sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), subset_lvl = 1)
+    print(samples)
+    evaluate!(models, samples[end]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = 1)
 
     performance = [performancefunction(samples[end])]
 
@@ -243,7 +245,7 @@ function probability_of_failure(
         if threshold[i] <= 0 || i == sim.levels
             break
         end
-
+        print("NEXT lvl samples with level $i\n")
         nextsamples, nextperformance = nextlevelsamples(
             samples[end][sorted_indices[1:number_of_seeds], :],
             sorted_performance[1:number_of_seeds],
@@ -254,7 +256,7 @@ function probability_of_failure(
             sim;
             sim_name = sim_name,
             sim_folder = sim_folder,
-            subset_lvl = i
+            subset_lvl = i + 1
         )
 
         push!(samples, nextsamples)
@@ -329,6 +331,7 @@ function nextlevelsamples(
         α_accept_indices = findall(α_accept)
         if any(α_accept)
             new_samples = chainsamples[α_accept, :]
+            print("NEW SAMPLES", new_samples)
             evaluate!(models, new_samples, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
 
             new_samplesperformance = performancefunction(new_samples)
@@ -381,7 +384,7 @@ function nextlevelsamples(
         sim_folder::String = "",
         subset_lvl = nothing,
     )
-    samples_per_seed = Int64(floor(sim.n / length(performance)))
+    samples_per_seed = Int64(floor(sim.n / size(samples, 1)))
 
     ρ = sqrt(1 - sim.s^2)
 
@@ -507,7 +510,6 @@ function conditional_sampling(
         chain_samples[k][:, rvs] = randn(size(μ)) .* σ .+ μ
 
         to_physical_space!(inputs, chain_samples[k])
-
         evaluate!(models, chain_samples[k]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
 
         chain_performance[k] = performancefunction(chain_samples[k])
