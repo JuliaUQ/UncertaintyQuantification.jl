@@ -1,13 +1,13 @@
 """
     DoubleLoop(lb::AbstractSimulation, ub::AbstractSimulation)
 
-Used to estimate imprecise reliability with the *double loop* Monte Carlo method. 
+Used to estimate imprecise reliability with the *double loop* Monte Carlo method.
 
 Wraps two simulation objects — one for lower-bound (`lb`) and one for upper-bound (`ub`).
 
 The two simulations can differ in simulation type, complexity, or accuracy settings, since estimating the lower bound often requires more simulation effort.
 
-This approach runs an optimisation loop over interval parameters (outer loop) and computes reliability bounds in an inner loop using the `lb` and `ub` simulation methods.
+This approach runs an optimisation loop over interval parameters (outer loop) and computes reliability bounds in an inner loop using the `lb` and `ub` simulation methods. A [`DistributionFreeProbabilityBox`](@ref) has no parameters, so it is not supported: use [`RandomSlicing`](@ref).
 
 Use `DoubleLoop(sim::AbstractSimulation)` for creating a `DoubleLoop` with same simulation method for both bounds.
 """
@@ -19,7 +19,7 @@ end
 """
     DoubleLoop(sim::AbstractSimulation)
 
-Construct a [`DoubleLoop`](@ref) where the same simulation method is used for both 
+Construct a [`DoubleLoop`](@ref) where the same simulation method is used for both
 lower and upper bounds.
 """
 function DoubleLoop(sim::AbstractSimulation)
@@ -31,11 +31,11 @@ end
 
 Used to estimate imprecise reliability with *random slicing* Monte Carlo method, sometimes known as interval Monte Carlo.
 
-Wraps two simulation objects — one for lower-bound (`lb`) and one for upper-bound (`ub`). 
+Wraps two simulation objects — one for lower-bound (`lb`) and one for upper-bound (`ub`).
 
 The two simulations can differ in simulation type, complexity, or accuracy settings, since estimating the lower bound often requires more simulation effort.
 
-In this approach, the `lb` and `ub` simulation methods generate random intervals from the imprecise variables. These intervals are then propagated through the model via optimisation-based interval propagation, yielding lower and upper bounds on the reliability estimate.
+In this approach, the `lb` and `ub` simulation methods generate random intervals from the imprecise variables. These intervals are then propagated through the model via optimisation-based interval propagation, yielding lower and upper bounds on the reliability estimate. It is the only method that supports [`DistributionFreeProbabilityBox`](@ref) inputs.
 
 Use `RandomSlicing(sim::AbstractSimulation)` for creating a `RandomSlicing` with same simulation method for both bounds.
 
@@ -51,7 +51,7 @@ end
 """
     RandomSlicing(sim::AbstractSimulation)
 
-Construct a [`RandomSlicing`](@ref) where the same simulation method is used for both 
+Construct a [`RandomSlicing`](@ref) where the same simulation method is used for both
 lower and upper bounds.
 """
 function RandomSlicing(sim::AbstractSimulation)
@@ -68,16 +68,16 @@ end
 
 Perform an **imprecise reliability analysis** using the *double loop* Monte Carlo method.
 
-The inputs must include at least one imprecise variable.
+The inputs must include at least one imprecise variable. Inputs with a [`DistributionFreeProbabilityBox`](@ref), also as a marginal of a [`JointDistribution`](@ref), are not supported and throw an `ArgumentError`: use [`RandomSlicing`](@ref).
 
 # Returns
-- **`pf_bounds`**: An [`Interval`](@ref) giving the lower and upper bounds on the probability of failure.  
-- **`result_lb`**: The outputs of the reliability simulation that achieved the lower bound.  
-- **`result_ub`**: The outputs of the reliability simulation that achieved the upper bound. 
+- **`pf_bounds`**: An [`Interval`](@ref) giving the lower and upper bounds on the probability of failure.
+- **`result_lb`**: The outputs of the reliability simulation that achieved the lower bound.
+- **`result_ub`**: The outputs of the reliability simulation that achieved the upper bound.
 
 If the lower and upper bounds are equal, returns only the scalar probability of failure.
 
-See [`DoubleLoop`](@ref) for details of the random slicing configuration.
+See [`DoubleLoop`](@ref) for details of the double looInputs with a [`DistributionFreeProbabilityBox`](@ref), also as a marginal of a [`JointDistribution`](@ref), are not supported and throw an `ArgumentError`: use [`RandomSlicing`](@ref). configuration.
 """
 function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
@@ -87,6 +87,23 @@ function probability_of_failure(
     )
     inputs, models = wrap.([inputs, models])
     @assert isimprecise(inputs, models)
+
+    # the double loop optimizes over the parameters of the p-boxes, and a distribution-free p-box has none: reject it, also as a marginal of a joint distribution
+    marginals = mapreduce(vcat, inputs) do i
+        if isa(i, JointDistribution{<:Copulas.Copula, <:RandomVariable})
+            return i.m
+        else
+            return [i]
+        end
+    end
+    distribution_free = filter(i -> isa(i, RandomVariable{<:DistributionFreeProbabilityBox}), marginals)
+    if !isempty(distribution_free)
+        throw(
+            ArgumentError(
+                "DoubleLoop doesn't support DistributionFreeProbabilityBox inputs ($(join(getproperty.(distribution_free, :name), ", "))), use RandomSlicing"
+            )
+        )
+    end
 
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
@@ -240,11 +257,11 @@ end
 
 Perform an **imprecise reliability analysis** using the *random slicing* Monte Carlo method
 
-The inputs must include at least one imprecise variable.  
+The inputs must include at least one imprecise variable.
 
 # Returns
-- **`pf_bounds`**: An [`Interval`](@ref) giving the lower and upper bounds on the probability of failure.  
-- **`result_lb`**: The outputs of the reliability simulation that achieved the lower bound.  
+- **`pf_bounds`**: An [`Interval`](@ref) giving the lower and upper bounds on the probability of failure.
+- **`result_lb`**: The outputs of the reliability simulation that achieved the lower bound.
 - **`result_ub`**: The outputs of the reliability simulation that achieved the upper bound.
 
 See [`RandomSlicing`](@ref) for details of the random slicing configuration.

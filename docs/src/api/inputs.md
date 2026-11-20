@@ -12,6 +12,7 @@ Pages = ["inputs.md"]
 Parameter
 Interval
 ProbabilityBox
+DistributionFreeProbabilityBox
 RandomVariable
 IntervalVariable
 EmpiricalDistribution
