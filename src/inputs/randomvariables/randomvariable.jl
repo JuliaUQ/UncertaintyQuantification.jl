@@ -13,7 +13,7 @@ julia> RandomVariable(Exponential(1), :x)
 RandomVariable{Exponential{Float64}}(Exponential(1.0), :x)
 ```
 """
-struct RandomVariable{T <: Union{UnivariateDistribution, ProbabilityBox}} <: RandomUQInput
+struct RandomVariable{T <: Union{UnivariateDistribution, ProbabilityBox, DistributionFreeProbabilityBox}} <: RandomUQInput
     dist::T
     name::Symbol
 end
@@ -56,3 +56,4 @@ var(rv::RandomVariable) = var(rv.dist)
 
 include("parametric/distribution.jl")
 include("parametric/pbox.jl")
+include("distribution-free-p-box.jl")

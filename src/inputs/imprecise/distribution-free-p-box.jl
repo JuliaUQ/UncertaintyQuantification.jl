@@ -77,6 +77,14 @@ function rand(pbox::DistributionFreeProbabilityBox, n::Integer = 1)
     return quantile.(Ref(pbox), rand(n))
 end
 
+Base.broadcastable(pbox::DistributionFreeProbabilityBox) = Ref(pbox)
+
+function Base.show(io::IO, pbox::DistributionFreeProbabilityBox)
+    lb = quantile(pbox, 0).lb
+    ub = quantile(pbox, 1).ub
+    return print(io, "DistributionFreeProbabilityBox(median = ", quantile(pbox, 0.5), ", ", lb, ", ", ub, ")")
+end
+
 # Region [a, b] where f rises from 0 to 1. A finite end of the support is used as it is; at an infinite end walk outwards until f is within atol of 0 (left) or 1 (right) (this also checks the limit when f can't be evaluated at ±Inf)
 function _rising_region(
         f::Function,

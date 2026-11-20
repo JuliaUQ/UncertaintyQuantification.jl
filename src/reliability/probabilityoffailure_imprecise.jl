@@ -88,6 +88,23 @@ function probability_of_failure(
     inputs, models = wrap.([inputs, models])
     @assert isimprecise(inputs, models)
 
+    # the double loop optimizes over the parameters of the p-boxes, and a distribution-free p-box has none: reject it, also as a marginal of a joint distribution
+    marginals = mapreduce(vcat, inputs) do i
+        if isa(i, JointDistribution{<:Copulas.Copula, <:RandomVariable})
+            return i.m
+        else
+            return [i]
+        end
+    end
+    distribution_free = filter(i -> isa(i, RandomVariable{<:DistributionFreeProbabilityBox}), marginals)
+    if !isempty(distribution_free)
+        throw(
+            ArgumentError(
+                "DoubleLoop doesn't support DistributionFreeProbabilityBox inputs ($(join(getproperty.(distribution_free, :name), ", "))), use RandomSlicing"
+            )
+        )
+    end
+
     imprecise_inputs = filter(x -> isimprecise(x), inputs)
     precise_inputs = filter(x -> !isimprecise(x), inputs)
 
