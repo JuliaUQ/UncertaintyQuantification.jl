@@ -59,4 +59,4 @@ In _UncertaintyQuantification.jl_ the four categories of uncertainties are descr
 - Category I: [`Parameter`](@ref)
 - Category II: [`IntervalVariable`](@ref)
 - Category III: [`RandomVariable`](@ref)
-- Category IV: [`ProbabilityBox`](@ref).
+- Category IV: [`ProbabilityBox`](@ref) (parametric) and [`DistributionFreeProbabilityBox`](@ref).

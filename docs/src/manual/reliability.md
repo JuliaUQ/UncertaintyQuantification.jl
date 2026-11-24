@@ -294,7 +294,7 @@ The following two sections provide two possible solutions to this challenging pr
 
 ### Double-loop Monte Carlo Simulation
 
-The simplest way to solve the imprecise reliability analysis is by double-loop simulation. The name refers to the need for two loops in comparison to a standard reliability analysis. The outer-loop essentially solves two optimisation problems over the parameter space of the epistemic inputs to find the combinations that minimize and maximize the probability of failure. The inner-loop requires a reliability calculation, with the current combination of parameters under consideration being mapped to precise inputs. In practice, [`IntervalVariable`](@ref) is mapped to a [`Parameter`](@ref) while a [`ProbabilityBox`](@ref) nested inside a [`RandomVariable`](@ref) yields a regular `RandomVariable`. Therefore, the double-loop simulation treats p-boxes as parametric. Then, a comprehensive reliability analysis using these purely *aleatory* inputs is carried out. This repeated analysis in the inner-loop makes the double-loop simulation computationally demanding. If a Monte Carlo simulation is applied in the inner-loop this is known as double-loop Monte Carlo simulation.
+The simplest way to solve the imprecise reliability analysis is by double-loop simulation. The name refers to the need for two loops in comparison to a standard reliability analysis. The outer-loop essentially solves two optimisation problems over the parameter space of the epistemic inputs to find the combinations that minimize and maximize the probability of failure. The inner-loop requires a reliability calculation, with the current combination of parameters under consideration being mapped to precise inputs. In practice, [`IntervalVariable`](@ref) is mapped to a [`Parameter`](@ref) while a [`ProbabilityBox`](@ref) nested inside a [`RandomVariable`](@ref) yields a regular `RandomVariable`. Therefore, the double-loop simulation treats p-boxes as parametric. A [`DistributionFreeProbabilityBox`](@ref) has no parameters to map, so it can't be used with the double loop. Then, a comprehensive reliability analysis using these purely *aleatory* inputs is carried out. This repeated analysis in the inner-loop makes the double-loop simulation computationally demanding. If a Monte Carlo simulation is applied in the inner-loop this is known as double-loop Monte Carlo simulation.
 
 Special attention must be paid to the type of optimisation algorithm used, as random sampling in the inner-loop leads to non-smooth objective functions. Here we have chosen to apply mesh adaptive direct search (MADS) algorithms which are specifically designed for such cases [abramsonOrthoMADSDeterministicMADS2009](@cite). However, exploration of alternative methods is part of the ongoing development.
 
@@ -390,5 +390,18 @@ Here, the lower bound is again estimated using FORM, while we apply subset simul
      subset = SubSetSimulation(2000, 0.1, 10, Normal())
      pf, out_lb, out_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1,x2], RandomSlicing(FORM(), subset))
 ```
+
+Since random slicing only uses the bounding CDFs of the p-boxes, it also works with a [`DistributionFreeProbabilityBox`](@ref), which can't be used with the double loop. As an example, we replace `x2` by the distribution-free p-box with the same bounds: at every ``x``, the lower and upper CDFs are the smallest and the largest of the CDFs of ``N(0, 1)`` and ``N(0, 2)``.
+
+```@example reliability
+lower_cdf = x -> min(cdf(Normal(0, 1), x), cdf(Normal(0, 2), x))
+upper_cdf = x -> max(cdf(Normal(0, 1), x), cdf(Normal(0, 2), x))
+x2_free = RandomVariable(DistributionFreeProbabilityBox(lower_cdf, upper_cdf, -Inf, Inf), :x2)
+
+pf, out_lb, out_ub = probability_of_failure(f, df -> 9 .+ df.f, [x1, x2_free], RandomSlicing(FORM()))
+pf
+```
+
+Both bounds match the analytical solution, ``\underline{p}_f = \Phi(-9; 1, 1) \approx 7.6 \times 10^{-24}`` and ``\overline{p}_f = \Phi(-9; -1, 2) \approx 3.2 \times 10^{-5}``: for this linear performance function the extreme failure probabilities are reached by the bounding CDFs, which here are Gaussian. For non-monotone performance functions the distribution-free p-box can give a wider interval than the parametric one, since it contains every CDF between the bounds and not only Gaussians.
 
 As outlined by [alvarez2018estimation](@cite), other forms of random-sets can in principle be evaluated with this method, such as possibility distributions [dubois1990consonant](@cite) or general Dempster–Shafer structures [shafer1976mathematical](@cite). However, careful consideration of multivariate extensions of these structures must be taken [schmelzer2023random](@cite). For this reason, we restrict ourselves to distributions, intervals, and p-boxes for the time being.

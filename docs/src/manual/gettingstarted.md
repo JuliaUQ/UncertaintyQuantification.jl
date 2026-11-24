@@ -106,6 +106,29 @@ plot(inputs)#hide
 
 ```
 
+If only the bounds of the p-box are known, but not a distribution family, it can be represented as a [`DistributionFreeProbabilityBox`](@ref): every CDF between the lower and the upper CDF is a possible distribution. It is constructed from the two CDFs, as functions, and the support `[lb, ub]` of the p-box, where `lb` can be `-Inf` and `ub` can be `Inf`.
+
+```@example rv
+lower_cdf = x -> cdf(Normal(1, 1), x)
+upper_cdf = x -> cdf(Normal(0, 1), x)
+pbox = DistributionFreeProbabilityBox(lower_cdf, upper_cdf, -Inf, Inf)
+```
+
+The constructor checks, with no tolerance, that both functions are valid CDFs, exactly 0 at `lb` and 1 at `ub`, and that the lower CDF is never above the upper one. The CDFs are stored as given, so their tails are never cut.
+
+The bounds can also be estimated from data, with two [`EmpiricalDistribution`](@ref)s: here the lower one is the same data shifted to the right. Pass the distributions themselves, not `x -> cdf(d, x)`, which would fail the exact checks because of rounding in the spline evaluation.
+
+```@example rv
+data = randn(500)
+pbox = DistributionFreeProbabilityBox(EmpiricalDistribution(data .+ 1), EmpiricalDistribution(data))
+```
+
+To be used in an analysis, it is wrapped in a [`RandomVariable`](@ref).
+
+```@example rv
+x = RandomVariable(pbox, :x)
+```
+
 ## Dependencies
 
 Modelling of dependent variables is exposed through the [`JointDistribution`](@ref). In its simplest form, this is a wrapper around any implementation of the `MultivariateDistribution` interface defined by _Distributions.jl_. To construct a [`JointDistribution`](@ref) pass the `MultivariateDistribution` and a `vector{`Symbol`}` of matching dimension.
