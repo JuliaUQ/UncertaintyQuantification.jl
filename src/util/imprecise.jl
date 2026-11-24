@@ -7,6 +7,8 @@ isimprecise(_::UQInput) = false
 
 isimprecise(rv::RandomVariable{<:ProbabilityBox}) = true
 
+isimprecise(rv::RandomVariable{<:DistributionFreeProbabilityBox}) = true
+
 isimprecise(i::IntervalVariable) = true
 
 function isimprecise(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable})

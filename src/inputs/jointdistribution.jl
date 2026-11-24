@@ -156,10 +156,9 @@ dimensions(jd::JointDistribution{<:Copulas.Copula, <:RandomVariable}) = length(j
 
 dimensions(jd::JointDistribution{<:MultivariateDistribution, <:Symbol}) = length(jd.d)
 
+# Copula joint distributions always store their marginals as the bare type RandomVariable (whatever distribution they hold), so the method is declared for any RandomVariable: a narrower signature like RandomVariable{<:Union{UnivariateDistribution, ProbabilityBox}} stops matching as soon as RandomVariable accepts more types, as happened when DistributionFreeProbabilityBox was added
 function bounds(
-        jd::JointDistribution{
-            <:Copulas.Copula, <:RandomVariable{<:Union{UnivariateDistribution, ProbabilityBox}},
-        },
+        jd::JointDistribution{<:Copulas.Copula, <:RandomVariable},
     )
     b = map(bounds, filter(isimprecise, jd.m))
 

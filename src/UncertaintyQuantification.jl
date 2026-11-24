@@ -121,6 +121,7 @@ export CentralComposite
 export CentralFiniteDifferences
 export CloughPenzien
 export DeviationNumber
+export DistributionFreeProbabilityBox
 export DoubleLoop
 export EmpiricalPSD
 export ExternalModel
@@ -233,6 +234,7 @@ include("inputs/parameter.jl")
 
 include("inputs/imprecise/interval.jl")
 include("inputs/imprecise/p-box.jl")
+include("inputs/imprecise/distribution-free-p-box.jl")
 
 include("inputs/randomvariables/randomvariable.jl")
 include("inputs/randomvariables/distributionparameters.jl")
