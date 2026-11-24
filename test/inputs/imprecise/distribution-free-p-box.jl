@@ -136,6 +136,7 @@ end
         @test q.lb == quantile(upper, u)
         @test q.ub == quantile(lower, u)
     end
+    @test_throws DomainError(1.5, "u must be in [0, 1]") quantile(pbox, 1.5)
 
     # the stored cdfs are clamped to [0, 1]: the spline evaluation can round slightly above 1
     x = range(minimum(upper) - 1, maximum(lower) + 1, 10^5)
@@ -202,4 +203,17 @@ end
     q = quantile(pbox, 0.5)
     @test 1 <= q.lb <= 4
     @test 2 <= q.ub <= 5
+end
+
+@testitem "Distribution-free p-box: cdf not defined at ±Inf" begin
+    N0 = x -> cdf(Normal(0, 1), x)
+
+    # a cdf that throws at ±Inf
+    throws_at_inf = x -> isinf(x) ? error("not defined at ±Inf") : N0(x)
+    @test DistributionFreeProbabilityBox(x -> throws_at_inf(x - 1), throws_at_inf, -Inf, Inf) isa DistributionFreeProbabilityBox
+
+    # a cdf that is NaN at ±Inf: x / (1 + |x|) is Inf / Inf there
+    nan_at_inf = x -> (x / (1 + abs(x)) + 1) / 2
+    @test isnan(nan_at_inf(Inf))
+    @test DistributionFreeProbabilityBox(x -> nan_at_inf(x - 1), nan_at_inf, -Inf, Inf) isa DistributionFreeProbabilityBox
 end

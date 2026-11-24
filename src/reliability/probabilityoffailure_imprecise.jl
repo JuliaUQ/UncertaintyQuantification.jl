@@ -77,7 +77,7 @@ The inputs must include at least one imprecise variable. Inputs with a [`Distrib
 
 If the lower and upper bounds are equal, returns only the scalar probability of failure.
 
-See [`DoubleLoop`](@ref) for details of the double looInputs with a [`DistributionFreeProbabilityBox`](@ref), also as a marginal of a [`JointDistribution`](@ref), are not supported and throw an `ArgumentError`: use [`RandomSlicing`](@ref). configuration.
+See [`DoubleLoop`](@ref) for details of the double loop configuration.
 """
 function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
