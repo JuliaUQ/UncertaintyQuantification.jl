@@ -88,32 +88,47 @@ function getresult(m::ExternalModel, path::String)
     return result
 end
 
+function createpath(workdir::String, sim_folder, subset_lvl, sample_folder, i, digits, add_s::Bool)
+    # if isnothing(sample_folder)
+    #     if !isnothing(subset_lvl)
+    #         return joinpath(workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))")
+    #     else
+    #         return joinpath(workdir, sim_folder, "sample-$(lpad(i, digits, "0"))")
+    #     end
+    # else
+    #     if !isnothing(subset_lvl)
+    #         return joinpath(workdir, sim_folder, "level-$(subset_lvl)", sample_folder)
+    #     else
+    #         return joinpath(workdir, sim_folder, sample_folder)
+    #     end
+    # end
+
+    folder = isnothing(sample_folder) ? "sample-$(lpad(i, digits, "0"))" : (add_s ? string(sample_folder, "-sample-$(lpad(i, digits, "0"))") : string(sample_folder, "-$(lpad(i, digits, "0"))"))
+    return folder =
+        return joinpath(workdir, sim_folder, isnothing(subset_lvl) ? "" : "level-$(subset_lvl)", folder)
+end
+
 function evaluate!(
         m::ExternalModel,
         df::DataFrame;
-        sim_name::String = "",
         sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
         subset_lvl = nothing,
+        sample_folder = nothing,
+        is_subsetinfinity = false,
     )
-    print("Evaluate EXT $sim_name $sim_folder $subset_lvl\n")
+    print("Evaluate EXT $sim_folder $subset_lvl\n")
     if !isnothing(m.scheduler)
         return evaluate!(
-            m, df, m.scheduler; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl
+            m, df, m.scheduler; sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = sample_folder, is_subsetinfinity = is_subsetinfinity
         )
     end
 
-    if sim_name != ""
-        sim_name = "-$(sim_name)"
-    end
+
     n = size(df, 1)
     digits = ndigits(n)
 
     results = pmap(1:n) do i
-        if !isnothing(subset_lvl)
-            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
-        else
-            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
-        end
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
         makedirectory(m, df[i, :], path)
         run(m.solver, path)
         result = getresult(m, path)
@@ -133,19 +148,16 @@ function evaluate!(
         m::ExternalModel,
         df::DataFrame,
         scheduler::AbstractHPCScheduler;
-        sim_name::String = "",
         sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
         subset_lvl = nothing,
+        sample_folder = nothing,
+        is_subsetinfinity = false,
     )
     n = size(df, 1)
     digits = ndigits(n)
 
     for i in 1:n
-        if !isnothing(subset_lvl)
-            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
-        else
-            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
-        end
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
         makedirectory(m, df[i, :], path)
     end
 
@@ -154,13 +166,7 @@ function evaluate!(
     run_hpc_jobs(scheduler, m, n, sim_folder)
 
     results = map(1:n) do i
-        if !isnothing(subset_lvl)
-            path = joinpath(m.workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))$(sim_name)")
-        else
-            path = joinpath(m.workdir, sim_folder, string("sample-$(lpad(i, digits, "0"))", sim_name))
-        end
-
-
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
         return getresult(m, path)
     end
 

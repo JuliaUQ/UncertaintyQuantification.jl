@@ -50,11 +50,11 @@ function evaluate!(m::ParallelModel, df::DataFrame)
     return nothing
 end
 
-function evaluate!(models::Vector{<:UQModel}, df::DataFrame; sim_name::String = "", sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), subset_lvl = nothing)
+function evaluate!(models::Vector{<:UQModel}, df::DataFrame; sim_folder::String = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), subset_lvl = nothing, sample_folder = nothing, is_subsetinfinity = false)
     # use same working directory for all external models
     for m in models
         if isa(m, ExternalModel)
-            evaluate!(m, df, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
+            evaluate!(m, df, sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = sample_folder, is_subsetinfinity = is_subsetinfinity)
         else
             evaluate!(m, df)
         end

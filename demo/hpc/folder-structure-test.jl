@@ -21,7 +21,7 @@ radius = Extractor(
 )
 
 binary = joinpath(Sys.BINDIR, "julia")
-
+print(typeof(binary))
 solver = Solver(binary, sourcefile)
 
 x = RandomVariable(Uniform(0, 1), :x)
@@ -42,6 +42,9 @@ function limitstate(df)
     return reduce(vcat, df.r) .- 0.1
 end
 
-subset = SubSetInfinity(30, 0.1, 10, 0.5)
+subset = SubSetSimulation(30, 0.1, 10, Normal())
+# subset = SubSetInfinity(30, 0.1, 10, 0.5)
+# subset = SubSetInfinityAdaptive(30, 0.1, 10, 1)
+
 @time pf, σ, samples = probability_of_failure(ext, limitstate, [x, y], subset)
 println("Probability of failure: $pf")

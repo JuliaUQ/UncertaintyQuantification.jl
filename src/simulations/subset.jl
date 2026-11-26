@@ -196,8 +196,8 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::AbstractSubSetSimulation
     )
-    sim_folder = Dates.format(now(), "YYYY-mm-dd-HH-MM-SS")
     sim_name = string(typeof(sim))
+    sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", sim_name)
     inputs, models = wrap.([inputs, models])
     print("START PoF SUBSET\n")
     if isimprecise(inputs, models)
@@ -206,7 +206,7 @@ function probability_of_failure(
 
     samples = [sample(inputs, sim)]
     print(samples)
-    evaluate!(models, samples[end]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = 1)
+    evaluate!(models, samples[end]; sim_folder = sim_folder, subset_lvl = 1)
 
     performance = [performancefunction(samples[end])]
 
@@ -254,7 +254,6 @@ function probability_of_failure(
             performancefunction,
             inputs,
             sim;
-            sim_name = sim_name,
             sim_folder = sim_folder,
             subset_lvl = i + 1
         )
@@ -284,7 +283,6 @@ function nextlevelsamples(
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetSimulation;
-        sim_name::String = "",
         sim_folder::String = "",
         subset_lvl = nothing,
     )
@@ -332,7 +330,7 @@ function nextlevelsamples(
         if any(α_accept)
             new_samples = chainsamples[α_accept, :]
             print("NEW SAMPLES", new_samples)
-            evaluate!(models, new_samples, sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
+            evaluate!(models, new_samples, sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = joinpath("", "batch-$i-sample"))
 
             new_samplesperformance = performancefunction(new_samples)
             reject = new_samplesperformance .> threshold
@@ -380,7 +378,6 @@ function nextlevelsamples(
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetInfinity;
-        sim_name::String = "",
         sim_folder::String = "",
         subset_lvl = nothing,
     )
@@ -398,9 +395,10 @@ function nextlevelsamples(
         ρ,
         sim.s,
         samples_per_seed;
-        sim_name = sim_name,
         sim_folder = sim_folder,
         subset_lvl = subset_lvl,
+        sample_folder = "batch-",
+        is_subsetinfinity = true,
     )
 
     @debug "Acceptance rate" α
@@ -416,7 +414,6 @@ function nextlevelsamples(
         performancefunction::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::SubSetInfinityAdaptive;
-        sim_name::String = "",
         sim_folder::String = "",
         subset_lvl = nothing,
     )
@@ -438,6 +435,7 @@ function nextlevelsamples(
 
     α = 0.0
     for batch in 1:number_of_batches
+        @show number_of_batches
         σ = min(1, λ * sim.s)
         ρ = sqrt(1 - σ^2)
 
@@ -451,9 +449,9 @@ function nextlevelsamples(
             ρ,
             σ,
             samples_per_seed,
-            sim_name=sim_name,
-            sim_folder=sim_folder,
-            subset_lvl=subset_lvl,
+            sim_folder = sim_folder,
+            subset_lvl = subset_lvl,
+            sample_folder = "batch-$(lpad(batch, ndigits(number_of_batches), "0"))-sample-",
         )
 
         α += acceptance_rate
@@ -486,12 +484,13 @@ function conditional_sampling(
         ρ::Real,
         σ::Real,
         N::Integer;
-        sim_name::String = "",
         sim_folder::String = "",
         subset_lvl = nothing,
+        sample_folder = nothing,
+        is_subsetinfinity = false,
     )
     α = 0.0
-
+    @show N
     random_inputs = filter(i -> isa(i, RandomUQInput), inputs)
     rvs = names(random_inputs)
 
@@ -510,7 +509,7 @@ function conditional_sampling(
         chain_samples[k][:, rvs] = randn(size(μ)) .* σ .+ μ
 
         to_physical_space!(inputs, chain_samples[k])
-        evaluate!(models, chain_samples[k]; sim_name = sim_name, sim_folder = sim_folder, subset_lvl = subset_lvl)
+        evaluate!(models, chain_samples[k]; sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = string(sample_folder, "$(lpad(k - 1, ndigits(N - 1), "0"))"), is_subsetinfinity)
 
         chain_performance[k] = performancefunction(chain_samples[k])
 
