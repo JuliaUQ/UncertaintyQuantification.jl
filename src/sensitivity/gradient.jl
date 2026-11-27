@@ -4,6 +4,8 @@ function gradient(
         x::DataFrame,
         output::Symbol;
         fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+        sim_folder=Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sample_folder = nothing,
     )
     samples = copy(x)
 
@@ -13,7 +15,7 @@ function gradient(
         samples = sample(inputs, size(x, 1))
         samples[:, random_names] .= x
 
-        evaluate!(models, samples)
+        evaluate!(models, samples; sim_folder=sim_folder=joinpath(sim_folder,string("gradient-",Dates.format(now(), "HH-MM-SS-sss"))), sample_folder=sample_folder)
 
         return samples[:, output][1]
     end
@@ -31,6 +33,8 @@ function gradient_in_standard_normal_space(
         reference::DataFrame,
         output::Symbol;
         fdm::FiniteDifferencesMethod = CentralFiniteDifferences(3),
+        sim_folder=Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"),
+        sample_folder = nothing,
     )
     samples = copy(reference)
 
@@ -47,7 +51,7 @@ function gradient_in_standard_normal_space(
         samples[:, random_names] .= x
         to_physical_space!(inputs, samples)
 
-        evaluate!(models, samples)
+        evaluate!(models, samples;sim_folder=joinpath(sim_folder, "gradients"), sample_folder = string("gradient-",Dates.format(now(), "HH-MM-SS-sss")))
 
         return samples[:, output][1]
     end

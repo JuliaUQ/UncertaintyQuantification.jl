@@ -23,7 +23,7 @@ function probability_of_failure(
     end
 
     samples = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim))))
 
     # Probability of failure
     pf = sum(performance(samples) .< 0) / sim.n
@@ -39,23 +39,24 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::LineSampling,
     )
+    sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim)))
     inputs, models = wrap.([inputs, models])
-
     if isimprecise(inputs, models)
         error("You must use DoubleLoop or RandomSlicing with imprecise inputs or models.")
     end
-
     if isempty(sim.direction)
         sim.direction = gradient_in_standard_normal_space(
             [wrap(models)..., Model(x -> -1 * performance(x), :performance)],
             inputs,
             sns_zero_point(inputs),
-            :performance,
+            :performance;
+            sim_folder = sim_folder,
         )
     end
-
     samples = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+    @show models
+    print("call evaluate in PoF LineSampling")
+    evaluate!(models, samples; sim_folder = sim_folder)
 
     # Evaluate performance function
     p = reshape(performance(samples), length(sim.points), sim.lines)'
@@ -79,6 +80,7 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::AdvancedLineSampling,
     )
+    sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim)))
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -90,7 +92,8 @@ function probability_of_failure(
             [wrap(models)..., Model(x -> -1 * performance(x), :performance)],
             inputs,
             sns_zero_point(inputs),
-            :performance,
+            :performance;
+            sim_folder=sim_folder,
         )
     end
 
@@ -112,7 +115,7 @@ function probability_of_failure(
     end
 
     to_physical_space!(inputs, samples)
-    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+    evaluate!(models, samples; sim_folder = sim_folder)
 
     β⁺ = rootinterpolation(sim.points, performance(samples))
     βᵢ = copy(β⁺)
@@ -148,7 +151,7 @@ function probability_of_failure(
                 DataFrames.hcat!(linesample, sample(deterministic_inputs, 1))
             end
             to_physical_space!(inputs, linesample)
-            evaluate!(models, linesample; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+            evaluate!(models, linesample; sim_folder = sim_folder, sample_folder = "line-$i-beta-$β")
             append!(samples, linesample)
             return performance(linesample)
         end
@@ -165,7 +168,7 @@ function probability_of_failure(
                 )
             end
             to_physical_space!(inputs, linesamples)
-            evaluate!(models, linesamples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+            evaluate!(models, linesamples; sim_folder = sim_folder, sample_folder = "line-$i-beta-$β")
             append!(samples, linesamples)
             β[i] = rootinterpolation(sim.points, performance(linesamples), i)
         end
@@ -208,6 +211,7 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::ImportanceSampling,
     )
+    sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim)))
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -215,14 +219,14 @@ function probability_of_failure(
     end
 
     if isempty(sim.dp) || isempty(sim.α)
-        _, β, dp, α = probability_of_failure(models, performance, inputs, FORM())
+        _, β, dp, α = probability_of_failure(models, performance, inputs, FORM(); sim_folder = sim_folder)
         sim.β = β
         sim.dp = dp
         sim.α = α
     end
 
     samples, weights = sample(inputs, sim)
-    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+    evaluate!(models, samples; sim_folder = sim_folder)
 
     # Probability of failure
     weighted_failures = (performance(samples) .< 0) .* weights
@@ -239,6 +243,7 @@ function probability_of_failure(
         inputs::Union{Vector{<:UQInput}, UQInput},
         sim::RadialBasedImportanceSampling,
     )
+    sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim)))
     inputs, models = wrap.([inputs, models])
 
     if isimprecise(inputs, models)
@@ -246,13 +251,13 @@ function probability_of_failure(
     end
 
     if iszero(sim.β)
-        _, β, _, _ = probability_of_failure(models, performance, inputs, FORM())
+        _, β, _, _ = probability_of_failure(models, performance, inputs, FORM(); sim_folder=sim_folder)
         sim.β = β
     end
 
     samples = sample(inputs, sim)
 
-    evaluate!(models, samples; sim_folder = string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", str(typeof(sim))))
+    evaluate!(models, samples; sim_folder = sim_folder)
 
     # Probability of failure
 

@@ -36,8 +36,10 @@ function probability_of_failure(
         models::Union{Vector{<:UQModel}, UQModel},
         performance::Function,
         inputs::Union{Vector{<:UQInput}, UQInput},
-        sim::FORM,
+        sim::FORM;
+        sim_folder=""
     )
+    sim_folder = joinpath(sim_folder,string(Dates.format(now(), "YYYY-mm-dd-HH-MM-SS"), "-", string(typeof(sim))))
     models, inputs = wrap.([models, inputs])
 
     if isimprecise(inputs, models)
@@ -60,12 +62,12 @@ function probability_of_failure(
     for it in 1:(sim.n)
         sns[1, random_names] .= y
 
-        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; fdm = sim.fdm)
+        H = gradient_in_standard_normal_space(G, inputs, sns, :performance; fdm = sim.fdm, sim_folder=sim_folder)
 
         H = map(n -> H[n], random_names)
 
         to_physical_space!(inputs, sns)
-        evaluate!(G, sns)
+        evaluate!(G, sns; sim_folder = sim_folder, sample_folder = "sample-$(lpad(it, ndigits(sim.n), "0"))")
 
         h = sns[1, :performance]
 

@@ -88,24 +88,9 @@ function getresult(m::ExternalModel, path::String)
     return result
 end
 
-function createpath(workdir::String, sim_folder, subset_lvl, sample_folder, i, digits, add_s::Bool)
-    # if isnothing(sample_folder)
-    #     if !isnothing(subset_lvl)
-    #         return joinpath(workdir, sim_folder, "level-$(subset_lvl)", "sample-$(lpad(i, digits, "0"))")
-    #     else
-    #         return joinpath(workdir, sim_folder, "sample-$(lpad(i, digits, "0"))")
-    #     end
-    # else
-    #     if !isnothing(subset_lvl)
-    #         return joinpath(workdir, sim_folder, "level-$(subset_lvl)", sample_folder)
-    #     else
-    #         return joinpath(workdir, sim_folder, sample_folder)
-    #     end
-    # end
-
-    folder = isnothing(sample_folder) ? "sample-$(lpad(i, digits, "0"))" : (add_s ? string(sample_folder, "-sample-$(lpad(i, digits, "0"))") : string(sample_folder, "-$(lpad(i, digits, "0"))"))
-    return folder =
-        return joinpath(workdir, sim_folder, isnothing(subset_lvl) ? "" : "level-$(subset_lvl)", folder)
+function createpath(workdir::String, sim_folder, subset_lvl, sample_folder, i, digits, add_s::Bool, add_num::Bool)
+    folder = isnothing(sample_folder) ? "sample-$(lpad(i, digits, "0"))" : (string(sample_folder,add_s ? "-sample" : "" , add_num ? "-$(lpad(i, digits, "0"))" : ""))
+    return joinpath(workdir, sim_folder, isnothing(subset_lvl) ? "" : "level-$(subset_lvl)", folder)
 end
 
 function evaluate!(
@@ -115,9 +100,11 @@ function evaluate!(
         subset_lvl = nothing,
         sample_folder = nothing,
         is_subsetinfinity = false,
+        add_num = true,
     )
-    print("Evaluate EXT $sim_folder $subset_lvl\n")
+    print("Evaluate EXT folder $sim_folder lvl $subset_lvl\n")
     if !isnothing(m.scheduler)
+        print("no scheduler")
         return evaluate!(
             m, df, m.scheduler; sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = sample_folder, is_subsetinfinity = is_subsetinfinity
         )
@@ -128,7 +115,7 @@ function evaluate!(
     digits = ndigits(n)
 
     results = pmap(1:n) do i
-        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity, add_num)
         makedirectory(m, df[i, :], path)
         run(m.solver, path)
         result = getresult(m, path)
@@ -152,12 +139,13 @@ function evaluate!(
         subset_lvl = nothing,
         sample_folder = nothing,
         is_subsetinfinity = false,
+        add_num=true,
     )
     n = size(df, 1)
     digits = ndigits(n)
 
     for i in 1:n
-        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity, add_num)
         makedirectory(m, df[i, :], path)
     end
 
@@ -166,7 +154,7 @@ function evaluate!(
     run_hpc_jobs(scheduler, m, n, sim_folder)
 
     results = map(1:n) do i
-        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity)
+        path = createpath(m.workdir, sim_folder, subset_lvl, sample_folder, i, digits, is_subsetinfinity, add_num)
         return getresult(m, path)
     end
 

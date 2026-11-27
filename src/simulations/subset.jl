@@ -330,7 +330,7 @@ function nextlevelsamples(
         if any(α_accept)
             new_samples = chainsamples[α_accept, :]
             print("NEW SAMPLES", new_samples)
-            evaluate!(models, new_samples, sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = joinpath("", "batch-$i-sample"))
+            evaluate!(models, new_samples, sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = joinpath("", "chain-$(lpad(i, ndigits(samples_per_chain), "0"))","-sample"))
 
             new_samplesperformance = performancefunction(new_samples)
             reject = new_samplesperformance .> threshold
@@ -452,6 +452,7 @@ function nextlevelsamples(
             sim_folder = sim_folder,
             subset_lvl = subset_lvl,
             sample_folder = "batch-$(lpad(batch, ndigits(number_of_batches), "0"))-sample-",
+            add_num = false,
         )
 
         α += acceptance_rate
@@ -488,6 +489,7 @@ function conditional_sampling(
         subset_lvl = nothing,
         sample_folder = nothing,
         is_subsetinfinity = false,
+        add_num=true,
     )
     α = 0.0
     @show N
@@ -509,7 +511,7 @@ function conditional_sampling(
         chain_samples[k][:, rvs] = randn(size(μ)) .* σ .+ μ
 
         to_physical_space!(inputs, chain_samples[k])
-        evaluate!(models, chain_samples[k]; sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = string(sample_folder, "$(lpad(k - 1, ndigits(N - 1), "0"))"), is_subsetinfinity)
+        evaluate!(models, chain_samples[k]; sim_folder = sim_folder, subset_lvl = subset_lvl, sample_folder = string(sample_folder, "$(lpad(k - 1, ndigits(N - 1), "0"))"), is_subsetinfinity, add_num=add_num)
 
         chain_performance[k] = performancefunction(chain_samples[k])
 

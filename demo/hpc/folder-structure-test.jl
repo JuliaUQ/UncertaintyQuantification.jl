@@ -27,7 +27,7 @@ solver = Solver(binary, sourcefile)
 x = RandomVariable(Uniform(0, 1), :x)
 y = RandomVariable(Uniform(0, 1), :y)
 
-workdir = joinpath(pwd(), "radius_subset")
+workdir = joinpath(pwd(), "EXT-radius")
 
 ext = ExternalModel(
     sourcedir,
@@ -42,9 +42,33 @@ function limitstate(df)
     return reduce(vcat, df.r) .- 0.1
 end
 
-subset = SubSetSimulation(30, 0.1, 10, Normal())
-# subset = SubSetInfinity(30, 0.1, 10, 0.5)
-# subset = SubSetInfinityAdaptive(30, 0.1, 10, 1)
 
-@time pf, σ, samples = probability_of_failure(ext, limitstate, [x, y], subset)
+# --- Simulation auswählen (jeweils eine Zeile aktivieren) ---
+
+# MonteCarlo
+# sim = MonteCarlo(100)
+
+# LineSampling
+# sim = LineSampling(10)
+
+# AdvancedLineSampling
+# sim = AdvancedLineSampling(10)
+
+# FORM
+sim = FORM()
+
+# ImportanceSampling
+# sim = ImportanceSampling(100)
+
+# RadialBasedImportanceSampling
+# sim = RadialBasedImportanceSampling(100)
+
+
+
+
+#sim = SubSetSimulation(30, 0.1, 10, Normal())
+# sim = SubSetInfinity(30, 0.1, 10, 0.5)
+# sim = SubSetInfinityAdaptive(30, 0.1, 10, 1)
+
+@time pf, σ, samples = probability_of_failure(ext, limitstate, [x, y], sim)
 println("Probability of failure: $pf")
